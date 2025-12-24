@@ -7,6 +7,10 @@ const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
 const Listing = require("./models/listing");
+const path = require("path");
+const methodOverride = require("method-override");
+const session = require("express-session");
+const flash = require("connect-flash");
 
 // Connection string for MongoDB, pointing to the local server (127.0.0.1) on port 27017,
 // and using the "wanderlust" database.
@@ -30,8 +34,95 @@ main()
     console.log(err);
   });
 
-app.get("/", (req, res) => {
-  res.send("Hi, I am root");
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
+app.use(express.urlencoded({ extended: true }));
+app.use(methodOverride("_method"));
+app.use(
+  session({
+    secret: "mywanderlustwebsite",
+    resave: false,
+    saveUninitialized: true,
+  })
+);
+app.use(flash());
+app.use((req, res, next) => {
+  res.locals.success = req.flash("success");
+  res.locals.error = req.flash("error");
+  next();
+});
+
+// app.get("/", (req, res) => {
+//   res.send("Hi, I am root");
+// });
+
+// Index Route
+app.get("/listings", async (req, res) => {
+  const allListings = await Listing.find({});
+  res.render("./listings/index.ejs", { allListings });
+});
+
+// Create Route
+app.get("/listings/new", (req, res) => {
+  res.render("./listings/new.ejs");
+});
+
+app.post("/listings", async (req, res) => {
+  try {
+    let listingData = req.body.listing;
+
+    const newListing = new Listing(listingData);
+    await newListing.save();
+
+    req.flash("success", "Listing created successfully!");
+
+    res.redirect("/listings");
+  } catch (err) {
+    console.log(err);
+    res.status(500).send("Error saving listing");
+  }
+});
+
+// Show Route
+app.get("/listings/:id", async (req, res) => {
+  let { id } = req.params;
+  const listing = await Listing.findById(id);
+  res.render("./listings/show", { listing });
+});
+
+// Edit and Update Routes
+app.get("/listings/:id/edit", async (req, res) => {
+  let { id } = req.params;
+
+  const listing = await Listing.findById(id);
+  res.render("./listings/edit.ejs", { listing });
+});
+
+app.put("/listings/:id", async (req, res) => {
+  const { id } = req.params;
+
+  await Listing.findByIdAndUpdate(id, req.body.listing, {
+    runValidators: true,
+  });
+
+  req.flash("success", "Listing updated successfully!");
+
+  res.redirect(`/listings`);
+});
+
+//Delete Route
+app.delete("/listings/:id", async (req, res) => {
+  let { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(404).send("Invalid listing ID");
+  }
+
+  await Listing.findByIdAndDelete(id);
+
+  req.flash("success", "Listing deleted successfully!");
+
+  res.redirect("/listings");
 });
 
 // app.get("/testListing", async (req, res) => {
