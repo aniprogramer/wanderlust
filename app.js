@@ -9,8 +9,6 @@ const mongoose = require("mongoose");
 const Listing = require("./models/listing");
 const path = require("path");
 const methodOverride = require("method-override");
-const session = require("express-session");
-const flash = require("connect-flash");
 
 // Connection string for MongoDB, pointing to the local server (127.0.0.1) on port 27017,
 // and using the "wanderlust" database.
@@ -38,19 +36,6 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
-app.use(
-  session({
-    secret: "mywanderlustwebsite",
-    resave: false,
-    saveUninitialized: true,
-  })
-);
-app.use(flash());
-app.use((req, res, next) => {
-  res.locals.success = req.flash("success");
-  res.locals.error = req.flash("error");
-  next();
-});
 
 // app.get("/", (req, res) => {
 //   res.send("Hi, I am root");
@@ -73,8 +58,6 @@ app.post("/listings", async (req, res) => {
 
     const newListing = new Listing(listingData);
     await newListing.save();
-
-    req.flash("success", "Listing created successfully!");
 
     res.redirect("/listings");
   } catch (err) {
@@ -105,8 +88,6 @@ app.put("/listings/:id", async (req, res) => {
     runValidators: true,
   });
 
-  req.flash("success", "Listing updated successfully!");
-
   res.redirect(`/listings`);
 });
 
@@ -119,8 +100,6 @@ app.delete("/listings/:id", async (req, res) => {
   }
 
   await Listing.findByIdAndDelete(id);
-
-  req.flash("success", "Listing deleted successfully!");
 
   res.redirect("/listings");
 });
