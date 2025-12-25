@@ -1,0 +1,170 @@
+body {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.container {
+  flex: 1;
+}
+
+.navbar {
+  height: 4rem;
+  background-color: white;
+}
+
+.navbar-brand {
+  color: #fe424d;
+  font-size: 2rem;
+  transition: color 0.25s ease, transform 0.15s ease;
+}
+
+.navbar-brand:hover {
+  color: #e63946; /* slightly darker red */
+  transform: scale(1.05); /* gentle emphasis */
+}
+
+.nav-link {
+  color: #222222 !important;
+}
+
+.f-info-links a {
+  text-decoration: none;
+  color: #222222;
+}
+
+.f-info-links a:hover {
+  text-decoration: underline;
+}
+
+.f-info {
+  text-align: center;
+  display: flex;
+  height: 8rem;
+  background-color: #ebebeb;
+  flex-wrap: wrap;
+  justify-content: space-evenly;
+  align-items: center;
+}
+
+.f-info-socials,
+.f-info-links,
+.f-info-brand {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.f-info-socials i {
+  font-size: 1.2rem;
+  margin-right: 1.1rem;
+}
+
+#new-page-title {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+#index-page-h2 {
+  margin: 1rem 0;
+}
+
+.card {
+  border: none;
+  margin-bottom: 2rem;
+  /* padding: 0; */
+}
+
+.card-img-top {
+  border-radius: 1rem;
+  width: 100%;
+  object-fit: cover;
+  height: 20rem;
+}
+
+.card-body {
+  padding: 0;
+  margin-top: 0.5rem;
+}
+
+.card-text {
+  color: #222222;
+  font-weight: 400;
+}
+
+.listing-link {
+  text-decoration: none;
+}
+
+/* Card Effect */
+.card-img-overlay {
+  opacity: 0;
+}
+
+.card-img-overlay:hover {
+  opacity: 0.2;
+  background-color: white;
+}
+
+.wanderlust-btn {
+  background-color: #fe424d;
+  border: none;
+  transition: background-color 0.25s ease, transform 0.15s ease;
+  margin: 1rem 0;
+}
+
+.wanderlust-btn:hover {
+  background-color: #e63946;
+  transform: translateY(-2px);
+}
+
+#edit-page-h3 {
+  margin: 1rem 0;
+  text-align: center;
+}
+
+.card-btn {
+  display: flex;
+  gap: 1rem;
+}
+
+.show-btn {
+  transition: background-color 0.25s ease, transform 0.15s ease;
+}
+
+.show-btn:hover {
+  transform: translateY(-2px);
+}
+
+.list-group-item {
+  padding: 0.75rem 0;
+}
+
+#show-page-h3 {
+  text-align: center;
+  margin: 2rem 0;
+}
+
+.show-card {
+  max-width: 900px;
+  margin: auto;
+}
+
+.show-card img {
+  height: 100%;
+  object-fit: cover;
+}
+
+.list-group-item i {
+  font-size: 1.1rem;
+}
+
+.show-btn i {
+  transition: transform 0.15s ease;
+}
+
+.show-btn:hover i {
+  transform: scale(1.1);
+}
