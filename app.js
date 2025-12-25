@@ -9,6 +9,7 @@ const mongoose = require("mongoose");
 const Listing = require("./models/listing");
 const path = require("path");
 const methodOverride = require("method-override");
+const ejsMate = require("ejs-mate");
 
 // Connection string for MongoDB, pointing to the local server (127.0.0.1) on port 27017,
 // and using the "wanderlust" database.
@@ -36,10 +37,12 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
+app.engine("ejs", ejsMate);
+app.use(express.static(path.join(__dirname, "/public")));
 
-// app.get("/", (req, res) => {
-//   res.send("Hi, I am root");
-// });
+app.get("/", (req, res) => {
+  res.redirect("/listings");
+});
 
 // Index Route
 app.get("/listings", async (req, res) => {
@@ -88,7 +91,7 @@ app.put("/listings/:id", async (req, res) => {
     runValidators: true,
   });
 
-  res.redirect(`/listings`);
+  res.redirect(`/listings/${id}`);
 });
 
 //Delete Route
