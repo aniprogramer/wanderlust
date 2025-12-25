@@ -1,29 +1,64 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WanderLust</title>
-  </head>
-  <body>
-    <h3>Listing Details :</h3>
-    <ul>
-      <li><%= listing.title %></li>
-      <li><%= listing.description %></li>
-      <li>₹ <%= listing.price.toLocaleString("en-IN") %></li>
-      <li><%= listing.location %></li>
-      <li><%= listing.country %></li>
-    </ul>
-    <form action="/listings/<%= listing._id %>/edit" method="GET">
-      <button type="submit">Edit</button>
-    </form>
-    <br /><br />
-    <form
-      action="/listings/<%= listing._id %>?_method=DELETE"
-      method="POST"
-      onsubmit="return confirm('Are you sure you want to delete this listing?')"
-    >
-      <button type="submit">Delete Listing</button>
-    </form>
-  </body>
-</html>
+<% layout("/layouts/boilerplate") %>
+
+<h3 id="show-page-h3"><%= listing.title %> Details</h3>
+
+<div class="container">
+  <div class="card show-card mb-5">
+    <div class="row g-4">
+      <!-- LEFT: Image -->
+      <div class="col-md-6">
+        <img
+          src="<%= listing.image.url %>"
+          class="img-fluid rounded-start"
+          alt="listing-image"
+        />
+      </div>
+
+      <!-- RIGHT: Details -->
+      <div class="col-md-6 ps-md-4">
+        <div class="card-body">
+          <h5 class="card-title"><%= listing.title %></h5>
+          <p class="card-text"><%= listing.description %></p>
+
+          <ul class="list-group list-group-flush mb-3">
+            <li class="list-group-item d-flex align-items-center">
+              <i class="bi bi-currency-rupee me-2 text-muted"></i>
+              <strong class="me-1">Price:</strong>
+              <%= listing.price.toLocaleString("en-IN") %> / night
+            </li>
+
+            <li class="list-group-item d-flex align-items-center">
+              <i class="bi bi-geo-alt me-2 text-muted"></i>
+              <strong class="me-1">Location:</strong>
+              <%= listing.location %>
+            </li>
+
+            <li class="list-group-item d-flex align-items-center">
+              <i class="bi bi-globe me-2 text-muted"></i>
+              <strong class="me-1">Country:</strong>
+              <%= listing.country %>
+            </li>
+          </ul>
+
+          <div class="card-btn">
+            <form action="/listings/<%= listing._id %>/edit" method="GET">
+              <button type="submit" class="btn btn-dark show-btn">
+                <i class="bi bi-pencil-square me-1"></i>Edit
+              </button>
+            </form>
+
+            <form
+              action="/listings/<%= listing._id %>?_method=DELETE"
+              method="POST"
+              onsubmit="return confirm('Are you sure you want to delete this listing?')"
+            >
+              <button type="submit" class="btn btn-danger show-btn">
+                <i class="bi bi-trash me-1"></i>Delete Listing
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
