@@ -3,7 +3,12 @@
   <div class="row">
     <div class="col-8 offset-2">
       <h3 id="edit-page-h3">Update <b><%= listing.title %></b> Listing</h3>
-      <form action="/listings/<%= listing._id %>?_method=PUT" method="post">
+      <form
+        action="/listings/<%= listing._id %>?_method=PUT"
+        method="post"
+        class="needs-validation"
+        novalidate
+      >
         <div class="mb-3">
           <label for="title" class="form-label">Title</label>
           <input
@@ -14,13 +19,22 @@
             class="form-control"
             required
           />
+          <div class="valid-feedback">Looks good!</div>
+          <div class="invalid-feedback">Please Enter the Title</div>
         </div>
 
         <div class="mb-3">
           <label for="desc" class="form-label">Description</label>
-          <textarea id="desc" name="listing[description]" class="form-control">
+          <textarea
+            id="desc"
+            name="listing[description]"
+            class="form-control"
+            required
+          >
 <%= listing.description %></textarea
           >
+          <div class="invalid-feedback">Maximum limit is 100 words.</div>
+          <div class="valid-feedback">Looks good!</div>
         </div>
 
         <div class="mb-3">
@@ -31,7 +45,10 @@
             name="listing[image][url]"
             value="<%= listing.image.url %>"
             class="form-control"
+            required
           />
+          <div class="invalid-feedback">Enter a valid URL!</div>
+          <div class="valid-feedback">Looks good!</div>
         </div>
 
         <div class="row">
@@ -43,7 +60,10 @@
               name="listing[price]"
               value="<%= listing.price %>"
               class="form-control"
+              required
             />
+            <div class="valid-feedback">Looks good!</div>
+            <div class="invalid-feedback">Please enter a valid price!</div>
           </div>
 
           <div class="mb-3 col-8">
@@ -54,7 +74,10 @@
               name="listing[country]"
               value="<%= listing.country %>"
               class="form-control"
+              required
             />
+            <div class="valid-feedback">Looks good!</div>
+            <div class="invalid-feedback">Please enter the country!</div>
           </div>
         </div>
 
@@ -66,7 +89,10 @@
             name="listing[location]"
             value="<%= listing.location %>"
             class="form-control"
+            required
           />
+          <div class="valid-feedback">Looks good!</div>
+          <div class="invalid-feedback">Please enter valid location!</div>
         </div>
 
         <button type="submit" class="btn btn-dark wanderlust-btn">
