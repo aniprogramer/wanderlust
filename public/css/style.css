@@ -17,7 +17,9 @@ body {
 .navbar-brand {
   color: #fe424d;
   font-size: 2rem;
-  transition: color 0.25s ease, transform 0.15s ease;
+  transition:
+    color 0.25s ease,
+    transform 0.15s ease;
 }
 
 .navbar-brand:hover {
@@ -111,7 +113,9 @@ body {
 .wanderlust-btn {
   background-color: #fe424d;
   border: none;
-  transition: background-color 0.25s ease, transform 0.15s ease;
+  transition:
+    background-color 0.25s ease,
+    transform 0.15s ease;
   margin: 1rem 0;
 }
 
@@ -131,7 +135,9 @@ body {
 }
 
 .show-btn {
-  transition: background-color 0.25s ease, transform 0.15s ease;
+  transition:
+    background-color 0.25s ease,
+    transform 0.15s ease;
 }
 
 .show-btn:hover {
@@ -167,4 +173,74 @@ body {
 
 .show-btn:hover i {
   transform: scale(1.1);
+}
+
+.star-rating {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+  gap: 0.25rem;
+}
+
+.star-rating input {
+  display: none;
+}
+
+.star-rating label {
+  font-size: 1.8rem;
+  color: #dcdcdc;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+/* Hover effect */
+.star-rating label:hover,
+.star-rating label:hover ~ label {
+  color: #ffc107;
+}
+
+/* Selected stars */
+.star-rating input:checked ~ label {
+  color: #ffc107;
+}
+
+.review-card {
+  background-color: #ffffff;
+  border: 1px solid #eaeaea;
+  border-radius: 14px;
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.review-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+/* Avatar */
+.review-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: #f1f1f1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+  font-size: 1.2rem;
+}
+
+/* Stars */
+.review-stars {
+  color: #ff385c; /* Airbnb red */
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+}
+
+/* Text */
+.review-text {
+  color: #333;
+  line-height: 1.6;
+  font-size: 0.95rem;
 }
