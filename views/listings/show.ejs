@@ -79,6 +79,7 @@
     <div class="col-lg-8">
       <div class="card border">
         <div class="card-body p-4">
+          <% if (currUser) { %>
           <h4 class="card-title mb-4">Leave a Review</h4>
 
           <form
@@ -127,6 +128,7 @@
               </button>
             </div>
           </form>
+          <% } %>
 
           <hr />
 
@@ -144,7 +146,9 @@
                   </div>
 
                   <div>
-                    <h6 class="mb-0 fw-semibold">Username</h6>
+                    <h6 class="mb-0 fw-semibold">
+                      @<%= review.author.username %>
+                    </h6>
                     <div class="review-stars">
                       <% for (let i = 1; i <= review.rating; i++) { %> ★ <% } %>
                     </div>
