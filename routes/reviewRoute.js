@@ -4,26 +4,7 @@ const wrapAsync = require("../utils/wrapAsync");
 const ExpressError = require("../utils/ExpressError.js");
 const Listing = require("../models/listing.js");
 const Review = require("../models/review");
-const { reviewSchema } = require("../schema");
-
-const validateReview = (req, res, next) => {
-  // Check if req.body exists first
-  if (!req.body || Object.keys(req.body).length == 0) {
-    return next(new ExpressError(400, "Request body cannot be empty"));
-  }
-
-  const { error } = reviewSchema.validate(req.body);
-
-  if (error) {
-    // Format error message nicely
-    const errorMessages = error.details
-      .map((detail) => detail.message)
-      .join(", ");
-    return next(new ExpressError(400, `Validation error: ${errorMessages}`));
-  }
-
-  next();
-};
+const { validateReview } = require("../middleware.js");
 
 listingRoute.post(
   "/",
