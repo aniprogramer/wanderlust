@@ -18,6 +18,10 @@
       <!-- RIGHT: Details -->
       <div class="col-md-6 ps-md-4">
         <div class="card-body">
+          <p class="card-text">
+            Listed By:
+            <i><u><%= listing.owner.username %></u></i>
+          </p>
           <p class="card-text"><%= listing.description %></p>
 
           <ul class="list-group list-group-flush mb-3">
@@ -42,6 +46,7 @@
           </ul>
 
           <!-- Action Buttons -->
+          <% if(currUser && currUser._id.equals(listing.owner._id)) { %>
           <div class="card-btn d-flex gap-2">
             <form action="/listings/<%= listing._id %>/edit" method="GET">
               <button type="submit" class="btn btn-dark show-btn">
@@ -63,6 +68,7 @@
               </button>
             </form>
           </div>
+          <% } %>
         </div>
       </div>
     </div>

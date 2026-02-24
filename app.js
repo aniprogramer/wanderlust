@@ -62,10 +62,6 @@ const sessionOptions = {
   },
 };
 
-app.get("/", (req, res) => {
-  res.redirect("/listings");
-});
-
 app.use(session(sessionOptions));
 app.use(flash());
 
@@ -81,6 +77,7 @@ passport.deserializeUser(User.deserializeUser());
 app.use((req, res, next) => {
   res.locals.successMsg = req.flash("success");
   res.locals.errorMsg = req.flash("error");
+  res.locals.currUser = req.user;
   console.log(res.locals.successMsg);
   console.log(res.locals.errorMsg);
   next();
@@ -96,6 +93,11 @@ app.use((req, res, next) => {
 //   let registeredUser = await User.register(fakeUser, "helloworld");
 //   res.send(registeredUser);
 // });
+
+// default route
+app.get("/", (req, res) => {
+  res.redirect("/listings");
+});
 
 // Listing Routes using Router
 app.use("/listings", listingRoutes);
