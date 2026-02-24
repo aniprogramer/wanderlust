@@ -4,10 +4,15 @@ const wrapAsync = require("../utils/wrapAsync");
 const ExpressError = require("../utils/ExpressError.js");
 const Listing = require("../models/listing.js");
 const Review = require("../models/review");
-const { validateReview } = require("../middleware.js");
+const {
+  validateReview,
+  isLoggedIn,
+  isReviewAuthor,
+} = require("../middleware.js");
 
 listingRoute.post(
   "/",
+  isLoggedIn,
   validateReview,
   wrapAsync(async (req, res) => {
     const { id } = req.params;
@@ -28,6 +33,8 @@ listingRoute.post(
 
     const newReview = new Review(req.body.review);
 
+    newReview.author = req.user._id;
+
     // 4. Associate review with listing
     listing.reviews.push(newReview);
 
@@ -47,6 +54,8 @@ listingRoute.post(
 // Review Delete Route
 listingRoute.delete(
   "/:reviewId",
+  isLoggedIn,
+  isReviewAuthor,
   wrapAsync(async (req, res) => {
     let { id, reviewId } = req.params;
 
