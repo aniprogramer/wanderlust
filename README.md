@@ -1,5 +1,7 @@
 # 🌍 Wanderlust
 
+**🚀 Live Demo:** [https://ani-wanderlust.onrender.com](https://ani-wanderlust.onrender.com)
+
 ![Wanderlust Overview](https://img.shields.io/badge/Project-Wanderlust-blue?style=for-the-badge&logo=airbnb)
 ![Node.js](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white)
 ![Express.js](https://img.shields.io/badge/Express.js-404D59?style=for-the-badge)
