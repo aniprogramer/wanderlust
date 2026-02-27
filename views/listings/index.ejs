@@ -5,60 +5,63 @@
     <button>Create New Listing</button>
   </form> -->
   <div id="filters">
-    <div class="filter">
-      <div>
-        <i class="fa-solid fa-fire"></i>
-        <p>Trending</p>
+    <div id="filters-list">
+      <div class="filter">
+        <div>
+          <i class="fa-solid fa-fire"></i>
+          <p>Trending</p>
+        </div>
+      </div>
+      <div class="filter">
+        <div>
+          <i class="fa-solid fa-bed"></i>
+          <p>Rooms</p>
+        </div>
+      </div>
+      <div class="filter">
+        <div>
+          <i class="fa-solid fa-mountain-city"></i>
+          <p>Mountain City</p>
+        </div>
+      </div>
+      <div class="filter">
+        <div>
+          <i class="fa-solid fa-mountain"></i>
+          <p>Mountains</p>
+        </div>
+      </div>
+      <div class="filter">
+        <div>
+          <span class="material-symbols-outlined">castle</span>
+          <p>Castles</p>
+        </div>
+      </div>
+      <div class="filter">
+        <div>
+          <span class="material-symbols-outlined">pool</span>
+          <p>Amazing Pools</p>
+        </div>
+      </div>
+      <div class="filter">
+        <div>
+          <span class="material-symbols-outlined">camping</span>
+          <p>Camping</p>
+        </div>
+      </div>
+      <div class="filter">
+        <div>
+          <span class="material-symbols-outlined">agriculture</span>
+          <p>Farm</p>
+        </div>
+      </div>
+      <div class="filter">
+        <div>
+          <span class="material-symbols-outlined">ac_unit</span>
+          <p>Artic</p>
+        </div>
       </div>
     </div>
-    <div class="filter">
-      <div>
-        <i class="fa-solid fa-bed"></i>
-        <p>Rooms</p>
-      </div>
-    </div>
-    <div class="filter">
-      <div>
-        <i class="fa-solid fa-mountain-city"></i>
-        <p>Mountain City</p>
-      </div>
-    </div>
-    <div class="filter">
-      <div>
-        <i class="fa-solid fa-mountain"></i>
-        <p>Mountains</p>
-      </div>
-    </div>
-    <div class="filter">
-      <div>
-        <span class="material-symbols-outlined">castle</span>
-        <p>Castles</p>
-      </div>
-    </div>
-    <div class="filter">
-      <div>
-        <span class="material-symbols-outlined">pool</span>
-        <p>Amazing Pools</p>
-      </div>
-    </div>
-    <div class="filter">
-      <div>
-        <span class="material-symbols-outlined">camping</span>
-        <p>Camping</p>
-      </div>
-    </div>
-    <div class="filter">
-      <div>
-        <span class="material-symbols-outlined">agriculture</span>
-        <p>Farm</p>
-      </div>
-    </div>
-    <div class="filter">
-      <div>
-        <span class="material-symbols-outlined">ac_unit</span>
-        <p>Artic</p>
-      </div>
-    </div>
+    <!-- /#filters-list -->
     <div class="tax-toggle">
       <div class="form-check-reverse form-switch">
         <input
@@ -73,10 +76,10 @@
       </div>
     </div>
   </div>
-  <div class="row row-cols-lg-3 row-cols-md-2 row-cols-sm-1">
+  <div class="row row-cols-lg-3 row-cols-md-2 row-cols-1">
     <% for (let listing of allListings) { %>
     <a href="/listings/<%= listing._id %>" class="listing-link">
-      <div class="card col" style="width: 20rem">
+      <div class="card col">
         <img src="<%= listing.image.url %>" class="card-img-top" alt="..." />
         <div class="card-img-overlay"></div>
         <div class="card-body">

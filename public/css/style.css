@@ -6,6 +6,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* Ensure the main container grows to fill the viewport */
@@ -17,7 +18,7 @@ body {
    Navbar
    ============ */
 .navbar {
-  height: 4rem;
+  min-height: 4rem;
   background-color: white;
 }
 
@@ -66,9 +67,35 @@ body {
   margin-bottom: 0.5rem;
   display: flex;
   flex-direction: row;
-  gap: 1.5rem;
-  flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
+}
+#filters-list {
+  display: flex;
+  flex-direction: row;
+  gap: 1.5rem;
+  align-items: center;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.5rem;
+  flex-grow: 1;
+}
+
+/* Custom scrollbar to indicate more filters exist */
+#filters-list::-webkit-scrollbar {
+  height: 6px;
+}
+#filters-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+#filters-list::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 10px;
+}
+#filters-list::-webkit-scrollbar-thumb:hover {
+  background: #999;
 }
 .filter {
   display: flex;
@@ -76,6 +103,7 @@ body {
   align-items: center;
   text-align: center;
   opacity: 0.7;
+  flex: 0 0 auto;
 }
 .filter:hover {
   opacity: 1;
@@ -92,7 +120,10 @@ body {
   border-radius: 1rem;
   padding: 1rem;
   height: 3.5rem;
-  margin: auto;
+  display: flex;
+  align-items: center;
+  margin-left: 1rem;
+  flex: 0 0 auto;
 }
 .tax-info {
   display: none;
@@ -331,4 +362,32 @@ body {
   color: #333;
   line-height: 1.6;
   font-size: 0.95rem;
+}
+
+/* ==========================
+   Mobile Responsiveness & Media Queries
+   ========================== */
+@media (max-width: 768px) {
+  /* Allow filters to scroll horizontally instead of wrapping off-screen */
+  #filters-list {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.5rem;
+    gap: 0.75rem; /* Reduced gap between filters on mobile */
+  }
+
+  /* Ensure filter tab stays inline as user scrolls */
+  .filter {
+    flex: 0 0 auto;
+    margin: 1rem 0.2rem; /* Reduced horizontal margin */
+  }
+
+  /* Hide tax toggle on mobile screens by default or stack it */
+  .tax-toggle {
+    flex: 0 0 auto;
+    margin-left: 1rem; /* Added spacing from the scroll container */
+    padding: 0.5rem;
+    height: auto;
+  }
 }
