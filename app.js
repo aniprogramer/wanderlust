@@ -1,3 +1,9 @@
+if (process.env.NODE_ENV != "production") {
+  require("dotenv").config();
+}
+
+console.log(process.env.SECRET);
+
 // Import required modules:
 // - express: lightweight web framework for building server-side applications
 // - mongoose: ODM (Object Data Modeling) library for MongoDB
