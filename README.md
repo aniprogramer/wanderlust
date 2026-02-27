@@ -16,6 +16,7 @@
 
 The platform includes:
 
+- 📱 **Fully responsive UI** optimized for mobile, tablet, and desktop
 - 🔐 **Secure user authentication** & authorization
 - 🕒 **Session management**
 - ☁️ **Cloud-based image uploading** for property photos
