@@ -1,3 +1,6 @@
+/* ==========================
+   Global layout & typography
+   ========================== */
 body {
   font-family: "Plus Jakarta Sans", sans-serif;
   display: flex;
@@ -5,10 +8,14 @@ body {
   min-height: 100vh;
 }
 
+/* Ensure the main container grows to fill the viewport */
 .container {
   flex: 1;
 }
 
+/* ============
+   Navbar
+   ============ */
 .navbar {
   height: 4rem;
   background-color: white;
@@ -31,6 +38,69 @@ body {
   color: #222222 !important;
 }
 
+/* Search Option */
+#search-box {
+  border-radius: 25rem;
+  padding: 0.5rem 3rem 0.5rem 3rem;
+}
+.btn-search {
+  background-color: #fe424d;
+  color: white;
+  transition: transform 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 25rem;
+  padding: 0 1rem 0 1rem;
+}
+.btn-search:hover {
+  background-color: #fe424d;
+  color: black;
+  /* transform: scale(1.05); */
+}
+/* ============
+   Filters & toggles
+   ============ */
+#filters {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  flex-direction: row;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.filter {
+  display: flex;
+  margin: 1rem 0;
+  align-items: center;
+  text-align: center;
+  opacity: 0.7;
+}
+.filter:hover {
+  opacity: 1;
+  cursor: pointer;
+}
+.filter > div p {
+  margin: 0;
+  margin-top: 0.2rem;
+  font-size: 0.85rem;
+}
+
+.tax-toggle {
+  border: 1px #222222 solid;
+  border-radius: 1rem;
+  padding: 1rem;
+  height: 3.5rem;
+  margin: auto;
+}
+.tax-info {
+  display: none;
+}
+
+/* ============
+   Footer info block
+   ============ */
 .f-info-links a {
   text-decoration: none;
   color: #222222;
@@ -64,6 +134,9 @@ body {
   margin-right: 1.1rem;
 }
 
+/* ============
+   Page titles
+   ============ */
 #new-page-title {
   text-align: center;
   margin-top: 1rem;
@@ -73,6 +146,9 @@ body {
   margin: 1rem 0;
 }
 
+/* ============
+   Listing cards
+   ============ */
 .card {
   border: none;
   margin-bottom: 2rem;
@@ -100,7 +176,7 @@ body {
   text-decoration: none;
 }
 
-/* Card Effect */
+/* Card overlay effect */
 .card-img-overlay {
   opacity: 0;
 }
@@ -110,6 +186,9 @@ body {
   background-color: white;
 }
 
+/* ============
+   Buttons
+   ============ */
 .wanderlust-btn {
   background-color: #fe424d;
   border: none;
@@ -124,6 +203,9 @@ body {
   transform: translateY(-2px);
 }
 
+/* ============
+   Edit / Show page helpers
+   ============ */
 #edit-page-h3 {
   margin: 1rem 0;
   text-align: center;
@@ -175,6 +257,9 @@ body {
   transform: scale(1.1);
 }
 
+/* ============
+   Star rating input styles
+   ============ */
 .star-rating {
   display: flex;
   flex-direction: row-reverse;
@@ -204,6 +289,9 @@ body {
   color: #ffc107;
 }
 
+/* ============
+   Review card styles
+   ============ */
 .review-card {
   background-color: #ffffff;
   border: 1px solid #eaeaea;
