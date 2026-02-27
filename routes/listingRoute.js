@@ -4,6 +4,9 @@ const Listing = require("../models/listing.js");
 const wrapAsync = require("../utils/wrapAsync");
 const { default: mongoose } = require("mongoose");
 const { isLoggedIn, isOwner, validateListing } = require("../middleware.js");
+const multer = require("multer");
+const { storage } = require("../cloudConfig.js");
+const upload = multer({ storage });
 
 // Importing Listing Controller
 const listingController = require("../controllers/listings.js");
@@ -17,7 +20,12 @@ listingRoute
   // Index Route - Fetches and displays all listings
   .get(wrapAsync(listingController.index))
   // Create Route - Processes the form to add a new listing
-  .post(isLoggedIn, validateListing, wrapAsync(listingController.newListing));
+  .post(
+    isLoggedIn,
+    validateListing,
+    upload.single("listing[image]"),
+    wrapAsync(listingController.newListing),
+  );
 
 // New Route - Renders the form to create a new listing
 // (Must be above /:id so "new" isn't treated as an ID)
@@ -38,6 +46,7 @@ listingRoute
     isLoggedIn,
     isOwner,
     validateListing,
+    upload.single("listing[image]"),
     wrapAsync(listingController.updateListing),
   )
   // Delete Route - Removes a listing from the database

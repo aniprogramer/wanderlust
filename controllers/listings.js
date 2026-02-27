@@ -9,13 +9,15 @@ module.exports.index = async (req, res) => {
 
 // post: new listing
 module.exports.newListing = async (req, res, next) => {
+  const url = req.file.path;
+  const filename = req.file.filename;
   const newListing = new Listing(req.body.listing);
-  console.log(req.user);
+
   newListing.owner = req.user._id;
+  newListing.image = { filename, url };
   await newListing.save();
 
   req.flash("success", "New Listing Added!");
-
   res.redirect("/listings");
 };
 
@@ -45,18 +47,28 @@ module.exports.renderEditForm = async (req, res) => {
 
   const listing = await Listing.findById(id);
 
-  res.render("./listings/edit.ejs", { listing });
+  let originalImageUrl = listing.image.url;
+  originalImageUrl = originalImageUrl.replace("/upload", "/upload/w_250");
+
+  res.render("./listings/edit.ejs", { listing, originalImageUrl });
 };
 
 // Update Route - Handles the logic for updating the listing in the database
 module.exports.updateListing = async (req, res) => {
   const { id } = req.params;
 
-  const listing = await Listing.findById(id);
+  // const listing = await Listing.findById(id);
 
-  await Listing.findByIdAndUpdate(id, req.body.listing, {
+  const listing = await Listing.findByIdAndUpdate(id, req.body.listing, {
     runValidators: true,
   });
+
+  if (typeof req.file != "undefined") {
+    const url = req.file.path;
+    const filename = req.file.filename;
+    listing.image = { filename, url };
+    await listing.save();
+  }
 
   req.flash("success", "Listing updated successfully!");
 
