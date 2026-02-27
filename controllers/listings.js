@@ -1,29 +1,52 @@
-const { default: mongoose } = require("mongoose");
+const mongoose = require("mongoose");
 const Listing = require("../models/listing");
+const cloudinary = require("../cloudConfig");
+const fs = require("fs");
 
-// index route controller
+// ========================
+// INDEX
+// ========================
 module.exports.index = async (req, res) => {
   const allListings = await Listing.find({});
   res.render("./listings/index.ejs", { allListings });
 };
 
-// post: new listing
+// ========================
+// CREATE NEW LISTING
+// ========================
 module.exports.newListing = async (req, res, next) => {
-  const url = req.file.path;
-  const filename = req.file.filename;
+  if (!req.file) {
+    req.flash("error", "Image is required!");
+    return res.redirect("/listings/new");
+  }
+
+  // Upload to Cloudinary
+  const result = await cloudinary.uploader.upload(req.file.path);
+
   const newListing = new Listing(req.body.listing);
 
   newListing.owner = req.user._id;
-  newListing.image = { filename, url };
+
+  newListing.image = {
+    url: result.secure_url,
+    filename: result.public_id,
+  };
+
   await newListing.save();
+
+  // Delete local temp file
+  fs.unlinkSync(req.file.path);
 
   req.flash("success", "New Listing Added!");
   res.redirect("/listings");
 };
 
-// show listing details route
+// ========================
+// SHOW LISTING
+// ========================
 module.exports.showListings = async (req, res) => {
   let { id } = req.params;
+
   const listing = await Listing.findById(id)
     .populate({
       path: "reviews",
@@ -34,18 +57,25 @@ module.exports.showListings = async (req, res) => {
     .populate("owner");
 
   if (!listing) {
-    req.flash("error", "Listing does not exists :(");
-    res.redirect("/listings");
+    req.flash("error", "Listing does not exist :(");
+    return res.redirect("/listings");
   }
-  console.log(listing);
+
   res.render("./listings/show", { listing });
 };
 
-// Edit Route - Renders the form to edit a specific listing
+// ========================
+// EDIT FORM
+// ========================
 module.exports.renderEditForm = async (req, res) => {
   let { id } = req.params;
 
   const listing = await Listing.findById(id);
+
+  if (!listing) {
+    req.flash("error", "Listing does not exist :(");
+    return res.redirect("/listings");
+  }
 
   let originalImageUrl = listing.image.url;
   originalImageUrl = originalImageUrl.replace("/upload", "/upload/w_250");
@@ -53,32 +83,50 @@ module.exports.renderEditForm = async (req, res) => {
   res.render("./listings/edit.ejs", { listing, originalImageUrl });
 };
 
-// Update Route - Handles the logic for updating the listing in the database
+// ========================
+// UPDATE LISTING
+// ========================
 module.exports.updateListing = async (req, res) => {
   const { id } = req.params;
 
-  // const listing = await Listing.findById(id);
-
   const listing = await Listing.findByIdAndUpdate(id, req.body.listing, {
     runValidators: true,
+    new: true,
   });
 
-  if (typeof req.file != "undefined") {
-    const url = req.file.path;
-    const filename = req.file.filename;
-    listing.image = { filename, url };
+  if (!listing) {
+    req.flash("error", "Listing does not exist :(");
+    return res.redirect("/listings");
+  }
+
+  // If new image uploaded
+  if (req.file) {
+    // Delete old image from Cloudinary
+    if (listing.image && listing.image.filename) {
+      await cloudinary.uploader.destroy(listing.image.filename);
+    }
+
+    // Upload new image
+    const result = await cloudinary.uploader.upload(req.file.path);
+
+    listing.image = {
+      url: result.secure_url,
+      filename: result.public_id,
+    };
+
     await listing.save();
+
+    // Delete local temp file
+    fs.unlinkSync(req.file.path);
   }
 
   req.flash("success", "Listing updated successfully!");
-
   res.redirect(`/listings/${id}`);
 };
 
-/**
- * DELETE /listings/:id
- * Removes a specific listing from the database
- */
+// ========================
+// DELETE LISTING
+// ========================
 module.exports.destroyListing = async (req, res) => {
   let { id } = req.params;
 
@@ -86,9 +134,14 @@ module.exports.destroyListing = async (req, res) => {
     return res.status(404).send("Invalid listing ID");
   }
 
+  const listing = await Listing.findById(id);
+
+  if (listing && listing.image && listing.image.filename) {
+    await cloudinary.uploader.destroy(listing.image.filename);
+  }
+
   await Listing.findByIdAndDelete(id);
 
   req.flash("success", "Listing Deleted Successfully!");
-
   res.redirect("/listings");
 };
