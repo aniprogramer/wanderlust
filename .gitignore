@@ -1,4 +1,21 @@
+# Dependencies
 node_modules/
-.prettierrc
-.vscode
+
+# Environment files
 .env
+.env*.local
+!.env.example
+
+# Uploads
+uploads/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor & OS files
+.vscode/
+.idea/
+.prettierrc
+.DS_Store
+Thumbs.db

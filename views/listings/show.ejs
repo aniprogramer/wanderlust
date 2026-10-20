@@ -20,7 +20,7 @@
         <div class="card-body">
           <p class="card-text">
             Listed By:
-            <i><u><%= listing.owner.username %></u></i>
+            <i><u><%= listing.owner ? listing.owner.username : "aniprogramer" %></u></i>
           </p>
           <p class="card-text"><%= listing.description %></p>
 
@@ -46,7 +46,7 @@
           </ul>
 
           <!-- Action Buttons -->
-          <% if(currUser && currUser._id.equals(listing.owner._id)) { %>
+          <% if(currUser && listing.owner && currUser._id.equals(listing.owner._id)) { %>
           <div class="card-btn d-flex gap-2">
             <form action="/listings/<%= listing._id %>/edit" method="GET">
               <button type="submit" class="btn btn-dark show-btn">
@@ -147,7 +147,7 @@
 
                   <div>
                     <h6 class="mb-0 fw-semibold">
-                      @<%= review.author.username %>
+                      @<%= review.author ? review.author.username : "traveler" %>
                     </h6>
                     <div class="review-stars">
                       <% for (let i = 1; i <= review.rating; i++) { %> ★ <% } %>
@@ -159,12 +159,14 @@
                 <p class="review-text mb-4"><%= review.comment %></p>
 
                 <!-- Actions -->
+                <% if (currUser && review.author && currUser._id.equals(review.author._id)) { %>
                 <form
                   action="/listings/<%= listing._id %>/reviews/<%= review._id %>?_method=DELETE"
                   method="POST"
                 >
                   <button class="btn btn-sm btn-outline-danger">Delete</button>
                 </form>
+                <% } %>
               </div>
             </div>
             <% }) %>
