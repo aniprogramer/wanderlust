@@ -1,0 +1,44 @@
+<%# Category, property type and map location picker. `listing` is optional (edit form). %>
+<% const current = typeof listing !== "undefined" && listing ? listing : {}; %>
+<div class="mb-3">
+  <label for="currency" class="form-label">Currency</label>
+  <select id="currency" name="listing[currency]" class="form-select">
+    <% for (const code of currencies) { %>
+    <option value="<%= code %>" <%= (current.currency || "INR") === code ? "selected" : "" %>><%= code %></option>
+    <% } %>
+  </select>
+</div>
+
+<div class="row">
+  <div class="mb-3 col-12 col-md-6">
+    <label for="category" class="form-label">Category</label>
+    <select id="category" name="listing[category]" class="form-select">
+      <option value="">Select a category</option>
+      <% for (const name of Object.keys(categories)) { %>
+      <option value="<%= name %>" <%= current.category === name ? "selected" : "" %>><%= name %></option>
+      <% } %>
+    </select>
+  </div>
+  <div class="mb-3 col-12 col-md-6">
+    <label for="propertyType" class="form-label">Property type</label>
+    <select id="propertyType" name="listing[propertyType]" class="form-select">
+      <option value="">Select a type</option>
+      <% for (const type of propertyTypes) { %>
+      <option value="<%= type %>" <%= current.propertyType === type ? "selected" : "" %>><%= type %></option>
+      <% } %>
+    </select>
+  </div>
+</div>
+
+<% if (mapboxToken) { %>
+<div class="mb-3">
+  <label class="form-label">Pin the exact location</label>
+  <%- include("./mapbox.ejs") %>
+  <div id="map" class="wl-map" data-mode="picker" data-token="<%= mapboxToken %>"></div>
+  <input type="hidden" id="lat" name="listing[lat]" value="<%= current.geometry && current.geometry.coordinates ? current.geometry.coordinates[1] : '' %>" />
+  <input type="hidden" id="lng" name="listing[lng]" value="<%= current.geometry && current.geometry.coordinates ? current.geometry.coordinates[0] : '' %>" />
+  <div id="map-status" class="form-text">
+    Enter the location and country, or click the map to drop a pin. Leave it to use the address.
+  </div>
+</div>
+<% } %>

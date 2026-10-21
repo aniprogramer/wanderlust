@@ -1,99 +1,339 @@
 <% layout("/layouts/boilerplate") %>
-<body>
-  <!-- <h2 id="index-page-h2">All Listings</h2> -->
-  <!-- <form method="GET" action="/listings/new">
-    <button>Create New Listing</button>
-  </form> -->
-  <div id="filters">
-    <div id="filters-list">
-      <div class="filter">
-        <div>
-          <i class="fa-solid fa-fire"></i>
-          <p>Trending</p>
-        </div>
+
+<!-- ==============================================
+     HERO SECTION WITH TOP HEADER & OVERLAPPING SEARCH
+     ============================================== -->
+<section class="wl-hero-section position-relative">
+  <!-- Top Navigation Header Controls (Inside Hero) -->
+  <header class="wl-hero-header d-flex justify-content-between align-items-center">
+    <!-- Mobile Brand Display (shown only on mobile/tablet) -->
+    <div class="wl-mobile-brand d-lg-none d-flex align-items-center gap-2">
+      <svg width="28" height="28" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 27L12 9L18 21L24 9L32 27H26L24 22L18 31L12 22L10 27H4Z" fill="#F5AD59" />
+        <circle cx="18" cy="6" r="3" fill="#F5AD59" />
+      </svg>
+      <span class="text-white fw-bold fs-5">wanderlust</span>
+    </div>
+
+    <!-- Top Right Actions -->
+    <div class="wl-hero-top-actions ms-auto d-flex align-items-center gap-3">
+      <!-- Currency Selector -->
+      <div class="dropdown">
+        <button class="wl-hero-pill-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="fa-solid fa-globe me-1"></i>
+          <span>INR</span>
+          <i class="fa-solid fa-chevron-down ms-1 small"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow">
+          <li><span class="dropdown-item active">₹ INR (Indian Rupee)</span></li>
+          <li><span class="dropdown-item disabled">$ USD (US Dollar)</span></li>
+          <li><span class="dropdown-item disabled">€ EUR (Euro)</span></li>
+        </ul>
       </div>
-      <div class="filter">
-        <div>
-          <i class="fa-solid fa-bed"></i>
-          <p>Rooms</p>
-        </div>
-      </div>
-      <div class="filter">
-        <div>
-          <i class="fa-solid fa-mountain-city"></i>
-          <p>Mountain City</p>
-        </div>
-      </div>
-      <div class="filter">
-        <div>
-          <i class="fa-solid fa-mountain"></i>
-          <p>Mountains</p>
-        </div>
-      </div>
-      <div class="filter">
-        <div>
-          <span class="material-symbols-outlined">castle</span>
-          <p>Castles</p>
-        </div>
-      </div>
-      <div class="filter">
-        <div>
-          <span class="material-symbols-outlined">pool</span>
-          <p>Amazing Pools</p>
-        </div>
-      </div>
-      <div class="filter">
-        <div>
-          <span class="material-symbols-outlined">camping</span>
-          <p>Camping</p>
-        </div>
-      </div>
-      <div class="filter">
-        <div>
-          <span class="material-symbols-outlined">agriculture</span>
-          <p>Farm</p>
-        </div>
-      </div>
-      <div class="filter">
-        <div>
-          <span class="material-symbols-outlined">ac_unit</span>
-          <p>Artic</p>
-        </div>
+
+      <!-- Become a Host Link -->
+      <a href="/listings/new" class="wl-hero-host-link text-decoration-none">
+        Become a host
+      </a>
+
+      <!-- User Account Dropdown -->
+      <div class="dropdown">
+        <button
+          class="wl-hero-avatar-btn"
+          type="button"
+          id="userMenuBtn"
+          data-bs-toggle="dropdown"
+          aria-expanded="false"
+          aria-label="User Account Menu"
+        >
+          <% if (currUser) { %>
+            <div class="wl-avatar-circle user-logged-in">
+              <%= currUser.username.slice(0, 1).toUpperCase() %>
+            </div>
+          <% } else { %>
+            <div class="wl-avatar-circle">
+              <i class="fa-solid fa-user"></i>
+            </div>
+          <% } %>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow-lg" aria-labelledby="userMenuBtn">
+          <% if (!currUser) { %>
+            <li><a class="dropdown-item py-2" href="/login"><b>Log in</b></a></li>
+            <li><a class="dropdown-item py-2" href="/signup">Sign up</a></li>
+            <li><hr class="dropdown-divider border-secondary" /></li>
+            <li><a class="dropdown-item py-2" href="/listings/new">Host your home</a></li>
+          <% } else { %>
+            <li class="dropdown-header text-light fw-bold">Hello, <%= currUser.username %></li>
+            <li><a class="dropdown-item py-2" href="/wishlist"><i class="fa-regular fa-bookmark me-2"></i>Saved Wishlist</a></li>
+            <li><a class="dropdown-item py-2" href="/bookings"><i class="fa-solid fa-suitcase-rolling me-2"></i>My Trips</a></li>
+            <li><a class="dropdown-item py-2" href="/bookings/hosting"><i class="fa-solid fa-house-chimney me-2"></i>Hosting Dashboard</a></li>
+            <li><a class="dropdown-item py-2" href="/listings/new"><i class="fa-solid fa-plus me-2"></i>Create Listing</a></li>
+            <li><hr class="dropdown-divider border-secondary" /></li>
+            <li>
+              <form action="/logout" method="POST" class="m-0">
+                <%- include("../includes/csrf.ejs") %>
+                <button type="submit" class="dropdown-item py-2 text-danger"><b>Log out</b></button>
+              </form>
+            </li>
+          <% } %>
+        </ul>
       </div>
     </div>
-    <!-- /#filters-list -->
-    <div class="tax-toggle">
-      <div class="form-check-reverse form-switch">
-        <input
-          class="form-check-input"
-          type="checkbox"
-          role="switch"
-          id="switchCheckDefault"
-        />
-        <label class="form-check-label" for="switchCheckDefault">
-          Display total after taxes
-        </label>
-      </div>
+  </header>
+
+  <!-- Hero Editorial Headline & Copy -->
+  <div class="wl-hero-body">
+    <div class="wl-hero-eyebrow">
+      STAYS &middot; EXPERIENCES &middot; DESTINATIONS
+    </div>
+    <h1 class="wl-hero-headline">
+      Discover places<br />
+      that stay with <em>you</em>
+    </h1>
+    <p class="wl-hero-subtitle">
+      Unique homes, incredible experiences and destinations around the world.
+    </p>
+  </div>
+
+  <!-- Lower-right Editorial Badge -->
+  <div class="wl-hero-side-quote d-none d-xl-flex flex-column align-items-end text-end">
+    <span class="wl-quote-script">More than just a stay</span>
+    <div class="wl-quote-tags d-flex flex-column gap-1">
+      <span>People</span>
+      <span>Places</span>
+      <span>Culture</span>
+      <span>Experiences</span>
     </div>
   </div>
-  <div class="row row-cols-lg-3 row-cols-md-2 row-cols-1">
-    <% for (let listing of allListings) { %>
-    <a href="/listings/<%= listing._id %>" class="listing-link">
-      <div class="card col">
-        <img src="<%= listing.image.url %>" class="card-img-top" alt="..." />
-        <div class="card-img-overlay"></div>
-        <div class="card-body">
-          <p class="card-text">
-            <b><%= listing.title %></b>
-            <br />
-            ₹
-            <%= listing.price.toLocaleString("en-IN") %>
-            / night
-            <i class="tax-info">&nbsp; &nbsp; +18% GST</i>
-          </p>
+
+  <!-- Overlapping Destination Search Panel -->
+  <div class="wl-search-wrapper">
+    <form action="/listings" method="GET" class="wl-search-panel" role="search" id="hero-search-form">
+      <!-- Field 1: Destination -->
+      <div class="wl-search-field wl-field-destination">
+        <i class="fa-solid fa-magnifying-glass wl-search-icon"></i>
+        <div class="wl-field-text">
+          <label for="search-box" class="wl-field-label">Where to?</label>
+          <input
+            type="search"
+            id="search-box"
+            name="q"
+            value="<%= filters.q || '' %>"
+            placeholder="Search destinations, cities or homes"
+            maxlength="100"
+            autocomplete="off"
+            class="wl-field-input"
+          />
         </div>
       </div>
-    </a>
+
+      <div class="wl-field-divider d-none d-md-block"></div>
+
+      <!-- Field 2: Check in -->
+      <div class="wl-search-field wl-field-date">
+        <i class="fa-regular fa-calendar wl-search-icon"></i>
+        <div class="wl-field-text">
+          <label for="check-in-input" class="wl-field-label">Check in</label>
+          <input
+            type="date"
+            id="check-in-input"
+            name="checkIn"
+            value="<%= filters.checkIn || '' %>"
+            min="<%= new Date().toISOString().slice(0, 10) %>"
+            class="wl-field-input wl-date-input"
+          />
+        </div>
+      </div>
+
+      <div class="wl-field-divider d-none d-md-block"></div>
+
+      <!-- Field 3: Check out -->
+      <div class="wl-search-field wl-field-date">
+        <div class="wl-field-text">
+          <label for="check-out-input" class="wl-field-label">Check out</label>
+          <input
+            type="date"
+            id="check-out-input"
+            name="checkOut"
+            value="<%= filters.checkOut || '' %>"
+            class="wl-field-input wl-date-input"
+          />
+        </div>
+      </div>
+
+      <div class="wl-field-divider d-none d-lg-block"></div>
+
+      <!-- Field 4: Guests -->
+      <div class="wl-search-field wl-field-guests d-none d-sm-flex">
+        <i class="fa-regular fa-user wl-search-icon"></i>
+        <div class="wl-field-text">
+          <label for="guests-select" class="wl-field-label">Guests</label>
+          <select id="guests-select" name="guests" class="wl-field-select">
+            <option value="1">1 guest</option>
+            <option value="2" selected>2 guests</option>
+            <option value="3">3 guests</option>
+            <option value="4">4+ guests</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Submit Action Button -->
+      <div class="wl-search-action">
+        <button type="submit" class="wl-search-btn" aria-label="Search Stays">
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- ==============================================
+     HORIZONTAL DESTINATION CATEGORIES STRIP
+     ============================================== -->
+<section class="wl-categories-section">
+  <div class="wl-categories-container">
+    <div class="wl-categories-track" id="categoryTrack">
+      <% for (const cat of uiCategories) { %>
+        <%
+          const isSelected = (!cat.categoryParam && !filters.category) || (cat.categoryParam && filters.category === cat.categoryParam);
+          const targetUrl = cat.categoryParam
+            ? `/listings${qs({ category: cat.categoryParam, page: undefined })}`
+            : `/listings${qs({ category: undefined, page: undefined })}`;
+        %>
+        <a href="<%= targetUrl %>" class="wl-category-item <%= isSelected ? 'selected' : '' %> text-decoration-none">
+          <div class="wl-cat-thumb-wrapper">
+            <img src="<%= cat.image %>" alt="<%= cat.label %>" class="wl-cat-thumb" loading="lazy" />
+          </div>
+          <span class="wl-cat-label"><%= cat.label %></span>
+        </a>
+      <% } %>
+    </div>
+    <!-- Right arrow scroll button -->
+    <button class="wl-cat-nav-btn" id="catScrollRight" aria-label="Scroll Categories Right">
+      <i class="fa-solid fa-chevron-right"></i>
+    </button>
+  </div>
+</section>
+
+<!-- ==============================================
+     FEATURED STAYS SECTION
+     ============================================== -->
+<section class="wl-featured-section">
+  <!-- Section Header -->
+  <div class="wl-featured-header d-flex flex-wrap justify-content-between align-items-end mb-4">
+    <div>
+      <span class="wl-featured-eyebrow">HANDPICKED FOR YOU</span>
+      <h2 class="wl-featured-title">Featured Stays</h2>
+    </div>
+
+    <!-- Discovery Controls -->
+    <div class="wl-featured-controls d-flex align-items-center gap-3">
+      <span class="wl-stays-count text-muted fw-semibold"><%= total === 1 ? '1 stay' : (total > 20 ? total + '+ stays' : total + ' stays') %></span>
+
+      <!-- Previous / Next Controls -->
+      <div class="wl-arrow-controls d-none d-sm-flex align-items-center gap-1">
+        <% if (page > 1) { %>
+          <a href="/listings<%= qs({ page: page - 1 }) %>" class="wl-nav-circle-btn" aria-label="Previous Page">
+            <i class="fa-solid fa-chevron-left"></i>
+          </a>
+        <% } else { %>
+          <span class="wl-nav-circle-btn disabled" aria-hidden="true">
+            <i class="fa-solid fa-chevron-left"></i>
+          </span>
+        <% } %>
+
+        <% if (page < pages) { %>
+          <a href="/listings<%= qs({ page: page + 1 }) %>" class="wl-nav-circle-btn" aria-label="Next Page">
+            <i class="fa-solid fa-chevron-right"></i>
+          </a>
+        <% } else { %>
+          <span class="wl-nav-circle-btn disabled" aria-hidden="true">
+            <i class="fa-solid fa-chevron-right"></i>
+          </span>
+        <% } %>
+      </div>
+
+      <!-- Advanced Filter Drawer Toggle -->
+      <button
+        class="wl-pill-outline-btn"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#advancedFilterPanel"
+        aria-expanded="false"
+        aria-controls="advancedFilterPanel"
+      >
+        <i class="fa-solid fa-sliders me-1"></i>
+        <span>Filters</span>
+      </button>
+
+      <!-- View on Map Button -->
+      <a href="/listings/map<%= qs({ page: undefined }) %>" class="wl-pill-outline-btn text-decoration-none">
+        <i class="fa-solid fa-map me-1"></i>
+        <span>View on map</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Collapsible Advanced Filters Drawer -->
+  <div class="collapse mb-4" id="advancedFilterPanel">
+    <form action="/listings" method="GET" class="card card-body filter-panel p-4 shadow-sm border-0 rounded-4">
+      <!-- Preserve destination search query if set -->
+      <% if (filters.q) { %>
+        <input type="hidden" name="q" value="<%= filters.q %>" />
+      <% } %>
+      <div class="row g-3">
+        <div class="col-12 col-md-6 col-lg-3">
+          <label class="form-label fw-bold small" for="f-q">Keywords</label>
+          <input class="form-control" id="f-q" name="q" value="<%= filters.q || '' %>" placeholder="Title, place, description" maxlength="100" />
+        </div>
+        <div class="col-12 col-md-6 col-lg-3">
+          <label class="form-label fw-bold small" for="f-country">Country</label>
+          <select class="form-select" id="f-country" name="country">
+            <option value="">Any Country</option>
+            <% for (const c of countries) { %>
+              <option value="<%= c %>" <%= filters.country === c ? "selected" : "" %>><%= c %></option>
+            <% } %>
+          </select>
+        </div>
+        <div class="col-6 col-lg-3">
+          <label class="form-label fw-bold small" for="f-min">Min Price</label>
+          <input type="number" class="form-control" id="f-min" name="minPrice" value="<%= filters.minPrice != null ? filters.minPrice : '' %>" min="0" placeholder="0" />
+        </div>
+        <div class="col-6 col-lg-3">
+          <label class="form-label fw-bold small" for="f-max">Max Price</label>
+          <input type="number" class="form-control" id="f-max" name="maxPrice" value="<%= filters.maxPrice != null ? filters.maxPrice : '' %>" min="0" placeholder="No max" />
+        </div>
+      </div>
+      <div class="d-flex justify-content-end gap-2 mt-3">
+        <a href="/listings" class="btn btn-outline-secondary btn-sm rounded-pill px-3">Reset All</a>
+        <button type="submit" class="btn btn-dark btn-sm rounded-pill px-4">Apply Filters</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Empty State -->
+  <% if (!allListings.length) { %>
+    <div class="text-center py-5 my-4 bg-white rounded-4 shadow-sm">
+      <i class="fa-solid fa-compass fs-1 mb-3 text-secondary" style="color: var(--wl-color-amber) !important;"></i>
+      <h4 class="fw-bold">No stays found</h4>
+      <p class="text-muted">No stays match your criteria. Try adjusting your destination, dates, or filters.</p>
+      <a href="/listings" class="btn btn-dark rounded-pill px-4 mt-2">Clear all filters</a>
+    </div>
+  <% } %>
+
+  <!-- 4-Column Desktop Property Card Grid -->
+  <div class="row row-cols-xxl-4 row-cols-xl-4 row-cols-lg-3 row-cols-md-2 row-cols-1 g-4 mb-5">
+    <% for (let listing of allListings) { %>
+      <div class="col">
+        <%- include("../includes/listingCard.ejs", { listing }) %>
+      </div>
     <% } %>
   </div>
-</body>
+
+  <!-- Pagination Controls -->
+  <% if (pages > 1 && allListings.length) { %>
+    <div class="d-flex justify-content-center pb-5">
+      <%- include("../includes/pagination.ejs", { base: "/listings" }) %>
+    </div>
+  <% } %>
+</section>

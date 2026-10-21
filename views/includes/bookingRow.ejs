@@ -1,0 +1,30 @@
+<%# Expects: booking, today, hosting (boolean) %>
+<% const upcoming = booking.status === "confirmed" && booking.checkIn > today; %>
+<div class="card border p-3 mb-3 booking-row">
+  <div class="d-flex flex-wrap align-items-center gap-3">
+    <% if (booking.listing) { %>
+    <img src="<%= booking.listing.image.url %>" alt="" />
+    <div class="flex-grow-1">
+      <a href="/listings/<%= booking.listing._id %>" class="fw-semibold text-dark"><%= booking.listing.title %></a>
+      <div class="text-muted small"><%= booking.listing.location %>, <%= booking.listing.country %></div>
+      <div class="small mt-1">
+        <i class="bi bi-calendar-event"></i>
+        <%= booking.checkIn.toISOString().slice(0, 10) %> → <%= booking.checkOut.toISOString().slice(0, 10) %>
+        · <%= money(booking.totalPrice, booking.listing && booking.listing.currency) %>
+        <% if (hosting) { %> · @<%= booking.guest ? booking.guest.username : "guest" %><% } %>
+      </div>
+    </div>
+    <% } else { %>
+    <div class="flex-grow-1 text-muted">Listing no longer available</div>
+    <% } %>
+    <span class="badge <%= booking.status === 'confirmed' ? 'text-bg-success' : 'text-bg-secondary' %>">
+      <%= booking.status === "confirmed" && !upcoming ? "completed / in progress" : booking.status %>
+    </span>
+    <% if (upcoming) { %>
+    <form action="/bookings/<%= booking._id %>?_method=DELETE" method="POST" data-confirm="Cancel this booking?">
+      <%- include("./csrf.ejs") %>
+      <button class="btn btn-sm btn-outline-danger">Cancel</button>
+    </form>
+    <% } %>
+  </div>
+</div>

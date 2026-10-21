@@ -1,5 +1,4 @@
 <% layout("/layouts/boilerplate") %>
-<body>
   <div class="row">
     <div class="col-12 col-md-8 offset-md-2">
       <h3 id="new-page-title">Create A New Listing</h3>
@@ -10,6 +9,7 @@
         class="needs-validation"
         enctype="multipart/form-data"
       >
+<%- include("../includes/csrf.ejs") %>
         <div class="mb-3">
           <label for="title" class="form-label">Title</label>
           <input
@@ -30,9 +30,10 @@
             id="desc"
             name="listing[description]"
             class="form-control"
+            maxlength="2000"
             required
           ></textarea>
-          <div class="invalid-feedback">Maximum limit is 100 words.</div>
+          <div class="invalid-feedback">Description is required (up to 2000 characters).</div>
           <div class="valid-feedback">Looks good!</div>
         </div>
 
@@ -90,10 +91,11 @@
           <div class="invalid-feedback">Please enter valid location!</div>
         </div>
 
+        <%- include("../includes/listingExtras.ejs") %>
+
         <button type="submit" class="btn btn-dark wanderlust-btn">
           Add Listing
         </button>
       </form>
     </div>
   </div>
-</body>

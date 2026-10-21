@@ -1,5 +1,4 @@
 <% layout("/layouts/boilerplate") %>
-<body>
   <div class="row">
     <div class="col-12 col-md-8 offset-md-2">
       <h3 id="edit-page-h3">
@@ -14,6 +13,7 @@
         enctype="multipart/form-data"
         novalidate
       >
+        <%- include("../includes/csrf.ejs") %>
         <div class="mb-3">
           <label for="title" class="form-label">Title</label>
           <input
@@ -34,18 +34,19 @@
             id="desc"
             name="listing[description]"
             class="form-control"
+            maxlength="2000"
             required
           >
 <%= listing.description %></textarea
           >
-          <div class="invalid-feedback">Maximum limit is 100 words.</div>
+          <div class="invalid-feedback">Description is required (up to 2000 characters).</div>
           <div class="valid-feedback">Looks good!</div>
         </div>
 
         <div class="mb-3">
           <label for="og_img">Original Image</label>
           <br />
-          <img id="og_img" src=" <%= originalImageUrl %>" alt="Listing Image" />
+          <img id="og_img" src="<%= originalImageUrl %>" alt="Listing Image" />
         </div>
 
         <div class="mb-3">
@@ -102,10 +103,11 @@
           <div class="invalid-feedback">Please enter valid location!</div>
         </div>
 
+        <%- include("../includes/listingExtras.ejs") %>
+
         <button type="submit" class="btn btn-dark wanderlust-btn">
           Update Listing
         </button>
       </form>
     </div>
   </div>
-</body>

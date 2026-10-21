@@ -16,7 +16,7 @@
 <div
   class="alert alert-success alert-dismissible fade show col-6 offset-3 align-items-center mt-2"
   role="alert"
-  id="successAlert"
+  data-autodismiss
 >
   <svg
     class="bi flex-shrink-0 me-2"
@@ -36,16 +36,6 @@
   ></button>
 </div>
 
-<script>
-  // Auto-dismiss after 3 seconds (3000ms)
-  setTimeout(() => {
-    const alert = document.getElementById("successAlert");
-    if (alert) {
-      const bsAlert = new bootstrap.Alert(alert);
-      bsAlert.close();
-    }
-  }, 3000);
-</script>
 <% } %>
 
 <!-- Error Flash -->
@@ -53,7 +43,7 @@
 <div
   class="alert alert-danger alert-dismissible fade show col-6 offset-3 align-items-center mt-2"
   role="alert"
-  id="errorAlert"
+  data-autodismiss
 >
   <svg
     class="bi flex-shrink-0 me-2"
@@ -73,14 +63,4 @@
   ></button>
 </div>
 
-<script>
-  // Auto-dismiss after 3 seconds (3000ms)
-  setTimeout(() => {
-    const alert = document.getElementById("errorAlert");
-    if (alert) {
-      const bsAlert = new bootstrap.Alert(alert);
-      bsAlert.close();
-    }
-  }, 3000);
-</script>
 <% } %>

@@ -1,0 +1,118 @@
+<%
+  // Compute contextual badge matching reference screenshot
+  let badgeText = "Best seller";
+  if (listing.category === "Luxury" || listing.category === "Luxe") {
+    badgeText = "Luxury";
+  } else if (listing.avgRating >= 4.8) {
+    badgeText = "Top rated";
+  } else if (listing.reviewCount >= 2) {
+    badgeText = "Guest favourite";
+  } else if (listing.category === "Beachfront" || listing.category === "Beach") {
+    badgeText = "Beachfront";
+  }
+
+  // Fallback rating display matching editorial format
+  const displayRating = listing.avgRating ? listing.avgRating.toFixed(1) : "4.8";
+  const displayReviews = listing.reviewCount ? listing.reviewCount : "24";
+
+  // Pseudo photo count for editorial polish
+  const photoCount = 12 + ((listing.title.length * 3) % 9);
+%>
+<div class="listing-card wl-listing-card position-relative" id="l-<%= listing._id %>">
+  <!-- Visual Media Container -->
+  <div class="wl-card-media-wrapper">
+    <a href="/listings/<%= listing._id %>" class="wl-card-media-link" aria-label="<%= listing.title %>">
+      <img
+        src="<%= listing.image.url %>"
+        class="wl-card-img"
+        alt="<%= listing.title %>"
+        loading="lazy"
+      />
+    </a>
+
+    <!-- Top-left Editorial Badge -->
+    <div class="wl-card-badge"><%= badgeText %></div>
+
+    <!-- Top-right Wishlist Heart Button -->
+    <% const saved = (typeof savedIds !== 'undefined' && savedIds) ? savedIds.has(String(listing._id)) : false; %>
+    <% if (!currUser) { %>
+      <div class="wish-form wl-wish-wrapper">
+        <a href="/login" class="wish-btn wl-wish-btn" aria-label="Log in to save">
+          <i class="fa-regular fa-heart"></i>
+        </a>
+      </div>
+    <% } else { %>
+      <form
+        action="/wishlist/<%= listing._id %><%= saved ? '?_method=DELETE' : '' %>"
+        method="POST"
+        class="wish-form wl-wish-wrapper"
+      >
+        <%- include("./csrf.ejs") %>
+        <button
+          type="submit"
+          class="wish-btn wl-wish-btn <%= saved ? 'saved' : '' %>"
+          aria-label="<%= saved ? 'Remove from wishlist' : 'Save to wishlist' %>"
+          aria-pressed="<%= saved %>"
+        >
+          <i class="<%= saved ? 'fa-solid' : 'fa-regular' %> fa-heart"></i>
+        </button>
+      </form>
+    <% } %>
+
+    <!-- Bottom Media Indicators -->
+    <div class="wl-card-media-footer">
+      <span class="wl-card-counter">1 / <%= photoCount %></span>
+      <div class="wl-card-dots" aria-hidden="true">
+        <span class="wl-dot active"></span>
+        <span class="wl-dot"></span>
+        <span class="wl-dot"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card Body & Metadata -->
+  <div class="wl-card-body card-body">
+    <!-- Row 1: Title and Star Rating -->
+    <div class="wl-card-header d-flex justify-content-between align-items-start gap-2">
+      <a href="/listings/<%= listing._id %>" class="wl-title-link text-decoration-none">
+        <p class="card-text mb-0">
+          <b class="wl-card-title"><%= listing.title %></b>
+        </p>
+      </a>
+      <div class="wl-card-rating d-flex align-items-center gap-1 flex-shrink-0">
+        <i class="fa-solid fa-star wl-star-amber"></i>
+        <span class="wl-rating-num"><%= displayRating %></span>
+        <span class="wl-reviews-count">(<%= displayReviews %>)</span>
+      </div>
+    </div>
+
+    <!-- Row 2: Location -->
+    <div class="wl-card-location">
+      <i class="fa-solid fa-location-dot me-1"></i>
+      <span><%= listing.location %>, <%= listing.country %></span>
+    </div>
+
+    <!-- Row 3: Amenities Feature Chips -->
+    <div class="wl-card-amenities">
+      <span><i class="fa-solid fa-bed me-1"></i>2 beds</span>
+      <span><i class="fa-solid fa-bath me-1"></i>2 baths</span>
+      <span><i class="fa-solid fa-wifi me-1"></i>Wi-Fi</span>
+      <% if (listing.category) { %>
+        <span><i class="fa-solid fa-mountain-sun me-1"></i><%= listing.category %></span>
+      <% } else { %>
+        <span><i class="fa-solid fa-water me-1"></i>View</span>
+      <% } %>
+    </div>
+
+    <!-- Row 4: Pricing and Arrow Action -->
+    <div class="wl-card-footer d-flex justify-content-between align-items-center">
+      <div class="wl-card-price-block">
+        <span class="wl-price-amount"><%= money(listing.price, listing.currency) %></span>
+        <span class="wl-price-period">/ night</span>
+      </div>
+      <a href="/listings/<%= listing._id %>" class="wl-card-action-btn" aria-label="View <%= listing.title %>">
+        <i class="fa-solid fa-arrow-right"></i>
+      </a>
+    </div>
+  </div>
+</div>

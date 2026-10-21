@@ -1,0 +1,11 @@
+<% layout("/layouts/boilerplate") %>
+<h3 class="my-4">Reservations at your listings</h3>
+<% if (!bookings.length) { %>
+<div class="text-center text-muted py-5">
+  <p>No guests have booked your listings yet.</p>
+</div>
+<% } %>
+<% bookings.forEach((booking) => { %>
+<%- include("../includes/bookingRow.ejs", { booking, today, hosting: true }) %>
+<% }) %>
+<%- include("../includes/pagination.ejs", { qs: (o) => `?page=${o.page}` }) %>

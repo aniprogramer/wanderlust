@@ -1,0 +1,12 @@
+<% layout("/layouts/boilerplate") %>
+<h3 class="my-4">My Trips</h3>
+<% if (!bookings.length) { %>
+<div class="text-center text-muted py-5">
+  <p>You have no reservations yet.</p>
+  <a href="/listings" class="btn btn-dark wanderlust-btn">Find a stay</a>
+</div>
+<% } %>
+<% bookings.forEach((booking) => { %>
+<%- include("../includes/bookingRow.ejs", { booking, today, hosting: false }) %>
+<% }) %>
+<%- include("../includes/pagination.ejs", { qs: (o) => `?page=${o.page}` }) %>

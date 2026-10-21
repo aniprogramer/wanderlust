@@ -1,0 +1,21 @@
+<% layout("/layouts/boilerplate") %>
+<%- include("../includes/filters.ejs", { action: "/listings/map" }) %>
+
+<% if (total > mapLimit) { %>
+<div class="alert alert-info" role="status">
+  Showing the first <%= mapLimit %> of <%= total %> stays. Narrow your filters to see the rest.
+</div>
+<% } %>
+
+<% if (mapboxToken) { %>
+<%- include("../includes/mapbox.ejs") %>
+<div
+  id="map"
+  class="wl-map wl-map-tall mb-4"
+  data-mode="cluster"
+  data-token="<%= mapboxToken %>"
+></div>
+<script type="application/json" id="map-data"><%- JSON.stringify(geojson).replace(/</g, "\\u003c") %></script>
+<% } else { %>
+<div class="alert alert-warning">Map is unavailable: <code>MAPBOX_TOKEN</code> is not configured.</div>
+<% } %>

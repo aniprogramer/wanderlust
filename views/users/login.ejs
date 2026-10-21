@@ -1,9 +1,9 @@
 <% layout("/layouts/boilerplate") %>
-<body>
-  <h1 style="text-align: center" class="mt-2">Login to Wanderlust</h1>
+  <h1 class="mt-2 text-center">Login to Wanderlust</h1>
   <div class="row mt-3">
     <div class="col-12 col-md-6 offset-md-3">
       <form action="/login" method="POST" class="needs-validation" novalidate>
+<%- include("../includes/csrf.ejs") %>
         <div class="mb-3">
           <label for="username" class="form-label">Username</label>
           <input
@@ -29,4 +29,3 @@
       </form>
     </div>
   </div>
-</body>

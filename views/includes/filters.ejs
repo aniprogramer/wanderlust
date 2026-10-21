@@ -1,0 +1,106 @@
+<%# Expects: filters, countries, qs(), action (form target path) %>
+<div id="filters">
+  <div id="filters-list">
+    <% for (const [name, icon] of Object.entries(categories)) { %>
+    <a
+      href="<%= action %><%= qs({ category: filters.category === name ? undefined : name, page: undefined }) %>"
+      class="filter text-decoration-none text-dark <%= filters.category === name ? 'active' : '' %>"
+    >
+      <div>
+        <i class="fa-solid <%= icon %>"></i>
+        <p><%= name %></p>
+      </div>
+    </a>
+    <% } %>
+  </div>
+</div>
+
+<div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+  <button
+    class="btn btn-outline-dark rounded-pill"
+    type="button"
+    data-bs-toggle="collapse"
+    data-bs-target="#filter-panel"
+    aria-expanded="false"
+    aria-controls="filter-panel"
+  >
+    <i class="fa-solid fa-sliders me-1"></i> Filters
+  </button>
+  <% if (action === "/listings") { %>
+  <a class="btn btn-outline-dark rounded-pill" href="/listings/map<%= qs({ page: undefined }) %>">
+    <i class="fa-solid fa-map me-1"></i> Map view
+  </a>
+  <% } else { %>
+  <a class="btn btn-outline-dark rounded-pill" href="/listings<%= qs() %>">
+    <i class="fa-solid fa-list me-1"></i> List view
+  </a>
+  <% } %>
+  <span class="text-muted small ms-auto"><%= total %> stay<%= total === 1 ? "" : "s" %></span>
+</div>
+
+<div class="collapse mb-4" id="filter-panel">
+  <form action="<%= action %>" method="GET" class="card card-body filter-panel p-3">
+    <div class="row g-3">
+      <div class="col-12 col-md-6 col-lg-3">
+        <label class="form-label" for="f-q">Keywords</label>
+        <input class="form-control" id="f-q" name="q" value="<%= filters.q || '' %>" placeholder="Title, place, description" maxlength="100" />
+      </div>
+      <div class="col-12 col-md-6 col-lg-3">
+        <label class="form-label" for="f-country">Country</label>
+        <select class="form-select" id="f-country" name="country">
+          <option value="">Any</option>
+          <% for (const c of countries) { %>
+          <option value="<%= c %>" <%= filters.country === c ? "selected" : "" %>><%= c %></option>
+          <% } %>
+        </select>
+      </div>
+      <div class="col-12 col-md-6 col-lg-3">
+        <label class="form-label" for="f-category">Category</label>
+        <select class="form-select" id="f-category" name="category">
+          <option value="">Any</option>
+          <% for (const c of Object.keys(categories)) { %>
+          <option value="<%= c %>" <%= filters.category === c ? "selected" : "" %>><%= c %></option>
+          <% } %>
+        </select>
+      </div>
+      <div class="col-12 col-md-6 col-lg-3">
+        <label class="form-label" for="f-type">Property type</label>
+        <select class="form-select" id="f-type" name="propertyType">
+          <option value="">Any</option>
+          <% for (const t of propertyTypes) { %>
+          <option value="<%= t %>" <%= filters.propertyType === t ? "selected" : "" %>><%= t %></option>
+          <% } %>
+        </select>
+      </div>
+      <div class="col-6 col-lg-2">
+        <label class="form-label" for="f-min">Min price (₹)</label>
+        <input class="form-control" type="number" min="0" id="f-min" name="minPrice" value="<%= filters.minPrice ?? '' %>" />
+      </div>
+      <div class="col-6 col-lg-2">
+        <label class="form-label" for="f-max">Max price (₹)</label>
+        <input class="form-control" type="number" min="0" id="f-max" name="maxPrice" value="<%= filters.maxPrice ?? '' %>" />
+      </div>
+      <div class="col-12 col-md-4 col-lg-2">
+        <label class="form-label" for="f-rating">Rating</label>
+        <select class="form-select" id="f-rating" name="minRating">
+          <option value="">Any</option>
+          <% for (let r = 4; r >= 1; r--) { %>
+          <option value="<%= r %>" <%= filters.minRating === r ? "selected" : "" %>><%= r %>★ &amp; up</option>
+          <% } %>
+        </select>
+      </div>
+      <div class="col-6 col-md-4 col-lg-3">
+        <label class="form-label" for="f-in">Check-in</label>
+        <input class="form-control" type="date" id="f-in" name="checkIn" value="<%= filters.checkIn || '' %>" />
+      </div>
+      <div class="col-6 col-md-4 col-lg-3">
+        <label class="form-label" for="f-out">Check-out</label>
+        <input class="form-control" type="date" id="f-out" name="checkOut" value="<%= filters.checkOut || '' %>" />
+      </div>
+    </div>
+    <div class="d-flex gap-2 mt-3">
+      <button class="btn btn-dark wanderlust-btn m-0" type="submit">Apply</button>
+      <a class="btn btn-outline-secondary" href="<%= action %>">Clear all</a>
+    </div>
+  </form>
+</div>
