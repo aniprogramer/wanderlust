@@ -1,13 +1,6 @@
-if (process.env.NODE_ENV != "production") {
+if (!["production", "test"].includes(process.env.NODE_ENV)) {
   require("dotenv").config();
 }
-
-// console.log(process.env.SECRET);
-
-// Import required modules:
-// - express: lightweight web framework for building server-side applications
-// - mongoose: ODM (Object Data Modeling) library for MongoDB
-// Initialize an Express application instance
 
 const express = require("express");
 const app = express();
@@ -15,7 +8,6 @@ const mongoose = require("mongoose");
 const path = require("path");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
-const wrapAsync = require("./utils/wrapAsync");
 const ExpressError = require("./utils/ExpressError.js");
 const session = require("express-session");
 const MongoStore = require("connect-mongo").default;
@@ -23,34 +15,67 @@ const flash = require("connect-flash");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
 const User = require("./models/user.js");
+const multer = require("multer");
+const { money } = require("./utils/format.js");
+const helmet = require("helmet");
+const { csrfGuard, csrfTokenFor } = require("./middleware.js");
+const {
+  CATEGORIES,
+  PROPERTY_TYPES,
+  CURRENCIES,
+  IMAGE_ERROR,
+} = require("./utils/constants.js");
 
-// Express Route
 const listingRoutes = require("./routes/listingRoute.js");
 const reviewRoutes = require("./routes/reviewRoute.js");
+const bookingRoutes = require("./routes/bookingRoute.js");
+const wishlistRoutes = require("./routes/wishlistRoute.js");
 const userRoutes = require("./routes/userRoute.js");
 
-// Connection string for MongoDB, pointing to the local server (127.0.0.1) on port 27017,
-// and using the "wanderlust" database.
-
-// const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
 const dbUrl = process.env.ATLAS;
 
-// Asynchronous function to establish a connection to MongoDB using Mongoose.
-// Ensures the app waits until the database connection is successfully opened before proceeding.
-async function main() {
-  await mongoose.connect(dbUrl);
+const isProd = process.env.NODE_ENV === "production";
+// Fail at load, before any listener exists, rather than signing cookies with "undefined"
+if (isProd && !process.env.SECRET) {
+  throw new Error("SECRET must be set when NODE_ENV=production");
 }
+// Behind Render's proxy the secure cookie flag and client IPs need the forwarded headers.
+if (isProd) app.set("trust proxy", 1);
 
-// Execute the main() function to connect to MongoDB.
-// If the connection succeeds, log "connected to DB".
-// If it fails, catch the error and log it for debugging.
-main()
-  .then(() => {
-    console.log("connected to DB");
-  })
-  .catch((err) => {
-    console.log(err);
-  });
+const CDNS = ["https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"];
+const MAPBOX = [
+  "https://api.mapbox.com",
+  "https://events.mapbox.com",
+  "https://*.tiles.mapbox.com",
+];
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", ...CDNS, "https://api.mapbox.com"],
+        styleSrc: ["'self'", ...CDNS, "https://api.mapbox.com"],
+        fontSrc: ["'self'", ...CDNS],
+        imgSrc: [
+          "'self'",
+          "data:",
+          "blob:",
+          "https://images.unsplash.com",
+          "https://plus.unsplash.com",
+          "https://res.cloudinary.com",
+          ...MAPBOX,
+        ],
+        connectSrc: ["'self'", ...MAPBOX],
+        // Mapbox GL renders in blob: web workers
+        workerSrc: ["'self'", "blob:"],
+        childSrc: ["blob:"],
+        objectSrc: ["'none'"],
+        // Plain http is expected in local development
+        upgradeInsecureRequests: isProd ? [] : null,
+      },
+    },
+  }),
+);
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -59,87 +84,117 @@ app.use(methodOverride("_method"));
 app.engine("ejs", ejsMate);
 app.use(express.static(path.join(__dirname, "/public")));
 
-const store = MongoStore.create({
-  mongoUrl: dbUrl,
-  crypto: {
+// Tests use the default in-memory store; real runs persist sessions in MongoDB.
+// The store reuses mongoose's client once startup has connected (see the bottom of
+// this file), so a bad ATLAS URL fails in exactly one place.
+let store;
+let resolveDbClient;
+if (process.env.NODE_ENV !== "test") {
+  store = MongoStore.create({
+    clientPromise: new Promise((resolve) => (resolveDbClient = resolve)),
+    crypto: {
+      secret: process.env.SECRET,
+    },
+    touchAfter: 24 * 3600,
+  });
+  store.on("error", (err) => {
+    console.log("ERROR in MONGO SESSION STORE", err);
+  });
+}
+
+app.use(
+  session({
+    store,
     secret: process.env.SECRET,
-  },
-  touchAfter: 24 * 3600,
-});
-
-store.on("error", (err) => {
-  console.log("ERROR in MONGO SESSION STORE", err);
-});
-
-const sessionOptions = {
-  store,
-  secret: process.env.SECRET,
-  resave: false,
-  saveUninitialized: true,
-  cookie: {
-    expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-    httpOnly: true,
-  },
-};
-
-app.use(session(sessionOptions));
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      httpOnly: true,
+      sameSite: "lax",
+      secure: isProd,
+    },
+  }),
+);
 app.use(flash());
 
-// Passport Initialization
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Passport Configuration
 passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
 app.use((req, res, next) => {
-  res.locals.successMsg = req.flash("success");
-  res.locals.errorMsg = req.flash("error");
+  // Reading flash on a fresh session would write to it and set a cookie for every visitor
+  const flashed = req.session.flash;
+  res.locals.successMsg = flashed ? req.flash("success") : [];
+  res.locals.errorMsg = flashed ? req.flash("error") : [];
+  res.locals.csrfToken = csrfTokenFor(req);
   res.locals.currUser = req.user;
-  console.log(res.locals.successMsg);
-  console.log(res.locals.errorMsg);
+  // Pages that show listing cards fill this in (see savedIdsFor in the controllers)
+  res.locals.savedIds = new Set();
+  res.locals.money = money;
+  res.locals.mapboxToken = process.env.MAPBOX_TOKEN;
+  res.locals.categories = CATEGORIES;
+  res.locals.propertyTypes = PROPERTY_TYPES;
+  res.locals.currencies = CURRENCIES;
   next();
 });
 
-// Fake User Registration
-// app.get("/demouser", async (req, res) => {
-//   let fakeUser = new User({
-//     email: "newuser@gmail.com",
-//     username: "fake-user",
-//   });
+app.use(csrfGuard);
 
-//   let registeredUser = await User.register(fakeUser, "helloworld");
-//   res.send(registeredUser);
-// });
-
-// default route
 app.get("/", (req, res) => {
   res.redirect("/listings");
 });
 
-// Listing Routes using Router
 app.use("/listings", listingRoutes);
-
-// Reviews Routes
 app.use("/listings/:id/reviews", reviewRoutes);
-
-// User Routes
+app.use("/bookings", bookingRoutes);
+app.use("/wishlist", wishlistRoutes);
 app.use("/", userRoutes);
 
 app.use((req, res, next) => {
   next(new ExpressError(404, "Page Not Found!"));
 });
 
-// Error Handler
 app.use((err, req, res, next) => {
-  let { statusCode = 500, message = "Something went wrong!" } = err;
+  // Malformed ObjectIds in URLs are "not found", not server errors
+  if (err.name === "CastError") err = new ExpressError(404, "Page Not Found!");
+  else if (err instanceof multer.MulterError)
+    err = new ExpressError(400, IMAGE_ERROR);
+  else if (err.name === "ValidationError")
+    err = new ExpressError(400, err.message);
+  const { statusCode = 500 } = err;
+  if (statusCode >= 500) {
+    console.error(err);
+    err.message = "Something went wrong!";
+  }
   res.status(statusCode).render("error.ejs", { err });
-  // res.status(statusCode).send(message);
 });
 
-app.listen(8080, () => {
-  console.log("Server is listening to port 8080");
-});
+module.exports = app;
+
+if (require.main === module) {
+  const port = process.env.PORT || 8080;
+  (async () => {
+    try {
+      await mongoose.connect(dbUrl);
+    } catch (err) {
+      console.error("Could not connect to DB:", err.message);
+      process.exit(1);
+    }
+    console.log("connected to DB");
+    resolveDbClient(mongoose.connection.getClient());
+    if (process.env.NODE_ENV !== "production") {
+      const Listing = require("./models/listing.js");
+      const count = await Listing.countDocuments();
+      if (count === 0) {
+        console.log("Database has 0 listings. Auto-seeding initial data...");
+        const { initDB } = require("./init");
+        await initDB();
+      }
+    }
+    app.listen(port, () => console.log(`Server is listening to port ${port}`));
+  })();
+}
