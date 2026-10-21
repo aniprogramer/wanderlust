@@ -20,17 +20,28 @@
       false,
     );
   });
-})();
 
-// Tax Toggle Switch
-let taxSwitch = document.getElementById("switchCheckDefault");
-taxSwitch.addEventListener("click", () => {
-  let taxInfo = document.getElementsByClassName("tax-info");
-  for (info of taxInfo) {
-    if (info.style.display != "inline") {
-      info.style.display = "inline";
-    } else {
-      info.style.display = "none";
+  // Homepage interaction: category track scroller & date validation
+  document.addEventListener("DOMContentLoaded", () => {
+    const track = document.getElementById("categoryTrack");
+    const scrollBtn = document.getElementById("catScrollRight");
+    if (track && scrollBtn) {
+      scrollBtn.addEventListener("click", () => {
+        track.scrollBy({ left: 320, behavior: "smooth" });
+      });
     }
-  }
-});
+
+    const checkInInput = document.getElementById("check-in-input");
+    const checkOutInput = document.getElementById("check-out-input");
+    if (checkInInput && checkOutInput) {
+      checkInInput.addEventListener("change", () => {
+        if (checkInInput.value) {
+          checkOutInput.min = checkInInput.value;
+          if (checkOutInput.value && checkOutInput.value < checkInInput.value) {
+            checkOutInput.value = checkInInput.value;
+          }
+        }
+      });
+    }
+  });
+})();
