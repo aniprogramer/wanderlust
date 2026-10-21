@@ -18,6 +18,17 @@ module.exports.createReview = async (req, res) => {
     throw new ExpressError(404, "Listing not found");
   }
 
+  if (listing.owner?.equals(req.user._id)) {
+    req.flash("error", "You cannot review your own listing.");
+    return res.redirect(`/listings/${id}`);
+  }
+  if (
+    await Review.exists({ _id: { $in: listing.reviews }, author: req.user._id })
+  ) {
+    req.flash("error", "You have already reviewed this listing.");
+    return res.redirect(`/listings/${id}`);
+  }
+
   // 3. Create new review - make sure req.body.review exists
   if (!req.body.review) {
     throw new ExpressError(400, "Review data is required");
@@ -27,14 +38,15 @@ module.exports.createReview = async (req, res) => {
 
   newReview.author = req.user._id;
 
-  // 4. Associate review with listing
-  listing.reviews.push(newReview);
-
-  // 5. Save both (using transaction if you want better error handling)
+  // 4. Save the review, then link it; undo the review if linking fails
   await newReview.save();
-  await listing.save();
-
-  console.log("New review saved for listing:", id);
+  try {
+    await Listing.updateOne({ _id: id }, { $push: { reviews: newReview._id } });
+  } catch (err) {
+    await Review.findByIdAndDelete(newReview._id);
+    throw err;
+  }
+  await Listing.refreshRating(id);
 
   req.flash("success", "Review added!");
 
@@ -49,8 +61,14 @@ module.exports.createReview = async (req, res) => {
 module.exports.destroyReview = async (req, res) => {
   let { id, reviewId } = req.params;
 
-  await Listing.findByIdAndUpdate(id, { $pull: { reviews: reviewId } });
-  await Review.findByIdAndDelete(reviewId);
+  const { modifiedCount } = await Listing.updateOne(
+    { _id: id, reviews: reviewId },
+    { $pull: { reviews: reviewId } },
+  );
+  if (modifiedCount) {
+    await Review.findByIdAndDelete(reviewId);
+    await Listing.refreshRating(id);
+  }
 
   req.flash("success", "Review deleted");
 

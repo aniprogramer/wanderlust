@@ -1,5 +1,12 @@
 const User = require("../models/user");
 
+const signupMessage = (err) => {
+  if (err.name === "UserExistsError") return "That username is taken.";
+  if (err.code === 11000 && err.keyPattern?.email)
+    return "That email is already registered.";
+  return "Could not create your account. Please try again.";
+};
+
 /**
  * GET /signup
  * Renders the user registration form
@@ -20,7 +27,6 @@ module.exports.signup = async (req, res, next) => {
       username,
     });
     const registeredUser = await User.register(newUser, password);
-    console.log(registeredUser);
     req.login(registeredUser, (err) => {
       if (err) {
         return next(err);
@@ -29,7 +35,8 @@ module.exports.signup = async (req, res, next) => {
       res.redirect("/listings");
     });
   } catch (err) {
-    req.flash("error", err.message);
+    console.error("Signup failed:", err);
+    req.flash("error", signupMessage(err));
     res.redirect("/signup");
   }
 };
@@ -49,7 +56,6 @@ module.exports.renderLoginForm = (req, res) => {
 module.exports.login = async (req, res) => {
   req.flash("success", "Logged in Successfully!");
   let redirectUrl = res.locals.redirectUrl || "/listings";
-  console.log(`Redirect URL: ${redirectUrl}`);
   res.redirect(redirectUrl);
 };
 
