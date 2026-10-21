@@ -6,6 +6,9 @@ node_modules/
 .env*.local
 !.env.example
 
+# Test coverage
+coverage/
+
 # Uploads
 uploads/
 
@@ -19,3 +22,7 @@ npm-debug.log*
 .prettierrc
 .DS_Store
 Thumbs.db
+
+# Playwright
+test-results/
+playwright-report/
