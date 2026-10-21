@@ -2,20 +2,27 @@ const express = require("express");
 const router = express.Router();
 const wrapAsync = require("../utils/wrapAsync");
 const passport = require("passport");
-const { saveRedirectUrl } = require("../middleware");
+const {
+  saveRedirectUrl,
+  validateSignup,
+  validateLogin,
+  authLimiter,
+} = require("../middleware");
 const userController = require("../controllers/userController");
 
 // Signup
 router
   .route("/signup")
   .get(userController.renderSignupForm)
-  .post(wrapAsync(userController.signup));
+  .post(authLimiter, validateSignup, wrapAsync(userController.signup));
 
 // Login
 router
   .route("/login")
   .get(userController.renderLoginForm)
   .post(
+    authLimiter,
+    validateLogin,
     saveRedirectUrl,
     passport.authenticate("local", {
       failureRedirect: "/login",
@@ -24,7 +31,7 @@ router
     userController.login,
   );
 
-// Logout
-router.get("/logout", userController.logout);
+// Logout (POST so a stray link or image cannot sign people out)
+router.post("/logout", userController.logout);
 
 module.exports = router;
