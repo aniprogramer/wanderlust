@@ -18,7 +18,7 @@
 
 <br />
 
-[![Node.js](https://img.shields.io/badge/Node.js-20.x-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20.19-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Express.js](https://img.shields.io/badge/Express.js-4.22-000000?style=flat-square&logo=express&logoColor=white)](https://expressjs.com/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=flat-square&logo=mongodb&logoColor=white)](https://www.mongodb.com/atlas)
 [![Cloudinary](https://img.shields.io/badge/Cloudinary-Media%20CDN-3448C5?style=flat-square&logo=cloudinary&logoColor=white)](https://cloudinary.com/)
@@ -54,7 +54,7 @@ Explore listings, create properties, upload images, and submit reviews in real t
 
 ## 📌 Project Overview
 
-**Wanderlust** is a production-ready, full-stack web application engineered on the **Model-View-Controller (MVC)** architectural pattern. It delivers an end-to-end marketplace experience where hosts can publish accommodations and travelers can discover destinations with transparent community reviews and ratings.
+**Wanderlust** is a full-stack web application engineered on the **Model-View-Controller (MVC)** architectural pattern. It delivers an end-to-end marketplace experience where hosts can publish accommodations and travelers can discover destinations with transparent community reviews and ratings.
 
 ### 💡 Problem Solved
 
@@ -79,6 +79,13 @@ Traditional starter web apps frequently omit essential production requirements: 
 | 🗑️ **Cascading Deletion**        | Mongoose `post('findOneAndDelete')` document middleware automatically cascades deletion to remove all associated reviews when a listing is removed. |
 | ✅ **Dual-Layer Validation**     | Input validation on both ends: HTML5/Bootstrap client-side validation and schema-based Joi validation on server requests.                           |
 | 🔔 **Flash Notifications**       | Instant user feedback banners across page reloads via `connect-flash` for operations like login, logout, create, and unauthorized access.           |
+| 🗺️ **Interactive Mapbox Maps**   | Location picker (click, drag or search an address) on the create/edit forms, automatic server-side geocoding, coordinates stored as GeoJSON, an interactive map with marker on every listing, and a clustered map of all search results at `/listings/map`. Invalid addresses are rejected gracefully; without a token the app still works, just without maps. |
+| 📅 **Bookings & Availability**   | Date-range calendar (Flatpickr) showing unavailable nights, server-side validation (no past dates, max 30 nights, hosts can't book their own listing) and atomic double-booking prevention through a unique partial MongoDB index. Guests manage trips at `/bookings`, hosts see reservations at `/bookings/hosting`, and both can cancel upcoming stays. |
+| ❤️ **Wishlist**                  | Save/unsave listings from any card; duplicate-free (`$addToSet`), persisted on the user document and shown at `/wishlist`. The heart state on a page of cards costs one small query for the signed-in user. |
+| 🔎 **Search & Filters**          | Full-text search (title, location, country, description) plus category, property type, country, price range, minimum rating and date-availability filters. Query-string based, paginated (12/page), filter values persist across pages, indexed in MongoDB, and collapsible on mobile. |
+| 🧪 **Automated Tests**           | Jest + Supertest suite (unit + integration) running against an in-memory MongoDB. Cloudinary and Mapbox are mocked. |
+| 🔒 **Security Hardening**        | CSRF tokens on every write (`csrf-sync`), `helmet` with a strict Content-Security-Policy (no inline scripts), rate limits on login, signup and geocoding (`express-rate-limit`), `SameSite=Lax` cookies (`Secure` in production), POST-only logout, upload type and size limits (JPEG/PNG/WebP, 5 MB) and Joi validation on signup and login. |
+| 💱 **Per-Listing Currency**      | Each listing is priced in its own currency (INR, USD, EUR, GBP, AUD, CAD, JPY or AED) and formatted with `Intl.NumberFormat`. |
 | 📱 **Responsive UI**             | Mobile-first layout constructed with Bootstrap 5 cards, grid system, responsive navigation, and FontAwesome iconography.                            |
 
 ---
@@ -99,6 +106,8 @@ Traditional starter web apps frequently omit essential production requirements: 
 
 </div>
 
+> The map, booking calendar, wishlist and filter screens ship with the app but are not captured above yet — add screenshots to `assets/` and reference them here after running it with your own `MAPBOX_TOKEN`.
+
 ---
 
 ## 🛠️ Tech Stack
@@ -114,7 +123,7 @@ Traditional starter web apps frequently omit essential production requirements: 
 
 ### Backend
 
-![Node.js](https://img.shields.io/badge/Node.js_v20+-339933?style=flat-square&logo=node.js&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js_%3E%3D20.19-339933?style=flat-square&logo=node.js&logoColor=white)
 ![Express.js](https://img.shields.io/badge/Express.js_4.x-000000?style=flat-square&logo=express&logoColor=white)
 ![REST API](https://img.shields.io/badge/Architecture-RESTful-orange?style=flat-square)
 
@@ -124,6 +133,7 @@ Traditional starter web apps frequently omit essential production requirements: 
 ![Mongoose](https://img.shields.io/badge/Mongoose_ODM-880000?style=flat-square&logo=mongoose&logoColor=white)
 ![MongoDB Atlas](https://img.shields.io/badge/MongoDB_Atlas-Cloud_DB-47A248?style=flat-square&logo=mongodb&logoColor=white)
 ![Cloudinary](https://img.shields.io/badge/Cloudinary-Media_CDN-3448C5?style=flat-square&logo=cloudinary&logoColor=white)
+![Mapbox](https://img.shields.io/badge/Mapbox_GL_JS-Maps_&_Geocoding-000000?style=flat-square&logo=mapbox&logoColor=white)
 
 ### Security & Utilities
 
@@ -137,6 +147,10 @@ Traditional starter web apps frequently omit essential production requirements: 
 
 ![Render](https://img.shields.io/badge/Render-Web_Service-46E3B7?style=flat-square&logo=render&logoColor=black)
 ![Git](https://img.shields.io/badge/Git-VCS-F05032?style=flat-square&logo=git&logoColor=white)
+![Jest](https://img.shields.io/badge/Jest-Test_Runner-C21325?style=flat-square&logo=jest&logoColor=white)
+![Supertest](https://img.shields.io/badge/Supertest-HTTP_Assertions-green?style=flat-square)
+![Flatpickr](https://img.shields.io/badge/Flatpickr-Date_Range_Calendar-ef5350?style=flat-square)
+
 ![Prettier](https://img.shields.io/badge/Code_Style-Prettier-F7B93E?style=flat-square&logo=prettier&logoColor=white)
 
 ---
@@ -155,12 +169,12 @@ Wanderlust implements the standard **Model-View-Controller (MVC)** design patter
             │
             ▼
      ┌──────────────┐
-     │  routes/     │ ─── Route Declarations & Validation Middleware (isLoggedIn, isOwner)
+     │  routes/     │ ─── Route Declarations & Middleware (isLoggedIn, isOwner, Joi validators)
      └──────┬───────┘
             │
             ▼
      ┌──────────────┐
-     │ controllers/ │ ─── Core Business Logic (Listing, Review, User controllers)
+     │ controllers/ │ ─── Business Logic (Listing, Review, Booking, Wishlist, User)
      └───┬────────┬─┘
          │        │
          ▼        ▼
@@ -177,38 +191,47 @@ Wanderlust implements the standard **Model-View-Controller (MVC)** design patter
 
 ```text
 wanderlust/
-├── controllers/          # Business logic separated from HTTP routes
-│   ├── listings.js       # Listing CRUD controller methods
-│   ├── reviews.js        # Review creation & deletion logic
-│   └── users.js          # Authentication workflows (signup, login, logout)
-├── init/                 # Database initialization and mock data
-│   ├── data.js           # Sample property dataset
-│   └── index.js          # Database seeding script
-├── models/               # Mongoose schema definitions
-│   ├── listing.js        # Listing schema with cascading review hook
-│   ├── review.js         # Review schema referencing author
-│   └── user.js           # User schema augmented by passport-local-mongoose
-├── public/               # Static client assets
-│   ├── css/              # Custom stylesheets
-│   └── js/               # Client-side scripts (form validation)
-├── routes/               # Express router modules
-│   ├── listingRoute.js   # Listing endpoints mapped with controllers
-│   ├── reviewRoute.js    # Review endpoints nested by listing ID
-│   └── userRoute.js      # Authentication endpoints
-├── utils/                # Error handling abstractions
-│   ├── ExpressError.js   # Custom HTTP error class with status codes
-│   └── wrapAsync.js      # Asynchronous error boundary wrapper
-├── views/                # Server-rendered EJS templates
-│   ├── includes/         # Partials (navbar, footer, flash alerts)
-│   ├── layouts/          # Boilerplate HTML shell via ejs-mate
-│   ├── listings/         # Listing views (index, show, new, edit)
-│   └── users/            # Authentication forms (login, signup)
-├── .env.example          # Sample environment variables reference
-├── app.js                # Application entrypoint & server bootstrap
-├── cloudConfig.js        # Cloudinary SDK credentials configuration
-├── middleware.js         # Route security & request validation middlewares
-├── package.json          # Node dependencies and project scripts
-└── schema.js             # Joi validation schemas for listings & reviews
+├── controllers/            # Business logic separated from HTTP routes
+│   ├── listings.js         # Listing CRUD, search/index, map view, geocoding
+│   ├── bookingController.js# Create / list / cancel reservations
+│   ├── wishlistController.js
+│   ├── reviewController.js # Review creation & deletion (refreshes ratings)
+│   └── userController.js   # Authentication workflows
+├── init/                   # Database seeding (geocodes if MAPBOX_TOKEN is set)
+├── models/
+│   ├── listing.js          # GeoJSON geometry, category, rating, text index, Listing.search()
+│   ├── booking.js          # Reservation + unique partial index (double-booking guard)
+│   ├── review.js
+│   └── user.js             # Includes wishlist references
+├── public/
+│   ├── css/
+│   └── js/                 # script.js (validation), map.js (Mapbox), booking.js (calendar)
+├── routes/                 # listingRoute, reviewRoute, bookingRoute, wishlistRoute, userRoute
+├── tests/
+│   ├── unit/               # utils, schema, middleware, models
+│   ├── integration/        # auth, listings, reviews, bookings, wishlist, search
+│   ├── helpers.js          # in-memory MongoDB + login helpers
+│   └── setupEnv.js
+├── utils/
+│   ├── constants.js        # Categories, property types, limits (single source of truth)
+│   ├── dates.js            # UTC day parsing / night enumeration
+│   ├── geocode.js          # Mapbox forward geocoding
+│   ├── queryString.js      # Filter-preserving links
+│   ├── ExpressError.js
+│   └── wrapAsync.js
+├── views/
+│   ├── includes/           # navbar, footer, flash, listingCard, filters, mapbox, bookingRow, listingExtras
+│   ├── layouts/
+│   ├── listings/           # index, map, show, new, edit
+│   ├── bookings/           # index (my trips), hosting
+│   ├── wishlist/
+│   └── users/
+├── .env.example
+├── app.js                  # Express app (exported for tests) + server bootstrap
+├── cloudConfig.js
+├── jest.config.js
+├── middleware.js           # Auth, ownership, booking-party and Joi validation middleware
+└── schema.js               # Joi schemas: listing, review, booking, search
 ```
 
 ---
@@ -219,10 +242,11 @@ Follow these steps to run Wanderlust on your local workstation.
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) (Version `>= 20.0.0` required)
+- [Node.js](https://nodejs.org/) (Version `>= 20.19.0` required by Mongoose 9 and the MongoDB driver 7)
 - [npm](https://www.npmjs.com/) (bundled with Node.js)
 - [MongoDB](https://www.mongodb.com/) (Local server or a [MongoDB Atlas](https://www.mongodb.com/atlas) cluster URI)
 - [Cloudinary](https://cloudinary.com/) (Free account for media management)
+- [Mapbox](https://www.mapbox.com/) (Free account; a public `pk.` token enables maps and geocoding)
 
 ---
 
@@ -257,6 +281,8 @@ SECRET=your_long_random_session_secret_key
 CLOUD_NAME=your_cloudinary_cloud_name
 CLOUD_API_KEY=your_cloudinary_api_key
 CLOUD_API_SECRET=your_cloudinary_api_secret
+MAPBOX_TOKEN=your_mapbox_public_access_token
+MAPBOX_SERVER_TOKEN=your_mapbox_secret_access_token
 ```
 
 ### Step 4: Seed Sample Database Records
@@ -267,12 +293,24 @@ Populate your database with initial listings:
 node init/index.js
 ```
 
-_Console output:_ `connected to DB` → `data is initialized!`
+The seeder **deletes every existing listing** together with its reviews, bookings and wishlist entries, then creates the sample listings under a `seed-host` user. When `NODE_ENV=production` it refuses to run; pass `--force` (`node init/index.js --force`) only if you really mean to wipe production data.
+
+_Console output:_ `connected to DB` → `data is initialized!`. With `MAPBOX_TOKEN` set, seeded listings are geocoded so they appear on the map.
+
+#### Upgrading an existing database
+
+If your database already has listings from an older version (instead of fresh seed data), run the migration once after pulling this version:
+
+```bash
+node init/migrate.js
+```
+
+It sets `currency` to `INR` on listings that have none and prints how many listings still have no category or map pin, so you can fix those by editing them. It never deletes data, and running it again changes nothing. Like the seeder, it refuses to run when `NODE_ENV=production` unless you pass `--force`.
 
 ### Step 5: Start the Application Server
 
 ```bash
-node app.js
+npm start
 ```
 
 _Console output:_ `Server is listening to port 8080`
@@ -294,7 +332,9 @@ http://localhost:8080/listings
 | `CLOUD_NAME`       | String | **Yes**  | Cloudinary account cloud identifier                            | `dqxyz123`                             |
 | `CLOUD_API_KEY`    | String | **Yes**  | Cloudinary public API credential key                           | `123456789012345`                      |
 | `CLOUD_API_SECRET` | String | **Yes**  | Cloudinary private secret key                                  | `aBcDeF9876_xYz`                       |
-| `NODE_ENV`         | String |    No    | Application runtime environment (`development` / `production`) | `development`                          |
+| `MAPBOX_TOKEN`     | String |    No    | Mapbox **public** token (`pk.…`) for maps and geocoding. Restrict it to your site URL in the Mapbox dashboard. Without it, maps are hidden and addresses are not geocoded. | `pk.eyJ1Ijoi…`                         |
+| `MAPBOX_SERVER_TOKEN` | String |    No    | Mapbox **secret** token (`sk.…`) used only for server-side geocoding, so the public token can stay URL-restricted. Falls back to `MAPBOX_TOKEN` when unset. Never expose it to the browser. | `sk.eyJ1Ijoi…`                         |
+| `NODE_ENV`         | String |    No    | Runtime environment (`development` / `production`). Production trusts the first proxy, marks the session cookie `Secure` and makes the seeder require `--force`. | `development`                          |
 | `PORT`             | Number |    No    | Port on which the HTTP server binds (Default: `8080`)          | `8080`                                 |
 
 ---
@@ -326,9 +366,34 @@ http://localhost:8080/listings
    - You will see the **Edit** and **Delete** control buttons (hidden for non-owners).
    - Attempting to bypass the UI via direct HTTP calls is rejected by the server-side `isOwner` middleware.
 
-5. **Submit a Review**
+5. **Search & Filter**
+   - Use the navbar search or **Filters** on the home page (keywords, country, category, property type, price, rating, availability dates). Click a category icon to filter instantly; **Map view** shows the same results as clustered pins.
+
+6. **Save to Wishlist**
+   - Tap the heart on any card; find saved stays under **Wishlist**.
+
+7. **Book a Stay**
+   - Pick check-in/check-out on the listing's calendar (greyed dates are taken) and click **Reserve**. Track and cancel trips under **Trips**; hosts manage guests under **Hosting**.
+
+8. **Submit a Review**
    - Any logged-in traveler can submit a rating (1 to 5 stars) and a textual review.
    - Review authors can delete their own reviews at any time.
+
+---
+
+## 🧪 Testing
+
+```bash
+npm test                 # run the whole suite
+npm run test:coverage    # with coverage report
+npm run test:watch       # watch mode
+```
+
+- **Stack:** Jest, Supertest, and `mongodb-memory-server` (a throw-away in-memory MongoDB; no database setup needed — the first run downloads a `mongod` binary, or set `MONGOMS_SYSTEM_BINARY=/path/to/mongod` to use an installed one).
+- **Unit tests** (`tests/unit`): date utilities, Joi schemas, middleware, models, query-string and geocoding helpers.
+- **Integration tests** (`tests/integration`): authentication flows, listing CRUD with authorization, reviews and rating aggregation, bookings (validation, overlap and race-condition protection, cancellation permissions), wishlist, search/filters/pagination, CSRF, security headers and rate limiting, upload limits, and the seeder.
+- **Mocks:** Cloudinary uploads and the Mapbox geocoder are mocked; no network access or credentials required.
+- Tests set `NODE_ENV=test`, which uses an in-memory session store instead of MongoDB and switches off rate limiting (the rate-limit test turns it back on with `ENABLE_RATE_LIMIT=1`).
 
 ---
 
@@ -342,6 +407,7 @@ http://localhost:8080/listings
 - **Session Security**: Session cookies set `httpOnly: true` to prevent Cross-Site Scripting (XSS) credential theft. Expire window set to 7 days with MongoDB-backed persistence via `connect-mongo`.
 - **Server-Side Request Validation**: Joi schemas enforce strict data boundaries (valid numeric price, required strings, valid schema structures) before any database invocation occurs.
 - **Cascading Data Integrity**: When a listing is removed, Mongoose middleware hooks cleanly delete all orphaned review subdocuments.
+- **Double-Booking Prevention**: bookings store one entry per night under a unique partial index, so concurrent requests for the same night cannot both succeed, even across server instances.
 - **Safe Asynchronous Flow**: Custom `wrapAsync` wrapper intercepts rejected Promises across controllers, routing failures through the centralized `ExpressError` handler.
 
 ---
@@ -360,12 +426,10 @@ This project demonstrates core competencies across modern full-stack web enginee
 
 ## 🗺️ Future Enhancements
 
-- [ ] **Interactive Mapbox Integration**: Visual geographic pinpointing and coordinate clustering for listings.
-- [ ] **Booking & Availability Calendar**: Reservation system preventing double-booking across selected dates.
 - [ ] **Payment Gateway**: Integration with Stripe / Razorpay for direct in-app transactions.
-- [ ] **Saved / Wishlist Listings**: Personal bookmark collections for authenticated users.
-- [ ] **Search & Category Filters**: Dynamic query filtering by pricing range, country, and stay type (cabins, beachfront, iconic cities).
-- [ ] **Automated Test Suite**: Unit and integration test coverage using Jest and Supertest.
+- [ ] **Host Availability Rules**: Blocking dates manually, minimum stays and seasonal pricing.
+- [ ] **Guest Count & Capacity**: Per-listing capacity checks and guest counts on bookings.
+- [ ] **Email Notifications**: Booking confirmations and cancellations.
 
 ---
 
