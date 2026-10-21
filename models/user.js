@@ -7,9 +7,13 @@ const userSchema = new Schema({
     type: String,
     required: true,
     unique: true,
+    lowercase: true,
+    trim: true,
   },
+  wishlist: [{ type: Schema.Types.ObjectId, ref: "Listing" }],
 });
 
-userSchema.plugin(passportLocalMongoose);
+// The wishlist is loaded only on pages that need it, not on every request
+userSchema.plugin(passportLocalMongoose, { selectFields: "username email" });
 
 module.exports = mongoose.model("User", userSchema);
