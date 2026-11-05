@@ -1,0 +1,235 @@
+/* ==========================================================================
+   Wanderlust Design Tokens
+   Source: docs/design/color-system.md
+   Themes: Stone (light) & Night (dark)
+   ========================================================================== */
+
+:root,
+[data-theme="light"] {
+  --bg: #F1EFE9;
+  --surface: #FBFAF7;
+  --surface-raised: #FFFEFB;
+  --surface-sunken: #E8E5DC;
+  --border: #D9D6CC;
+  --border-strong: #8A8678;
+  --primary: #0E2B29;
+  --primary-hover: #1B403D;
+  --primary-pressed: #071918;
+  --on-primary: #F1EFE9;
+  --secondary: #44605A;
+  --secondary-hover: #33493F;
+  --secondary-subtle: #E2E9E5;
+  --accent: #8A6420;
+  --accent-hover: #6F4F18;
+  --accent-fill: #C9A45C;
+  --accent-subtle: #EFE4CC;
+  --success: #2C6A48;
+  --success-subtle: #E3EEE6;
+  --warning: #8F5200;
+  --warning-subtle: #F5E7D0;
+  --error: #9B2C27;
+  --error-subtle: #F4DEDA;
+  --link: #1B5E58;
+  --link-hover: #0E2B29;
+  --info-subtle: #DDEAE7;
+  --text: #111B1A;
+  --text-secondary: #3E4A47;
+  --text-muted: #5A6562;
+  --text-disabled: #8F9692;
+  --state-hover: rgba(17, 27, 26, 0.04);
+  --state-pressed: rgba(17, 27, 26, 0.08);
+  --focus-ring: #0E2B29;
+  --scrim: rgba(10, 19, 18, 0.6);
+
+  /* Companion typography & scale tokens */
+  --font-display: "Instrument Serif", Georgia, serif;
+  --font-sans: "Geist", "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 32px;
+  --space-4: 64px;
+
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-xl: 16px;
+  --radius-pill: 999px;
+
+  /* Spacing half steps (docs/DESIGN.md 4.1) */
+  --space-half: 4px;
+  --space-1-5: 12px;
+  --space-2-5: 24px;
+  --space-3-5: 48px;
+
+  /* Bands and photographs stay dark in both themes, so they get their own names.
+     Every value is a palette colour; nothing here adds a hue. */
+  --band: #0E2B29;
+  --band-hover: #1B403D;
+  --on-band: #F1EFE9;
+  --band-accent: #D3A85A;
+  --band-accent-soft: #C9A45C;
+  --on-photo: #F1EFE9;
+  --photo-scrim-opacity: 0;
+
+  /* Elevation */
+  --shadow-soft: 0 8px 30px rgba(17, 27, 26, 0.08);
+  --shadow-raised: 0 16px 40px rgba(17, 27, 26, 0.12);
+
+  /* Native select arrow: a data URI cannot read a CSS variable */
+  --select-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%233E4A47' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+
+  /* Scrollbar tokens (Stone theme) */
+  --scrollbar-track: var(--bg);
+  --scrollbar-thumb: var(--secondary);
+  --scrollbar-thumb-hover: var(--primary);
+
+  /* Legacy compatibility aliases mapped to new tokens */
+  --wl-bg-canvas: var(--bg);
+  --wl-bg-sidebar: #0E2B29;
+  --wl-bg-sidebar-card: #081d1c;
+  --wl-bg-search: var(--surface);
+  --wl-color-amber: var(--accent-fill);
+  --wl-color-amber-hover: var(--accent);
+  --wl-color-text-main: var(--text);
+  --wl-color-text-muted: var(--text-muted);
+  --wl-color-border: var(--border);
+  --wl-color-border-dark: rgba(217, 214, 204, 0.2);
+  --wl-font-serif: var(--font-display);
+  --wl-font-sans: var(--font-sans);
+}
+
+[data-theme="dark"] {
+  --bg: #0A1312;
+  --surface: #101C1B;
+  --surface-raised: #162625;
+  --surface-sunken: #0D1817;
+  --border: #26332F;
+  --border-strong: #5B6A65;
+  --primary: #EDE9DF;
+  --primary-hover: #F7F4EC;
+  --primary-pressed: #D8D3C6;
+  --on-primary: #0A1312;
+  --secondary: #9DBBB2;
+  --secondary-hover: #B6D0C8;
+  --secondary-subtle: #15292A;
+  --accent: #D3A85A;
+  --accent-hover: #E3BF7C;
+  --accent-fill: #D3A85A;
+  --accent-subtle: #2A2314;
+  --success: #6DB88E;
+  --success-subtle: #14291F;
+  --warning: #E8903C;
+  --warning-subtle: #2E2113;
+  --error: #E57F76;
+  --error-subtle: #2E1816;
+  --link: #8FCBC1;
+  --link-hover: #C6E4DE;
+  --info-subtle: #12292A;
+  --text: #F1EFE9;
+  --text-secondary: #C2CBC7;
+  --text-muted: #8E9B96;
+  --text-disabled: #5E6B67;
+  --state-hover: rgba(241, 239, 233, 0.06);
+  --state-pressed: rgba(241, 239, 233, 0.10);
+  --focus-ring: #D3A85A;
+  --scrim: rgba(0, 0, 0, 0.6);
+
+  /* Scrollbar tokens (Night theme) */
+  --scrollbar-track: var(--bg);
+  --scrollbar-thumb: var(--secondary);
+  --scrollbar-thumb-hover: var(--secondary-hover);
+
+  /* Legacy compatibility aliases mapped to new tokens */
+  --wl-bg-canvas: var(--bg);
+  --wl-bg-sidebar: #060e0d;
+  --wl-bg-sidebar-card: #0c1615;
+  --wl-bg-search: var(--surface);
+  --wl-color-amber: var(--accent);
+  --wl-color-amber-hover: var(--accent-hover);
+  --wl-color-text-main: var(--text);
+  --wl-color-text-muted: var(--text-muted);
+  --wl-color-border: var(--border);
+  --wl-color-border-dark: var(--border);
+  --band: #0A1312;
+  --band-hover: #162625;
+  --photo-scrim-opacity: 1;
+  --shadow-soft: 0 12px 32px rgba(0, 0, 0, 0.35);
+  --shadow-raised: 0 20px 48px rgba(0, 0, 0, 0.45);
+  --select-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23C2CBC7' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+}
+
+/* Night follows the visitor's system setting (LD7). There is no toggle; an explicit
+   data-theme attribute (used by tests) wins over the media query. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0A1312;
+    --surface: #101C1B;
+    --surface-raised: #162625;
+    --surface-sunken: #0D1817;
+    --border: #26332F;
+    --border-strong: #5B6A65;
+    --primary: #EDE9DF;
+    --primary-hover: #F7F4EC;
+    --primary-pressed: #D8D3C6;
+    --on-primary: #0A1312;
+    --secondary: #9DBBB2;
+    --secondary-hover: #B6D0C8;
+    --secondary-subtle: #15292A;
+    --accent: #D3A85A;
+    --accent-hover: #E3BF7C;
+    --accent-fill: #D3A85A;
+    --accent-subtle: #2A2314;
+    --success: #6DB88E;
+    --success-subtle: #14291F;
+    --warning: #E8903C;
+    --warning-subtle: #2E2113;
+    --error: #E57F76;
+    --error-subtle: #2E1816;
+    --link: #8FCBC1;
+    --link-hover: #C6E4DE;
+    --info-subtle: #12292A;
+    --text: #F1EFE9;
+    --text-secondary: #C2CBC7;
+    --text-muted: #8E9B96;
+    --text-disabled: #5E6B67;
+    --state-hover: rgba(241, 239, 233, 0.06);
+    --state-pressed: rgba(241, 239, 233, 0.10);
+    --focus-ring: #D3A85A;
+    --scrim: rgba(0, 0, 0, 0.6);
+
+    /* Scrollbar tokens (Night theme) */
+    --scrollbar-track: var(--bg);
+    --scrollbar-thumb: var(--secondary);
+    --scrollbar-thumb-hover: var(--secondary-hover);
+
+    /* Legacy compatibility aliases mapped to new tokens */
+    --wl-bg-canvas: var(--bg);
+    --wl-bg-sidebar: #060e0d;
+    --wl-bg-sidebar-card: #0c1615;
+    --wl-bg-search: var(--surface);
+    --wl-color-amber: var(--accent);
+    --wl-color-amber-hover: var(--accent-hover);
+    --wl-color-text-main: var(--text);
+    --wl-color-text-muted: var(--text-muted);
+    --wl-color-border: var(--border);
+    --wl-color-border-dark: var(--border);
+    --band: #0A1312;
+    --band-hover: #162625;
+    --photo-scrim-opacity: 1;
+    --shadow-soft: 0 12px 32px rgba(0, 0, 0, 0.35);
+    --shadow-raised: 0 20px 48px rgba(0, 0, 0, 0.45);
+    --select-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23C2CBC7' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  }
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}

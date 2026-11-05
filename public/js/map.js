@@ -4,7 +4,10 @@
 
   mapboxgl.accessToken = el.dataset.token;
   const { mode } = el.dataset;
-  const brand = "#fe424d";
+  const token = (name) =>
+    getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const brand = token("--primary");
+  const onBrand = token("--on-primary");
   const map = new mapboxgl.Map({
     container: el,
     style: "mapbox://styles/mapbox/streets-v12",
@@ -105,7 +108,7 @@
           "text-field": ["get", "point_count_abbreviated"],
           "text-size": 13,
         },
-        paint: { "text-color": "#fff" },
+        paint: { "text-color": onBrand },
       });
       map.addLayer({
         id: "point",
@@ -116,7 +119,7 @@
           "circle-color": brand,
           "circle-radius": 8,
           "circle-stroke-width": 2,
-          "circle-stroke-color": "#fff",
+          "circle-stroke-color": onBrand,
         },
       });
 
