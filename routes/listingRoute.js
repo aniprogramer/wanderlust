@@ -7,17 +7,28 @@ const {
   validateListing,
   validateSearch,
   validateBooking,
+  validateBlock,
+  validateReport,
+  reportLimiter,
+  requireVerifiedEmail,
+  bookingLimiter,
+  listingLimiter,
   csrfAfterUpload,
   geocodeLimiter,
 } = require("../middleware.js");
 const multer = require("multer");
 const ExpressError = require("../utils/ExpressError");
-const { ALLOWED_IMAGE_TYPES, IMAGE_ERROR } = require("../utils/constants");
+const {
+  ALLOWED_IMAGE_TYPES,
+  IMAGE_ERROR,
+  MAX_IMAGES,
+} = require("../utils/constants");
+const { checkImageContent } = require("../middleware.js");
 
 // Multer now stores files temporarily in local /uploads folder
 const upload = multer({
   dest: "uploads/",
-  limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+  limits: { fileSize: 5 * 1024 * 1024, files: MAX_IMAGES },
   fileFilter: (req, file, cb) =>
     cb(
       ALLOWED_IMAGE_TYPES.includes(file.mimetype)
@@ -27,9 +38,16 @@ const upload = multer({
     ),
 });
 
+// `listing[image]` is the single-file field older clients post; the form uses `listing[images]`.
+const photoUpload = upload.fields([
+  { name: "listing[image]", maxCount: 1 },
+  { name: "listing[images]", maxCount: MAX_IMAGES },
+]);
+
 // Importing Listing Controller
 const listingController = require("../controllers/listings.js");
 const bookingController = require("../controllers/bookingController.js");
+const reportController = require("../controllers/reportController.js");
 
 // ==========================================
 // INDEX & CREATE ROUTES
@@ -40,15 +58,18 @@ listingRoute
   .get(validateSearch, wrapAsync(listingController.index))
   .post(
     isLoggedIn,
-    upload.single("listing[image]"),
+    requireVerifiedEmail,
+    listingLimiter,
+    photoUpload,
     csrfAfterUpload,
+    checkImageContent,
     validateListing,
     wrapAsync(listingController.newListing),
   );
 
 // New Route
-listingRoute.get("/new", isLoggedIn, (req, res) => {
-  res.render("./listings/new.ejs");
+listingRoute.get("/new", isLoggedIn, requireVerifiedEmail, (req, res) => {
+  res.render("./listings/new.ejs", { pageTitle: "List your stay", noindex: true });
 });
 
 // Map of all (filtered) listings, clustered
@@ -72,8 +93,9 @@ listingRoute
   .put(
     isLoggedIn,
     isOwner,
-    upload.single("listing[image]"),
+    photoUpload,
     csrfAfterUpload,
+    checkImageContent,
     validateListing,
     wrapAsync(listingController.updateListing),
   )
@@ -83,6 +105,8 @@ listingRoute
 listingRoute.post(
   "/:id/bookings",
   isLoggedIn,
+  requireVerifiedEmail,
+  bookingLimiter,
   validateBooking,
   wrapAsync(bookingController.createBooking),
 );
@@ -96,6 +120,32 @@ listingRoute.get(
   isLoggedIn,
   isOwner,
   wrapAsync(listingController.renderEditForm),
+);
+
+// Report a listing to the team (5.1)
+listingRoute
+  .route("/:id/report")
+  .get(isLoggedIn, wrapAsync(reportController.form))
+  .post(
+    isLoggedIn,
+    reportLimiter,
+    validateReport,
+    wrapAsync(reportController.send),
+  );
+
+// Availability: nights the host is away
+listingRoute.post(
+  "/:id/blocks",
+  isLoggedIn,
+  isOwner,
+  validateBlock,
+  wrapAsync(listingController.addBlock),
+);
+listingRoute.delete(
+  "/:id/blocks/:blockId",
+  isLoggedIn,
+  isOwner,
+  wrapAsync(listingController.removeBlock),
 );
 
 module.exports = listingRoute;
