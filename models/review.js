@@ -12,10 +12,14 @@ const reviewSchema = new Schema({
     type: Date,
     default: Date.now,
   },
+  // Removed when the author deletes their account; the page then shows "Deleted user"
   author: {
     type: Schema.Types.ObjectId,
     ref: "User",
   },
+  // False on reviews written before stays had to be confirmed first (see D9 in the PRD)
+  verifiedStay: { type: Boolean, default: false },
+  booking: { type: Schema.Types.ObjectId, ref: "Booking" },
 });
 
 module.exports = mongoose.model("Review", reviewSchema);
