@@ -20,7 +20,12 @@ const backTo = (req, id) => {
 module.exports.index = async (req, res) => {
   const { wishlist } = await User.findById(req.user._id).populate("wishlist");
   res.locals.savedIds = new Set(wishlist.map((l) => String(l._id)));
-  res.render("wishlist/index.ejs", { allListings: wishlist });
+  res.render("wishlist/index.ejs", {
+    pageTitle: "Saved",
+    noindex: true,
+    // A listing hidden by the team stays saved, but is not shown until it is back
+    allListings: wishlist.filter((listing) => listing.status !== "hidden"),
+  });
 };
 
 /**

@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Listing = require("../models/listing");
 const Booking = require("../models/booking");
 const User = require("../models/user");
@@ -5,8 +6,21 @@ const cloudinary = require("../cloudConfig");
 const fs = require("fs");
 const { geocode } = require("../utils/geocode");
 const buildQs = require("../utils/queryString");
-const { toDay, today } = require("../utils/dates");
-const { MAP_LIMIT } = require("../utils/constants");
+const { toDay, today, parseDay } = require("../utils/dates");
+const {
+  MAP_LIMIT,
+  MAX_IMAGES,
+  MAX_BLOCKED_RANGES,
+  MAX_LISTINGS_PER_HOST,
+  MAX_LISTINGS_PER_HOST_24H,
+  TAX_NOTICE,
+  AMENITIES,
+  SORTS,
+} = require("../utils/constants");
+const { blockedNights } = require("../utils/availability");
+const { uploadsOf } = require("../middleware");
+const seoFor = require("../utils/seo");
+const logger = require("../utils/logger");
 const { UI_CATEGORIES } = require("../utils/categories");
 
 const hasGeocoder = () =>
@@ -23,8 +37,10 @@ const savedIdsFor = async (user, listings) => {
 };
 module.exports.savedIdsFor = savedIdsFor;
 
-const removeTempFile = (file) =>
-  file && fs.promises.unlink(file.path).catch(() => {});
+const removeTempFiles = (files) =>
+  Promise.all(
+    files.map((file) => fs.promises.unlink(file.path).catch(() => {})),
+  );
 
 // Uses picker coordinates when given, otherwise geocodes. Returns a GeoJSON Point,
 // null when the place cannot be found, or undefined when geocoding is unavailable.
@@ -37,7 +53,7 @@ const resolveGeometry = async ({ lat, lng, location, country }) => {
     const coordinates = await geocode(`${location}, ${country}`);
     return coordinates ? { type: "Point", coordinates } : null;
   } catch (err) {
-    console.error("Geocoding unavailable:", err.message);
+    logger.warn("Geocoding unavailable", { errorName: err.name });
     return undefined;
   }
 };
@@ -59,6 +75,10 @@ module.exports.index = async (req, res) => {
     Listing.search(filters, { page }),
     Listing.countries(),
   ]);
+  // A page past the end keeps the filters and lands on the last page that has results
+  if (total > 0 && page > pages) {
+    return res.redirect(302, `/listings${buildQs({ ...filters, page: pages })}`);
+  }
   res.locals.savedIds = await savedIdsFor(req.user, listings);
   res.render("./listings/index.ejs", {
     allListings: listings,
@@ -69,6 +89,13 @@ module.exports.index = async (req, res) => {
     countries,
     isHomePage: true,
     uiCategories: UI_CATEGORIES,
+    sorts: SORTS,
+    amenityInfo: AMENITIES,
+    serverToday: toDay(today()),
+    pageTitle: "Stays worth the journey",
+    pageDescription:
+      "Find homes, cabins and villas, send a request to the host and pay at the property.",
+    canonicalPath: "/listings",
     qs: (overrides) => buildQs({ ...filters, ...overrides }),
   });
 };
@@ -100,6 +127,10 @@ module.exports.mapView = async (req, res) => {
     geojson,
     total,
     mapLimit: MAP_LIMIT,
+    sorts: SORTS,
+    amenityInfo: AMENITIES,
+    pageTitle: "Map of stays",
+    pageDescription: "See Wanderlust stays on a map.",
     filters,
     countries,
     qs: (overrides) => buildQs({ ...filters, ...overrides }),
@@ -120,10 +151,67 @@ module.exports.geocode = async (req, res) => {
 // ========================
 // CREATE NEW LISTING
 // ========================
-module.exports.newListing = async (req, res, next) => {
+const PLACEHOLDER_IMAGE = "listingimage";
+
+// Largest side kept at Cloudinary, whatever size was uploaded (3.10)
+const UPLOAD_OPTIONS = {
+  transformation: [{ width: 2400, height: 2400, crop: "limit" }],
+};
+
+const destroyImages = (filenames) =>
+  Promise.all(
+    filenames
+      .filter((name) => name && name !== PLACEHOLDER_IMAGE)
+      .map((name) => cloudinary.uploader.destroy(name).catch(() => {})),
+  );
+
+// Sends the temp files to Cloudinary. If one fails, the ones already sent are removed.
+const uploadAll = async (files) => {
+  const photos = [];
   try {
-    if (!req.file) {
-      req.flash("error", "Image is required!");
+    for (const file of files) {
+      const result = await cloudinary.uploader.upload(file.path, UPLOAD_OPTIONS);
+      photos.push({ url: result.secure_url, filename: result.public_id });
+    }
+  } catch (err) {
+    await destroyImages(photos.map((photo) => photo.filename));
+    throw err;
+  }
+  return photos;
+};
+
+const listingLimitMessage = async (ownerId) => {
+  const total = await Listing.countDocuments({ owner: ownerId });
+  if (total >= MAX_LISTINGS_PER_HOST) {
+    return `An account can have up to ${MAX_LISTINGS_PER_HOST} listings.`;
+  }
+  // Listings have no createdAt, but their ObjectId holds the creation second
+  const since = mongoose.Types.ObjectId.createFromTime(
+    Math.floor((Date.now() - 864e5) / 1000),
+  );
+  const recent = await Listing.countDocuments({
+    owner: ownerId,
+    _id: { $gt: since },
+  });
+  return recent >= MAX_LISTINGS_PER_HOST_24H
+    ? `You can add up to ${MAX_LISTINGS_PER_HOST_24H} listings a day. Please try again tomorrow.`
+    : null;
+};
+
+module.exports.newListing = async (req, res, next) => {
+  const files = uploadsOf(req);
+  try {
+    if (!files.length) {
+      req.flash("error", "Add at least one photo.");
+      return res.redirect("/listings/new");
+    }
+    if (files.length > MAX_IMAGES) {
+      req.flash("error", `A listing can have up to ${MAX_IMAGES} photos.`);
+      return res.redirect("/listings/new");
+    }
+    const limit = await listingLimitMessage(req.user._id);
+    if (limit) {
+      req.flash("error", limit);
       return res.redirect("/listings/new");
     }
 
@@ -131,32 +219,44 @@ module.exports.newListing = async (req, res, next) => {
     const geometry = await resolveGeometry({ lat, lng, ...data });
     if (geometry === null) return unknownLocation(req, res, "/listings/new");
 
-    const result = await cloudinary.uploader.upload(req.file.path);
+    const photos = await uploadAll(files);
 
     const newListing = new Listing(data);
     newListing.owner = req.user._id;
     if (geometry) newListing.geometry = geometry;
-    newListing.image = {
-      url: result.secure_url,
-      filename: result.public_id,
-    };
+    newListing.images = photos;
     try {
       await newListing.save();
     } catch (err) {
-      await cloudinary.uploader.destroy(result.public_id).catch(() => {});
+      await destroyImages(photos.map((photo) => photo.filename));
       throw err;
     }
 
-    req.flash("success", "New Listing Added!");
+    req.flash("success", "Your listing is live.");
     res.redirect("/listings");
   } finally {
-    await removeTempFile(req.file);
+    await removeTempFiles(files);
   }
 };
 
 // ========================
 // SHOW LISTING
 // ========================
+// What the review area offers this visitor (2.8)
+const reviewStateFor = async (user, listing) => {
+  if (!user) return "wait";
+  if (listing.owner?._id.equals(user._id)) return "owner";
+  const already = listing.reviews.some((r) => r.author?._id.equals(user._id));
+  if (already) return "reviewed";
+  const stayed = await Booking.exists({
+    listing: listing._id,
+    guest: user._id,
+    status: "confirmed",
+    checkOut: { $lte: today() },
+  });
+  return stayed ? "form" : "wait";
+};
+
 module.exports.showListings = async (req, res) => {
   let { id } = req.params;
 
@@ -167,7 +267,9 @@ module.exports.showListings = async (req, res) => {
     })
     .populate("owner", "username");
 
-  if (!listing) {
+  const canSeeHidden =
+    req.user?.isAdmin || listing?.owner?._id.equals(req.user?._id);
+  if (!listing || (listing.status === "hidden" && !canSeeHidden)) {
     req.flash("error", "Listing does not exist :(");
     return res.redirect("/listings");
   }
@@ -179,13 +281,25 @@ module.exports.showListings = async (req, res) => {
   })
     .sort("checkIn")
     .populate("guest", "username");
-  const bookedNights = bookings.flatMap((b) => b.nights.map(toDay));
+  // Both reach the calendar as "unavailable"; a guest does not need to know which is which
+  const bookedNights = [
+    ...new Set([
+      ...bookings.flatMap((b) => b.nights.map(toDay)),
+      ...blockedNights(listing),
+    ]),
+  ].sort();
 
   res.render("./listings/show", {
     listing,
     bookings,
     bookedNights,
     serverToday: toDay(today()),
+    reviewState: await reviewStateFor(req.user, listing),
+    taxNotice: TAX_NOTICE,
+    amenityInfo: AMENITIES,
+    pageTitle: `${listing.title}, ${listing.location}`,
+    pageDescription: (listing.description || "").slice(0, 155),
+    ...seoFor(listing),
   });
 };
 
@@ -202,18 +316,23 @@ module.exports.renderEditForm = async (req, res) => {
     return res.redirect("/listings");
   }
 
-  let originalImageUrl = listing.image.url;
-  originalImageUrl = originalImageUrl.replace("/upload", "/upload/w_250");
-
-  res.render("./listings/edit.ejs", { listing, originalImageUrl });
+  res.render("./listings/edit.ejs", {
+    listing,
+    today: toDay(today()),
+    pageTitle: `Edit ${listing.title}`,
+    noindex: true,
+  });
 };
 
 // ========================
 // UPDATE LISTING
 // ========================
+const fieldFiles = (req, field) => req.files?.[`listing[${field}]`] || [];
+
 module.exports.updateListing = async (req, res) => {
   const { id } = req.params;
   const editUrl = `/listings/${id}/edit`;
+  const files = uploadsOf(req);
 
   try {
     const listing = await Listing.findById(id);
@@ -237,40 +356,105 @@ module.exports.updateListing = async (req, res) => {
 
     // Blank optional selects clear the stored value
     listing.set({ category: undefined, propertyType: undefined, ...data });
+    // Saving this form is the host confirming the numbers migration 002 guessed
+    listing.capacityDefaulted = undefined;
     if (geometry) listing.geometry = geometry;
     // Geocoder down: a pin for the old address is worse than no pin
     else if (addressChanged) listing.geometry = undefined;
 
+    // Work out the photo list before spending any uploads on it
+    const current = listing.images.length
+      ? listing.images.map((p) => p.toObject())
+      : [{ url: listing.image.url, filename: listing.image.filename }];
+    const replacements = fieldFiles(req, "image");
+    const dropped = new Set(req.body.removeImages || []);
+    // The old single-file field replaces the cover
+    if (replacements.length && current[0]) dropped.add(current[0].filename);
+    const kept = current.filter((photo) => !dropped.has(photo.filename));
+    const count = kept.length + files.length;
+    if (count > MAX_IMAGES) {
+      req.flash("error", `A listing can have up to ${MAX_IMAGES} photos.`);
+      return res.redirect(editUrl);
+    }
+    if (count === 0) {
+      req.flash("error", "Keep at least one photo.");
+      return res.redirect(editUrl);
+    }
+
     // Validate before spending an upload on a doomed save
     await listing.validate();
 
-    const oldImage = listing.image?.filename;
-    let uploaded;
-    if (req.file) {
-      uploaded = await cloudinary.uploader.upload(req.file.path);
-      listing.image = {
-        url: uploaded.secure_url,
-        filename: uploaded.public_id,
-      };
-    }
+    const uploaded = await uploadAll(files);
+    const photos = replacements.length
+      ? [...uploaded, ...kept]
+      : [...kept, ...uploaded];
+    const coverAt = photos.findIndex((p) => p.filename === req.body.coverImage);
+    if (coverAt > 0) photos.unshift(...photos.splice(coverAt, 1));
+    listing.images = photos;
 
     try {
       await listing.save();
     } catch (err) {
-      if (uploaded)
-        await cloudinary.uploader.destroy(uploaded.public_id).catch(() => {});
+      await destroyImages(uploaded.map((photo) => photo.filename));
       throw err;
     }
 
-    if (uploaded && oldImage && oldImage !== "listingimage") {
-      await cloudinary.uploader.destroy(oldImage);
-    }
+    await destroyImages(
+      current
+        .filter((photo) => !photos.some((p) => p.filename === photo.filename))
+        .map((photo) => photo.filename),
+    );
 
-    req.flash("success", "Listing updated successfully!");
+    req.flash("success", "Listing updated.");
     res.redirect(`/listings/${id}`);
   } finally {
-    await removeTempFile(req.file);
+    await removeTempFiles(files);
   }
+};
+
+// ========================
+// AVAILABILITY (nights the host is away)
+// ========================
+module.exports.addBlock = async (req, res) => {
+  const { id } = req.params;
+  const back = `/listings/${id}/edit#availability`;
+  const from = parseDay(req.body.from);
+  const to = parseDay(req.body.to);
+  const listing = await Listing.findById(id);
+  if (listing.blockedRanges.length >= MAX_BLOCKED_RANGES) {
+    req.flash(
+      "error",
+      `You can have up to ${MAX_BLOCKED_RANGES} blocked periods. Remove one first.`,
+    );
+    return res.redirect(back);
+  }
+  const clash = await Booking.findOne({
+    listing: id,
+    status: "confirmed",
+    checkIn: { $lte: to },
+    checkOut: { $gt: from },
+  });
+  if (clash) {
+    req.flash(
+      "error",
+      `Those dates overlap confirmed booking ${clash.reference} (${toDay(clash.checkIn)} to ${toDay(clash.checkOut)}).`,
+    );
+    return res.redirect(back);
+  }
+  listing.blockedRanges.push({ from, to, note: req.body.note || undefined });
+  await listing.save();
+  req.flash("success", "Those dates are now blocked.");
+  res.redirect(back);
+};
+
+module.exports.removeBlock = async (req, res) => {
+  const { id, blockId } = req.params;
+  await Listing.updateOne(
+    { _id: id },
+    { $pull: { blockedRanges: { _id: blockId } } },
+  );
+  req.flash("success", "Those dates are open again.");
+  res.redirect(`/listings/${id}/edit#availability`);
 };
 
 // ========================
@@ -295,10 +479,12 @@ module.exports.destroyListing = async (req, res) => {
 
   const listing = await Listing.findByIdAndDelete(id);
 
-  const imageId = listing?.image?.filename;
-  if (imageId && imageId !== "listingimage") {
-    await cloudinary.uploader.destroy(imageId);
-  }
+  await destroyImages([
+    ...new Set([
+      listing?.image?.filename,
+      ...(listing?.images || []).map((photo) => photo.filename),
+    ]),
+  ]);
 
   req.flash("success", "Listing Deleted Successfully!");
   res.redirect("/listings");
