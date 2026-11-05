@@ -1,6 +1,6 @@
 const fs = require("fs");
 const { csrfSync } = require("csrf-sync");
-const rateLimit = require("express-rate-limit");
+const { rateLimit, ipKeyGenerator } = require("express-rate-limit");
 const Listing = require("./models/listing");
 const Review = require("./models/review.js");
 const Booking = require("./models/booking.js");
@@ -13,7 +13,18 @@ const {
   searchSchema,
   signupSchema,
   loginSchema,
+  forgotSchema,
+  resetSchema,
+  reasonSchema,
+  blockSchema,
+  profileSchema,
+  changePasswordSchema,
+  deleteAccountSchema,
+  reportSchema,
 } = require("./schema.js");
+const User = require("./models/user");
+const { sniffImageType } = require("./utils/imageType");
+const { IMAGE_ERROR } = require("./utils/constants");
 
 module.exports.isLoggedIn = (req, res, next) => {
   if (!req.isAuthenticated()) {
@@ -24,9 +35,29 @@ module.exports.isLoggedIn = (req, res, next) => {
   next();
 };
 
+// The login box takes a username or an email. Emails are mapped to the username that
+// passport authenticates with; an unknown email falls through and fails like any bad login.
+module.exports.resolveLoginIdentifier = wrapAsync(async (req, res, next) => {
+  const id = req.body.username;
+  if (id.includes("@")) {
+    const user = await User.findOne({ email: id.toLowerCase() });
+    if (user) req.body.username = user.username;
+  }
+  next();
+});
+
+// Ends sessions that predate the last password change (a reset must log out thieves too).
+module.exports.sessionFreshness = (req, res, next) => {
+  const changed = req.user?.passwordChangedAt;
+  if (!changed || req.session.authAt >= changed.getTime()) return next();
+  req.logOut((err) => next(err));
+};
+
 module.exports.saveRedirectUrl = (req, res, next) => {
-  if (req.session.redirectUrl) {
-    res.locals.redirectUrl = req.session.redirectUrl;
+  const url = req.session.redirectUrl;
+  // Only same-site paths; "//host" and "/\\host" are protocol-relative tricks
+  if (typeof url === "string" && /^\/(?![/\\])/.test(url)) {
+    res.locals.redirectUrl = url;
   }
   next();
 };
@@ -60,18 +91,55 @@ module.exports.isReviewAuthor = wrapAsync(async (req, res, next) => {
 module.exports.isBookingParty = wrapAsync(async (req, res, next) => {
   const booking = await Booking.findById(req.params.bookingId).populate(
     "listing",
-    "owner",
+    "owner title location country image images currency",
   );
   if (!booking) throw new ExpressError(404, "Booking not found");
   const userId = res.locals.currUser._id;
-  if (
-    !booking.guest.equals(userId) &&
-    !booking.listing?.owner?.equals(userId)
-  ) {
+  const isGuest = Boolean(booking.guest?.equals(userId));
+  const isHost = Boolean(booking.listing?.owner?.equals(userId));
+  if (!isGuest && !isHost) {
     req.flash("error", "You are not authorized");
     return res.redirect("/bookings");
   }
   req.booking = booking;
+  req.bookingRole = isHost ? "host" : "guest";
+  next();
+});
+
+// Refused rather than hidden: the routes are not secret, only forbidden.
+module.exports.isAdmin = (req, res, next) =>
+  req.user?.isAdmin
+    ? next()
+    : next(new ExpressError(403, "You are not authorized"));
+
+// LD4: production needs a confirmed address before anyone can list or send a request.
+// Read at request time, not at load, so a test can switch it on for a single request.
+module.exports.requireVerifiedEmail = (req, res, next) => {
+  if (process.env.NODE_ENV !== "production" || req.user?.emailVerifiedAt) {
+    return next();
+  }
+  return res.redirect("/verify-email");
+};
+
+// Every file multer stored for this request, whichever field it came in on
+const uploadsOf = (req) => Object.values(req.files || {}).flat();
+module.exports.uploadsOf = uploadsOf;
+const removeUploads = (req) =>
+  uploadsOf(req).forEach((file) =>
+    fs.promises.unlink(file.path).catch(() => {}),
+  );
+
+// Multer only knows the type the browser declared; this reads the file's first bytes (3.10).
+module.exports.checkImageContent = wrapAsync(async (req, res, next) => {
+  for (const file of uploadsOf(req)) {
+    const handle = await fs.promises.open(file.path, "r");
+    const { buffer } = await handle.read(Buffer.alloc(12), 0, 12, 0);
+    await handle.close();
+    if (sniffImageType(buffer) !== file.mimetype) {
+      removeUploads(req);
+      throw new ExpressError(400, IMAGE_ERROR);
+    }
+  }
   next();
 });
 
@@ -84,7 +152,7 @@ const validate =
     });
     if (error) {
       // Multer already wrote the upload to disk; don't leave it behind
-      if (req.file) fs.promises.unlink(req.file.path).catch(() => {});
+      removeUploads(req);
       const text = message || error.details.map((el) => el.message).join(", ");
       if (redirectTo) {
         req.flash("error", text);
@@ -107,7 +175,33 @@ module.exports.validateLogin = validate(loginSchema, "body", {
   redirectTo: "/login",
   message: "Incorrect username or password.",
 });
+module.exports.validateForgot = validate(forgotSchema, "body", {
+  redirectTo: "/forgot-password",
+  message: "Enter a valid email address.",
+});
+module.exports.validateReset = (req, res, next) =>
+  validate(resetSchema, "body", {
+    redirectTo: `/reset-password/${encodeURIComponent(req.params.token)}`,
+  })(req, res, next);
 module.exports.validateSearch = validate(searchSchema, "query");
+module.exports.validateReason = validate(reasonSchema);
+module.exports.validateReport = (req, res, next) =>
+  validate(reportSchema, "body", {
+    redirectTo: `/listings/${req.params.id}/report`,
+  })(req, res, next);
+module.exports.validateProfile = validate(profileSchema, "body", {
+  redirectTo: "/account",
+});
+module.exports.validateChangePassword = validate(changePasswordSchema, "body", {
+  redirectTo: "/account",
+});
+module.exports.validateDeleteAccount = validate(deleteAccountSchema, "body", {
+  redirectTo: "/account",
+});
+module.exports.validateBlock = (req, res, next) =>
+  validate(blockSchema, "body", {
+    redirectTo: `/listings/${req.params.id}/edit#availability`,
+  })(req, res, next);
 
 // ---------- CSRF ----------
 // Token travels in the form body (_csrf) or an x-csrf-token header, never the query string.
@@ -117,7 +211,7 @@ const { csrfSynchronisedProtection, generateToken } = csrfSync({
 
 const checkCsrf = (req, res, next) =>
   csrfSynchronisedProtection(req, res, (err) => {
-    if (err && req.file) fs.promises.unlink(req.file.path).catch(() => {});
+    if (err) removeUploads(req);
     if (!err && req.body) delete req.body._csrf; // keep it out of Joi's way
     next(err);
   });
@@ -154,7 +248,40 @@ const limiter = (limit, windowMs, extra = {}) =>
     ...extra,
   });
 
-module.exports.authLimiter = limiter(10, 15 * 60 * 1000);
+// In memory, per process (AD5): a restart clears them and two instances count separately.
+const MINUTE = 60 * 1000;
+const HOUR = 60 * MINUTE;
+const ipKey = (req) => ipKeyGenerator(req.ip);
+const lower = (value) => String(value ?? "").trim().toLowerCase();
+
+// Keyed by address and identifier, so one person's failures do not lock out another account
+// on the same address, until the wider per-address limit below.
+module.exports.loginLimiter = [
+  limiter(30, 15 * MINUTE),
+  limiter(10, 15 * MINUTE, {
+    keyGenerator: (req) => `${ipKey(req)}:${lower(req.body?.username)}`,
+  }),
+];
+module.exports.signupLimiter = limiter(10, HOUR);
+module.exports.forgotLimiter = [
+  limiter(5, HOUR),
+  limiter(5, HOUR, {
+    keyGenerator: (req) => `forgot:${lower(req.body?.email)}`,
+  }),
+];
+module.exports.resetLimiter = limiter(10, HOUR);
+module.exports.supportLimiter = limiter(5, HOUR);
+module.exports.reportLimiter = limiter(5, HOUR);
+// Per signed-in user, so a shared address cannot exhaust someone else's allowance
+module.exports.verifyResendLimiter = limiter(5, 60 * 60 * 1000, {
+  keyGenerator: (req) => `verify:${req.user?._id}`,
+});
+module.exports.bookingLimiter = limiter(30, 60 * 60 * 1000, {
+  keyGenerator: (req) => `booking:${req.user?._id}`,
+});
+module.exports.listingLimiter = limiter(30, 60 * 60 * 1000, {
+  keyGenerator: (req) => `listing:${req.user?._id}`,
+});
 module.exports.geocodeLimiter = limiter(60, 60 * 1000, {
   keyGenerator: (req) => req.sessionID,
 });

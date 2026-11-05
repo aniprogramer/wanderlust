@@ -10,11 +10,17 @@ const parseDay = (str) => {
     : date;
 };
 
-const today = () => {
-  const now = new Date();
-  return new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
-  );
+// LD9: stays are plain calendar dates, kept at 00:00 UTC. "Today" is the date on the clock
+// in APP_TIMEZONE, so a guest in Kolkata can book today just after their midnight.
+const DEFAULT_TIMEZONE = "Asia/Kolkata";
+const today = (now = new Date(), timeZone = process.env.APP_TIMEZONE) => {
+  const local = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timeZone || DEFAULT_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+  return new Date(`${local}T00:00:00.000Z`);
 };
 
 // Each night stayed: checkIn inclusive, checkOut exclusive.
