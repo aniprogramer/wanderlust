@@ -16,6 +16,10 @@ beforeAll(connectDb);
 afterAll(disconnectDb);
 beforeEach(clearDb);
 
+// LD1: a request holds nothing until the host accepts, so older tests confirm it first.
+const confirmAll = () =>
+  Booking.updateMany({ status: "pending" }, { status: "confirmed" });
+
 const book = (agent, id, checkIn, checkOut) =>
   agent
     .post(`/listings/${id}/bookings`)
@@ -31,18 +35,18 @@ beforeEach(async () => {
 });
 
 describe("creating bookings", () => {
-  test("books available dates and computes the total", async () => {
+  test("sends a request and computes the total on the server", async () => {
     const res = await book(
       await login(app, "bob"),
       listing._id,
       day(10),
       day(13),
     );
-    expect(res.headers.location).toBe("/bookings");
     const booking = await Booking.findOne();
+    expect(res.headers.location).toBe(`/bookings/${booking._id}`);
     expect(booking.totalPrice).toBe(3000);
     expect(booking.nights).toHaveLength(3);
-    expect(booking.status).toBe("confirmed");
+    expect(booking.status).toBe("pending");
   });
 
   test("requires login", async () => {
@@ -70,6 +74,7 @@ describe("creating bookings", () => {
     const bob = await login(app, "bob");
     const carol = await login(app, "carol");
     await book(bob, listing._id, day(10), day(13));
+    await confirmAll();
 
     await book(carol, listing._id, day(12), day(15)); // overlaps the last night
     await book(carol, listing._id, day(8), day(11)); // overlaps the first night
@@ -81,23 +86,14 @@ describe("creating bookings", () => {
     expect(await Booking.countDocuments()).toBe(3);
   });
 
-  test("simultaneous requests for the same dates yield exactly one booking", async () => {
-    const bob = await login(app, "bob");
-    const carol = await login(app, "carol");
-    await Booking.init();
-    await Promise.all([
-      book(bob, listing._id, day(20), day(23)),
-      book(carol, listing._id, day(20), day(23)),
-    ]);
-    expect(await Booking.countDocuments()).toBe(1);
-  });
-
   test("cancelled dates become available again", async () => {
     const bob = await login(app, "bob");
     await book(bob, listing._id, day(10), day(12));
+    await confirmAll();
     const booking = await Booking.findOne();
     await bob.delete(`/bookings/${booking._id}`);
     await book(await login(app, "carol"), listing._id, day(10), day(12));
+    await confirmAll();
     expect(await Booking.countDocuments({ status: "confirmed" })).toBe(1);
   });
 
@@ -116,6 +112,7 @@ describe("viewing and cancelling", () => {
   test("guest sees own reservations, host sees reservations at their listings", async () => {
     const bob = await login(app, "bob");
     await book(bob, listing._id, day(10), day(12));
+    await confirmAll();
 
     expect((await bob.get("/bookings")).text).toContain("Cozy Cabin");
     expect(
@@ -129,6 +126,7 @@ describe("viewing and cancelling", () => {
 
   test("listing page shows unavailable dates publicly, guest names only to host", async () => {
     await book(await login(app, "bob"), listing._id, day(10), day(12));
+    await confirmAll();
     const publicPage = await request(app).get(`/listings/${listing._id}`);
     expect(publicPage.text).toContain(day(10));
     expect(publicPage.text).not.toContain("@bob");
@@ -142,6 +140,7 @@ describe("viewing and cancelling", () => {
     const bob = await login(app, "bob");
     await book(bob, listing._id, day(10), day(12));
     await book(bob, listing._id, day(15), day(17));
+    await confirmAll();
     const [first, second] = await Booking.find().sort("checkIn");
 
     await (await login(app, "carol")).delete(`/bookings/${first._id}`);

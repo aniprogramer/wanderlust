@@ -5,6 +5,7 @@ const {
   reviewSchema,
   signupSchema,
   loginSchema,
+  resetSchema,
 } = require("../../schema");
 const { day } = require("../helpers");
 
@@ -15,6 +16,10 @@ const listing = (over = {}) => ({
     location: "l",
     country: "c",
     price: 10,
+    maxGuests: 2,
+    bedrooms: 1,
+    beds: 1,
+    bathrooms: 1,
     ...over,
   },
 });
@@ -29,6 +34,13 @@ describe("listingSchema", () => {
   });
 
   test.each([
+    [{ maxGuests: 0 }],
+    [{ maxGuests: 17 }],
+    [{ maxGuests: undefined }],
+    [{ bedrooms: 21 }],
+    [{ beds: 0 }],
+    [{ bathrooms: 1.25 }],
+    [{ amenities: ["helipad"] }],
     [{ price: 0 }],
     [{ category: "Spaceships" }],
     [{ propertyType: "Igloo" }],
@@ -134,7 +146,8 @@ describe("signupSchema", () => {
   const user = (over = {}) => ({
     username: "bob_1",
     email: "bob@example.com",
-    password: "longenough",
+    password: "longenough1",
+    terms: "on",
     ...over,
   });
 
@@ -153,14 +166,47 @@ describe("signupSchema", () => {
   });
 });
 
+describe("password policy (A1)", () => {
+  const signup = (password) =>
+    signupSchema.validate({
+      username: "bob_1",
+      email: "bob@example.com",
+      password,
+      terms: "on",
+    }).error;
+
+  test.each([
+    ["all digits", "12345678"],
+    ["all letters", "abcdefgh"],
+    ["129 characters", `a1${"b".repeat(127)}`],
+    ["too short", "abc123"],
+  ])("rejects %s", (_name, password) => {
+    expect(signup(password)).toBeDefined();
+    expect(signup(password).message).toMatch(/at least one letter and one digit/);
+  });
+
+  test.each([["abcd1234"], [`a1${"b".repeat(126)}`]])("accepts %s", (password) => {
+    expect(signup(password)).toBeUndefined();
+  });
+
+  test("the reset form follows the same rule", () => {
+    const reset = (password) =>
+      resetSchema.validate({ password, confirmPassword: password }).error;
+    expect(reset("12345678")).toBeDefined();
+    expect(reset("abcdefgh")).toBeDefined();
+    expect(reset("abcd1234")).toBeUndefined();
+  });
+});
+
 describe("loginSchema", () => {
-  test("needs both fields, each at most 100 characters", () => {
+  // Raised from 100 with the A1 password rule: a 128-character password must be able to log in
+  test("needs both fields, password at most 128 characters", () => {
     expect(
       loginSchema.validate({ username: "a", password: "b" }).error,
     ).toBeUndefined();
     expect(loginSchema.validate({}).error).toBeDefined();
     expect(
-      loginSchema.validate({ username: "a", password: "b".repeat(101) }).error,
+      loginSchema.validate({ username: "a", password: "b".repeat(129) }).error,
     ).toBeDefined();
   });
 });

@@ -34,6 +34,8 @@ beforeEach(async () => {
   geocode.mockResolvedValue([-106.82, 39.19]);
 });
 
+const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
+
 const submit = (agent, method, url, fields = {}, withImage = true) => {
   const base = {
     "listing[title]": "Mountain Lodge",
@@ -41,12 +43,16 @@ const submit = (agent, method, url, fields = {}, withImage = true) => {
     "listing[location]": "Aspen",
     "listing[country]": "United States",
     "listing[price]": "2500",
+    "listing[maxGuests]": "4",
+    "listing[bedrooms]": "2",
+    "listing[beds]": "2",
+    "listing[bathrooms]": "1.5",
     ...fields,
   };
   let req = agent[method](url);
   for (const [k, v] of Object.entries(base)) req = req.field(k, v);
   return withImage
-    ? req.attach("listing[image]", Buffer.from("png"), "a.png")
+    ? req.attach("listing[image]", PNG, "a.png")
     : req;
 };
 
@@ -473,5 +479,161 @@ describe("map", () => {
     const agent = await login(app);
     const res = await agent.get("/listings/geocode?q=Aspen");
     expect(res.body).toEqual({ coordinates: [-106.82, 39.19] });
+  });
+});
+
+describe("photos (4.3) and upload checks (3.10)", () => {
+  const fs = require("fs");
+  const JPEG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  const WEBP = Buffer.from("RIFF\0\0\0\0WEBPVP8 ");
+  const form = (agent, method, url, fields = {}) => {
+    let req = agent[method](url);
+    const base = {
+      "listing[title]": "Lodge",
+      "listing[description]": "Snowy",
+      "listing[location]": "Aspen",
+      "listing[country]": "United States",
+      "listing[price]": "2500",
+      "listing[maxGuests]": "4",
+      "listing[bedrooms]": "2",
+      "listing[beds]": "2",
+      "listing[bathrooms]": "1.5",
+      ...fields,
+    };
+    for (const [k, v] of Object.entries(base)) req = req.field(k, v);
+    return req;
+  };
+  const uploadsCount = () =>
+    fs.existsSync("uploads") ? fs.readdirSync("uploads").length : 0;
+  let counter;
+
+  beforeEach(() => {
+    counter = 0;
+    cloudinary.uploader.upload.mockImplementation(async () => {
+      counter += 1;
+      return { secure_url: `https://cdn.test/${counter}.png`, public_id: `id-${counter}` };
+    });
+    cloudinary.uploader.destroy.mockResolvedValue({});
+  });
+
+  test.each([
+    ["a text file named .png", Buffer.from("not an image at all"), "a.png", "image/png"],
+    ["a PNG declared as JPEG", PNG, "a.jpg", "image/jpeg"],
+    ["a script declared as WebP", Buffer.from("<script>alert(1)</script>"), "a.webp", "image/webp"],
+  ])("rejects %s and leaves no temp file", async (_name, bytes, filename, contentType) => {
+    await createUser("alice");
+    const agent = await login(app);
+    const before = uploadsCount();
+    const res = await form(agent, "post", "/listings").attach("listing[images]", bytes, { filename, contentType });
+    expect(res.status).toBe(400);
+    expect(uploadsCount()).toBe(before);
+    expect(cloudinary.uploader.upload).not.toHaveBeenCalled();
+    expect(await Listing.countDocuments()).toBe(0);
+  });
+
+  test("accepts real JPEG, PNG and WebP; the first is the cover", async () => {
+    await createUser("alice");
+    const agent = await login(app);
+    const before = uploadsCount();
+    await form(agent, "post", "/listings", { "listing[amenities]": "wifi" })
+      .attach("listing[images]", JPEG, { filename: "a.jpg", contentType: "image/jpeg" })
+      .attach("listing[images]", PNG, { filename: "b.png", contentType: "image/png" })
+      .attach("listing[images]", WEBP, { filename: "c.webp", contentType: "image/webp" });
+    const saved = await Listing.findOne();
+    expect(saved.images.map((p) => p.filename)).toEqual(["id-1", "id-2", "id-3"]);
+    expect(saved.image.filename).toBe("id-1");
+    expect(saved.amenities).toEqual(["wifi"]);
+    expect(saved.maxGuests).toBe(4);
+    expect(uploadsCount()).toBe(before);
+    expect(cloudinary.uploader.upload.mock.calls[0][1].transformation[0]).toMatchObject({ crop: "limit", width: 2400 });
+  });
+
+  test("more than six photos is refused before anything uploads", async () => {
+    await createUser("alice");
+    const agent = await login(app);
+    let req = form(agent, "post", "/listings");
+    for (let i = 0; i < 7; i++) req = req.attach("listing[images]", PNG, `${i}.png`);
+    const res = await req;
+    expect(res.status).toBe(400);
+    expect(cloudinary.uploader.upload).not.toHaveBeenCalled();
+  });
+
+  test("a failed save removes every uploaded photo", async () => {
+    await createUser("alice");
+    const agent = await login(app);
+    jest.spyOn(Listing.prototype, "save").mockRejectedValueOnce(new Error("db down"));
+    jest.spyOn(console, "error").mockImplementation(() => {});
+    await form(agent, "post", "/listings")
+      .attach("listing[images]", PNG, "a.png")
+      .attach("listing[images]", PNG, "b.png");
+    expect(cloudinary.uploader.destroy).toHaveBeenCalledWith("id-1");
+    expect(cloudinary.uploader.destroy).toHaveBeenCalledWith("id-2");
+    jest.restoreAllMocks();
+  });
+
+  test("editing adds, removes and reorders; removed photos leave Cloudinary", async () => {
+    const owner = await createUser("alice");
+    const photo = (n) => ({ url: `https://cdn.test/old${n}.png`, filename: `old-${n}` });
+    const listing = await createListing(owner, { images: [photo(1), photo(2), photo(3)] });
+    const agent = await login(app);
+    await form(agent, "put", `/listings/${listing._id}`, {
+      removeImages: "old-1",
+      coverImage: "old-3",
+    }).attach("listing[images]", PNG, "new.png");
+    const saved = await Listing.findById(listing._id);
+    expect(saved.images.map((p) => p.filename)).toEqual(["old-3", "old-2", "id-1"]);
+    expect(saved.image.filename).toBe("old-3");
+    expect(cloudinary.uploader.destroy).toHaveBeenCalledWith("old-1");
+    expect(cloudinary.uploader.destroy).not.toHaveBeenCalledWith("old-2");
+  });
+
+  test("the last photo cannot be removed, and the cap holds on edit", async () => {
+    const owner = await createUser("alice");
+    const photo = (n) => ({ url: `https://cdn.test/${n}.png`, filename: `old-${n}` });
+    const listing = await createListing(owner, { images: [photo(1)] });
+    const agent = await login(app);
+    const res = await form(agent, "put", `/listings/${listing._id}`, { removeImages: "old-1" });
+    expect(res.headers.location).toBe(`/listings/${listing._id}/edit`);
+    expect((await Listing.findById(listing._id)).images).toHaveLength(1);
+
+    await Listing.updateOne({ _id: listing._id }, { images: [1, 2, 3, 4, 5, 6].map(photo) });
+    await form(agent, "put", `/listings/${listing._id}`).attach("listing[images]", PNG, "a.png");
+    expect(cloudinary.uploader.upload).not.toHaveBeenCalled();
+  });
+
+  test("a listing form clears the confirm-details flag", async () => {
+    const owner = await createUser("alice");
+    const listing = await createListing(owner, { capacityDefaulted: true });
+    const agent = await login(app);
+    await form(agent, "put", `/listings/${listing._id}`);
+    expect((await Listing.findById(listing._id)).capacityDefaulted).toBeUndefined();
+  });
+
+  test("new listings are capped per day and in total", async () => {
+    const owner = await createUser("alice");
+    const agent = await login(app);
+    await Listing.insertMany(
+      Array.from({ length: 10 }, (_, i) => ({ title: `L${i}`, price: 1, location: "l", country: "c", owner: owner._id })),
+    );
+    const res = await form(agent, "post", "/listings").attach("listing[images]", PNG, "a.png");
+    expect(res.headers.location).toBe("/listings/new");
+    expect(cloudinary.uploader.upload).not.toHaveBeenCalled();
+    expect((await agent.get("/listings/new")).text).toContain("10 listings a day");
+  });
+
+  test("the show page offers a keyboard gallery and lists amenities", async () => {
+    const owner = await createUser("alice");
+    const listing = await createListing(owner, {
+      images: [
+        { url: "https://cdn.test/1.png", filename: "1" },
+        { url: "https://cdn.test/2.png", filename: "2", caption: "The courtyard" },
+      ],
+      amenities: ["wifi", "kitchen"],
+    });
+    const { text } = await request(app).get(`/listings/${listing._id}`);
+    expect(text).toContain("data-gallery-thumb");
+    expect(text).toContain("The courtyard");
+    expect(text).toContain("Show photo 2 of 2");
+    expect(text).toContain("What this place offers");
   });
 });

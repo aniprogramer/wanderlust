@@ -1,21 +1,20 @@
-const { report, missing, MISSING_GEOMETRY } = require("../../init/migrate");
+// 3.4 replaced init/migrate.js with the numbered runner, so these tests moved with it.
+const { available, refusal } = require("../../migrations/runner");
 
-describe("migration helpers", () => {
-  test("filters only match rows lacking the field", () => {
-    expect(missing("currency")).toEqual({ currency: { $exists: false } });
-    expect(MISSING_GEOMETRY).toEqual({
-      "geometry.coordinates.0": { $exists: false },
-    });
+describe("migration runner", () => {
+  test("scripts are numbered, ordered and described", () => {
+    const scripts = available();
+    expect(scripts.map((s) => s.name)).toEqual([...scripts.map((s) => s.name)].sort());
+    expect(scripts.length).toBeGreaterThanOrEqual(5);
+    for (const script of scripts) {
+      expect(script.description).toBeTruthy();
+      expect(typeof script.up).toBe("function");
+    }
   });
 
-  test("report lists each count", () => {
-    const text = report({
-      currencySet: 2,
-      missingCategory: 3,
-      missingGeometry: 0,
-    });
-    expect(text).toContain("set to INR on 2 listing(s)");
-    expect(text).toContain("category: 3 listing(s)");
-    expect(text).toContain("geometry: 0 listing(s)");
+  test("production needs --force", () => {
+    expect(refusal({ env: { NODE_ENV: "production" }, argv: [] })).toMatch(/--force/);
+    expect(refusal({ env: { NODE_ENV: "production" }, argv: ["--force"] })).toBeNull();
+    expect(refusal({ env: { NODE_ENV: "development" }, argv: [] })).toBeNull();
   });
 });

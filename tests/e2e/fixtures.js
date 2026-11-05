@@ -11,6 +11,8 @@ module.exports = {
     pinned: "64b0000000000000000000a1",
     bookingSoon: "64b0000000000000000000b1",
     bookingLater: "64b0000000000000000000b2",
+    bookingPast: "64b0000000000000000000b3",
+    bookingPending: "64b0000000000000000000b4",
   },
   booked: [day(3), day(4)], // nights of bookingSoon
   freeRange: [day(7), day(9)],

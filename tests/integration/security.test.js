@@ -107,7 +107,10 @@ describe("headers and session", () => {
     const csp = (await request(app).get("/listings")).headers[
       "content-security-policy"
     ];
-    expect(csp).toContain("https://cdn.jsdelivr.net");
+    // 3.9: libraries moved to public/vendor, so CDNs left the policy; Mapbox's API stays
+    expect(csp).not.toContain("cdn.jsdelivr.net");
+    expect(csp).not.toContain("cdnjs.cloudflare.com");
+    expect(csp).toMatch(/script-src 'self'(;|$)/);
     expect(csp).toContain("https://api.mapbox.com");
     expect(csp).toContain("https://res.cloudinary.com");
     const scriptSrc = csp.split(";").find((d) => d.startsWith("script-src"));
@@ -126,7 +129,7 @@ describe("headers and session", () => {
     ]) {
       const { text } = await agent.get(path);
       expect(text).not.toMatch(
-        /<script(?![^>]*\bsrc=)(?![^>]*application\/json)[^>]*>/,
+        /<script(?![^>]*\bsrc=)(?![^>]*application\/(ld\+)?json)[^>]*>/,
       );
       expect(text).not.toMatch(/\son(submit|click|change)=/);
       // style attributes are blocked by the CSP (no style-src 'unsafe-inline')

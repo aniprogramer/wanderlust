@@ -2,6 +2,8 @@ const request = require("supertest");
 const app = require("../../app");
 const Listing = require("../../models/listing");
 const Review = require("../../models/review");
+const User = require("../../models/user");
+const Booking = require("../../models/booking");
 const {
   connectDb,
   disconnectDb,
@@ -10,12 +12,28 @@ const {
   login,
   guest,
   createListing,
+  day,
 } = require("../helpers");
 
 beforeAll(connectDb);
 afterAll(disconnectDb);
 afterEach(() => jest.restoreAllMocks());
 beforeEach(clearDb);
+
+// 2.8: reviews need a confirmed stay that has ended. Each stay gets its own nights.
+let stayOffset = 40;
+const stayed = async (username, listing) => {
+  const guestUser = await User.findOne({ username });
+  stayOffset += 2;
+  return Booking.create({
+    listing: listing._id,
+    guest: guestUser._id,
+    checkIn: new Date(day(-stayOffset)),
+    checkOut: new Date(day(-stayOffset + 1)),
+    nights: [new Date(day(-stayOffset))],
+    totalPrice: 1,
+  });
+};
 
 const postReview = (agent, id, rating, comment = "Nice") =>
   agent
@@ -38,6 +56,8 @@ describe("reviews", () => {
     const carol = await createUser("carol");
     const listing = await createListing(owner);
 
+    await stayed("bob", listing);
+    await stayed("carol", listing);
     await postReview(await login(app, "bob"), listing._id, 5);
     await postReview(await login(app, "carol"), listing._id, 4);
 
@@ -65,6 +85,7 @@ describe("reviews", () => {
     const listing1 = await createListing(owner);
     const listing2 = await createListing(owner, { title: "Other" });
     const bob = await login(app, "bob");
+    await stayed("bob", listing1);
     await postReview(bob, listing1._id, 4);
     const review = await Review.findOne();
 
@@ -84,6 +105,7 @@ describe("reviews", () => {
     await createUser("mallory");
     const listing = await createListing(owner);
     const bob = await login(app, "bob");
+    await stayed("bob", listing);
     await postReview(bob, listing._id, 3);
     const review = await Review.findOne();
 
@@ -119,6 +141,7 @@ describe("review rules", () => {
     await createUser("bob");
     const listing = await createListing(owner);
     const bob = await login(app, "bob");
+    await stayed("bob", listing);
     await postReview(bob, listing._id, 5);
     await postReview(bob, listing._id, 1);
     expect(await Review.countDocuments()).toBe(1);
@@ -132,6 +155,7 @@ describe("review rules", () => {
     const owner = await createUser("alice");
     await createUser("bob");
     const listing = await createListing(owner);
+    await stayed("bob", listing);
     jest
       .spyOn(Listing, "updateOne")
       .mockRejectedValueOnce(new Error("db down"));
@@ -139,5 +163,50 @@ describe("review rules", () => {
     const res = await postReview(await login(app, "bob"), listing._id, 4);
     expect(res.status).toBe(500);
     expect(await Review.countDocuments()).toBe(0);
+  });
+
+  test("nobody reviews before a confirmed stay has ended", async () => {
+    const owner = await createUser("alice");
+    const bob = await createUser("bob");
+    const listing = await createListing(owner);
+    const agent = await login(app, "bob");
+    const stay = (over) =>
+      Booking.create({
+        listing: listing._id,
+        guest: bob._id,
+        checkIn: new Date(day(-3)),
+        checkOut: new Date(day(-1)),
+        nights: [new Date(day(-3)), new Date(day(-2))],
+        totalPrice: 1,
+        ...over,
+      });
+    await postReview(agent, listing._id, 5);
+    expect(await Review.countDocuments()).toBe(0);
+    expect((await agent.get(`/listings/${listing._id}`)).text).toContain(
+      "You can review this stay after you have stayed here.",
+    );
+
+    const pending = await stay({ status: "pending", expiresAt: new Date(day(9)) });
+    await postReview(agent, listing._id, 5);
+    expect(await Review.countDocuments()).toBe(0);
+    await pending.deleteOne();
+
+    const future = await stay({
+      checkIn: new Date(day(3)),
+      checkOut: new Date(day(4)),
+      nights: [new Date(day(3))],
+    });
+    await postReview(agent, listing._id, 5);
+    expect(await Review.countDocuments()).toBe(0);
+    await future.deleteOne();
+
+    const real = await stay();
+    await postReview(agent, listing._id, 5);
+    const review = await Review.findOne();
+    expect(review.verifiedStay).toBe(true);
+    expect(String(review.booking)).toBe(String(real._id));
+    expect((await agent.get(`/listings/${listing._id}`)).text).toContain(
+      "Verified stay",
+    );
   });
 });

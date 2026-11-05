@@ -139,6 +139,10 @@ describe("validators", () => {
           country: "c",
           price: "5",
           category: "",
+          maxGuests: "2",
+          bedrooms: "1",
+          beds: "1",
+          bathrooms: "1",
         },
       },
     };

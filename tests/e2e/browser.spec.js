@@ -92,6 +92,8 @@ test("self-hosted Plus Jakarta Sans loads", async ({ page }) => {
 const dayCell = (page, ymd) =>
   page.evaluateHandle((ymd) => {
     const fp = document.querySelector("#date-range")._flatpickr;
+    // The panel shows one month, so bring the wanted date into view first
+    document.querySelector("#date-range")._flatpickr.jumpToDate(ymd);
     return [...document.querySelectorAll(".flatpickr-day")].find(
       (el) =>
         !el.classList.contains("prevMonthDay") &&
@@ -137,11 +139,13 @@ test("reserve stays disabled until a valid range is picked", async ({
   await expect(page.locator("#booking-form input[name=_csrf]")).not.toHaveValue(
     freeRange[0],
   );
+  // LD1: this sends a request; nothing is confirmed until the host accepts
   await Promise.all([
-    page.waitForURL(/\/bookings$/),
+    page.waitForURL(/\/bookings\/[0-9a-f]{24}$/),
     page.locator("#reserve-btn").click(),
   ]);
-  await expect(page.getByText("Booking confirmed!")).toBeVisible();
+  await expect(page.getByText("Your request has been sent")).toBeVisible();
+  await expect(page.getByText("Waiting for the host")).toBeVisible();
 });
 
 // ---------- Location picker ----------
@@ -256,7 +260,7 @@ test("declining the delete-listing confirm keeps the listing", async ({
   await page.goto(`/listings/${ids.pinned}`);
   const msg = await declineAndCheck(
     page,
-    page.getByRole("button", { name: /Delete Listing/ }),
+    page.getByRole("button", { name: /Delete listing/ }),
   );
   expect(msg).toContain("delete this listing");
   expect((await page.goto(`/listings/${ids.pinned}`)).status()).toBe(200);

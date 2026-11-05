@@ -166,10 +166,11 @@ describe("pagination", () => {
     ]);
   });
 
-  test("pages beyond the end are empty, not errors", async () => {
+  // F6 changed this from an empty page to a redirect to the last page with results
+  test("pages beyond the end redirect to the last page, not an error", async () => {
     const res = await search("?page=99");
-    expect(res.status).toBe(200);
-    expect(titles(res)).toHaveLength(0);
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toMatch(/page=\d+$/);
   });
 });
 
