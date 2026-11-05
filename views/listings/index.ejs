@@ -14,11 +14,6 @@
 
     <!-- Top Right Actions -->
     <div class="wl-hero-top-actions ms-auto d-flex align-items-center gap-3">
-      <!-- Become a Host Link -->
-      <a href="/listings/new" class="wl-hero-host-link text-decoration-none">
-        Become a host
-      </a>
-
       <!-- User Account Dropdown -->
       <div class="dropdown">
         <button
@@ -44,8 +39,6 @@
           <% if (!currUser) { %>
             <li><a class="dropdown-item py-2" href="/login"><b>Log in</b></a></li>
             <li><a class="dropdown-item py-2" href="/signup">Sign up</a></li>
-            <li><hr class="dropdown-divider" /></li>
-            <li><a class="dropdown-item py-2" href="/listings/new">Host your home</a></li>
           <% } else { %>
             <li class="dropdown-header fw-bold">Hello, <%= currUser.username %></li>
             <li><a class="dropdown-item py-2" href="/wishlist"><i class="fa-regular fa-bookmark me-2"></i>Saved Wishlist</a></li>
@@ -68,7 +61,7 @@
   <!-- Hero Editorial Headline & Copy -->
   <div class="wl-hero-body">
     <div class="wl-hero-eyebrow">
-      HOMES &middot; CABINS &middot; VILLAS
+      STAYS &middot; CABINS &middot; VILLAS
     </div>
     <h1 class="wl-hero-headline">
       Stays worth<br />
@@ -92,7 +85,7 @@
             id="search-box"
             name="q"
             value="<%= filters.q || '' %>"
-            placeholder="Search destinations, cities or homes"
+            placeholder="Search destinations"
             maxlength="100"
             autocomplete="off"
             class="wl-field-input"
@@ -247,7 +240,7 @@
   <!-- Section Header -->
   <div class="wl-featured-header d-flex flex-wrap justify-content-between align-items-end mb-4">
     <div>
-      <span class="wl-featured-eyebrow">ALL STAYS</span>
+      <span class="wl-featured-eyebrow">PLACES TO STAY</span>
       <h2 class="wl-featured-title">Places to stay</h2>
     </div>
 
@@ -402,7 +395,7 @@
 <section class="wl-editorial-panels-section mt-2 mb-5">
   <div class="row g-4">
     <!-- Panel 1: Destinations -->
-    <div class="col-12 col-lg-4">
+    <div class="col-12 col-lg-6">
       <div class="wl-editorial-card wl-card-destinations">
         <img
           src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80"
@@ -423,7 +416,7 @@
     </div>
 
     <!-- Panel 2: Experiences -->
-    <div class="col-12 col-lg-4">
+    <div class="col-12 col-lg-6">
       <div class="wl-editorial-card wl-card-experiences">
         <img
           src="https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=800&q=80"
@@ -437,27 +430,6 @@
             <h3 class="wl-editorial-title">Treehouses, castles and tiny homes</h3>
           </div>
           <a href="/listings?category=Unique%20Stays" class="wl-editorial-arrow-btn" aria-label="Browse unique stays">
-            <i class="fa-solid fa-arrow-right"></i>
-          </a>
-        </div>
-      </div>
-    </div>
-
-    <!-- Panel 3: Become a Host -->
-    <div class="col-12 col-lg-4">
-      <div class="wl-editorial-card wl-card-hosting">
-        <img
-          src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80"
-          alt=""
-          class="wl-editorial-bg"
-          loading="lazy"
-        />
-        <div class="wl-editorial-overlay">
-          <div class="wl-editorial-copy">
-            <span class="wl-editorial-eyebrow">BECOME A HOST</span>
-            <h3 class="wl-editorial-title">Share a unique place</h3>
-          </div>
-          <a href="/listings/new" class="wl-editorial-arrow-btn" aria-label="Become a Host">
             <i class="fa-solid fa-arrow-right"></i>
           </a>
         </div>
