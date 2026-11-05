@@ -69,24 +69,24 @@ Traditional starter web apps frequently omit essential production requirements: 
 
 ## ✨ Features
 
-| Feature                          | Description                                                                                                                                         |
-| :------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 🔐 **Authentication & Sessions** | User registration and authentication powered by Passport.js using salted PBKDF2 hashing. Sessions persist in MongoDB via `connect-mongo`.           |
-| 🛡️ **Role-Based Authorization**  | Custom route middleware ensures only the original listing owner can edit/delete listings, and only review authors can delete their reviews.         |
-| 🏠 **Full Property CRUD**        | Complete Create, Read, Update, and Delete lifecycle for listings with localized pricing, descriptions, and regional metadata.                       |
-| ☁️ **Cloud Media Storage**       | Multi-part image file uploads handled via `multer` and streamed directly to Cloudinary cloud infrastructure with auto-generated URLs.               |
-| ⭐ **Review & Rating Engine**    | Community review system linked relationally to listings with numeric ratings and text feedback.                                                     |
-| 🗑️ **Cascading Deletion**        | Mongoose `post('findOneAndDelete')` document middleware automatically cascades deletion to remove all associated reviews when a listing is removed. |
-| ✅ **Dual-Layer Validation**     | Input validation on both ends: HTML5/Bootstrap client-side validation and schema-based Joi validation on server requests.                           |
-| 🔔 **Flash Notifications**       | Instant user feedback banners across page reloads via `connect-flash` for operations like login, logout, create, and unauthorized access.           |
+| Feature                          | Description                                                                                                                                                                                                                                                                                                                                                    |
+| :------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 🔐 **Authentication & Sessions** | User registration and authentication powered by Passport.js using salted PBKDF2 hashing. Sessions persist in MongoDB via `connect-mongo`.                                                                                                                                                                                                                      |
+| 🛡️ **Role-Based Authorization**  | Custom route middleware ensures only the original listing owner can edit/delete listings, and only review authors can delete their reviews.                                                                                                                                                                                                                    |
+| 🏠 **Full Property CRUD**        | Complete Create, Read, Update, and Delete lifecycle for listings with localized pricing, descriptions, and regional metadata.                                                                                                                                                                                                                                  |
+| ☁️ **Cloud Media Storage**       | Multi-part image file uploads handled via `multer` and streamed directly to Cloudinary cloud infrastructure with auto-generated URLs.                                                                                                                                                                                                                          |
+| ⭐ **Review & Rating Engine**    | Community review system linked relationally to listings with numeric ratings and text feedback.                                                                                                                                                                                                                                                                |
+| 🗑️ **Cascading Deletion**        | Mongoose `post('findOneAndDelete')` document middleware automatically cascades deletion to remove all associated reviews when a listing is removed.                                                                                                                                                                                                            |
+| ✅ **Dual-Layer Validation**     | Input validation on both ends: HTML5/Bootstrap client-side validation and schema-based Joi validation on server requests.                                                                                                                                                                                                                                      |
+| 🔔 **Flash Notifications**       | Instant user feedback banners across page reloads via `connect-flash` for operations like login, logout, create, and unauthorized access.                                                                                                                                                                                                                      |
 | 🗺️ **Interactive Mapbox Maps**   | Location picker (click, drag or search an address) on the create/edit forms, automatic server-side geocoding, coordinates stored as GeoJSON, an interactive map with marker on every listing, and a clustered map of all search results at `/listings/map`. Invalid addresses are rejected gracefully; without a token the app still works, just without maps. |
-| 📅 **Bookings & Availability**   | Date-range calendar (Flatpickr) showing unavailable nights, server-side validation (no past dates, max 30 nights, hosts can't book their own listing) and atomic double-booking prevention through a unique partial MongoDB index. Guests manage trips at `/bookings`, hosts see reservations at `/bookings/hosting`, and both can cancel upcoming stays. |
-| ❤️ **Wishlist**                  | Save/unsave listings from any card; duplicate-free (`$addToSet`), persisted on the user document and shown at `/wishlist`. The heart state on a page of cards costs one small query for the signed-in user. |
-| 🔎 **Search & Filters**          | Full-text search (title, location, country, description) plus category, property type, country, price range, minimum rating and date-availability filters. Query-string based, paginated (12/page), filter values persist across pages, indexed in MongoDB, and collapsible on mobile. |
-| 🧪 **Automated Tests**           | Jest + Supertest suite (unit + integration) running against an in-memory MongoDB. Cloudinary and Mapbox are mocked. |
-| 🔒 **Security Hardening**        | CSRF tokens on every write (`csrf-sync`), `helmet` with a strict Content-Security-Policy (no inline scripts), rate limits on login, signup and geocoding (`express-rate-limit`), `SameSite=Lax` cookies (`Secure` in production), POST-only logout, upload type and size limits (JPEG/PNG/WebP, 5 MB) and Joi validation on signup and login. |
-| 💱 **Per-Listing Currency**      | Each listing is priced in its own currency (INR, USD, EUR, GBP, AUD, CAD, JPY or AED) and formatted with `Intl.NumberFormat`. |
-| 📱 **Responsive UI**             | Mobile-first layout constructed with Bootstrap 5 cards, grid system, responsive navigation, and FontAwesome iconography.                            |
+| 📅 **Bookings & Availability**   | Date-range calendar (Flatpickr) showing unavailable nights, server-side validation (no past dates, max 30 nights, hosts can't book their own listing) and atomic double-booking prevention through a unique partial MongoDB index. Guests manage trips at `/bookings`, hosts see reservations at `/bookings/hosting`, and both can cancel upcoming stays.      |
+| ❤️ **Wishlist**                  | Save/unsave listings from any card; duplicate-free (`$addToSet`), persisted on the user document and shown at `/wishlist`. The heart state on a page of cards costs one small query for the signed-in user.                                                                                                                                                    |
+| 🔎 **Search & Filters**          | Full-text search (title, location, country, description) plus category, property type, country, price range, minimum rating and date-availability filters. Query-string based, paginated (12/page), filter values persist across pages, indexed in MongoDB, and collapsible on mobile.                                                                         |
+| 🧪 **Automated Tests**           | Jest + Supertest suite (unit + integration) running against an in-memory MongoDB. Cloudinary and Mapbox are mocked.                                                                                                                                                                                                                                            |
+| 🔒 **Security Hardening**        | CSRF tokens on every write (`csrf-sync`), `helmet` with a strict Content-Security-Policy (no inline scripts), rate limits on login, signup and geocoding (`express-rate-limit`), `SameSite=Lax` cookies (`Secure` in production), POST-only logout, upload type and size limits (JPEG/PNG/WebP, 5 MB) and Joi validation on signup and login.                  |
+| 💱 **Per-Listing Currency**      | Each listing is priced in its own currency (INR, USD, EUR, GBP, AUD, CAD, JPY or AED) and formatted with `Intl.NumberFormat`.                                                                                                                                                                                                                                  |
+| 📱 **Responsive UI**             | Mobile-first layout constructed with Bootstrap 5 cards, grid system, responsive navigation, and FontAwesome iconography.                                                                                                                                                                                                                                       |
 
 ---
 
@@ -94,19 +94,27 @@ Traditional starter web apps frequently omit essential production requirements: 
 
 <div align="center">
 
-|                         Explore Destinations (Homepage)                         |                        Property Details & Guest Reviews                        |
-| :-----------------------------------------------------------------------------: | :----------------------------------------------------------------------------: |
-| <img src="./assets/explore-listings.png" alt="Explore Listings" width="100%" /> | <img src="./assets/listing-details.png" alt="Listing Details" width="100%" />  |
-|      _Browse available stays worldwide with responsive cards and pricing_       | _In-depth property view with host details, pricing, location, and review feed_ |
+|                           Explore Destinations & Categories                           |                           Property Details & Reservation Engine                           |
+| :-----------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------: |
+|    <img src="./assets/explore-listings.png" alt="Explore Listings" width="100%" />    |       <img src="./assets/listing-details.png" alt="Listing Details" width="100%" />       |
+| _Curated stays with category pills, full-text search, live pricing, and saved hearts_ | _Photo gallery, verified ratings, host profile, Mapbox pin, and dynamic booking calendar_ |
 
-|                        Host a Home (Create Listing)                         |                         Mobile Responsive Layout                         |
-| :-------------------------------------------------------------------------: | :----------------------------------------------------------------------: |
-| <img src="./assets/create-listing.png" alt="Create Listing" width="100%" /> | <img src="./assets/mobile-view.png" alt="Mobile Layout" width="280px" /> |
-|   _Cloudinary multipart upload with schema validation and error feedback_   |   _Fluid responsive viewport optimized for mobile phones and tablets_    |
+|                          Interactive Clustered Map View                          |                            Trips & Reservation Dashboard                            |
+| :------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------: |
+| <img src="./assets/map-view.png" alt="Mapbox Clustered Map View" width="100%" /> |     <img src="./assets/booking-trips.png" alt="Trips Dashboard" width="100%" />     |
+| _Mapbox integration with coordinates geocoding and clustered property discovery_ | _Traveler trips dashboard with real-time status badges, price breakdown, and dates_ |
+
+|                         Saved Wishlist Collections                          |                         Host Onboarding & Property Creation                         |
+| :-------------------------------------------------------------------------: | :---------------------------------------------------------------------------------: |
+|    <img src="./assets/wishlist.png" alt="Saved Wishlist" width="100%" />    |      <img src="./assets/create-listing.png" alt="Host a Home" width="100%" />       |
+| _Single-click bookmarking persisted to MongoDB user document (`$addToSet`)_ | _Multi-image Cloudinary upload with interactive pin picker, pricing, and amenities_ |
+
+|                             Mobile-First Responsive Experience                              |
+| :-----------------------------------------------------------------------------------------: |
+|          <img src="./assets/mobile-view.png" alt="Mobile Layout" width="340px" />           |
+| _Fully responsive viewport optimized for mobile gestures, sticky actions, and fluid layout_ |
 
 </div>
-
-> The map, booking calendar, wishlist and filter screens ship with the app but are not captured above yet — add screenshots to `assets/` and reference them here after running it with your own `MAPBOX_TOKEN`.
 
 ---
 
@@ -271,27 +279,17 @@ Create a `.env` file in the project root directory:
 cp .env.example .env
 ```
 
-Populate the `.env` file with your credentials:
-
-```env
-PORT=8080
-NODE_ENV=development
-ATLAS=mongodb+srv://<username>:<password>@cluster0.mongodb.net/wanderlust?retryWrites=true&w=majority
-SECRET=your_long_random_session_secret_key
-CLOUD_NAME=your_cloudinary_cloud_name
-CLOUD_API_KEY=your_cloudinary_api_key
-CLOUD_API_SECRET=your_cloudinary_api_secret
-MAPBOX_TOKEN=your_mapbox_public_access_token
-MAPBOX_SERVER_TOKEN=your_mapbox_secret_access_token
-```
+Fill in `.env`. `.env.example` lists every variable with a placeholder. For local work you need `ATLAS` (a local MongoDB is fine), `SECRET` and the `CLOUD_*` keys. Without SMTP settings in development, nothing is emailed. Production also needs the SMTP settings, `APP_URL` and `SUPPORT_EMAIL`, and refuses to start without them.
 
 ### Step 4: Seed Sample Database Records
 
 Populate your database with initial listings:
 
 ```bash
-node init/index.js
+ALLOW_DESTRUCTIVE_SEED=true node init/index.js --yes
 ```
+
+The seed guard never runs in production. Elsewhere it needs both the variable and `--yes`, and it refuses any database URL containing a value from `PROTECTED_DB_MARKERS`.
 
 The seeder **deletes every existing listing** together with its reviews, bookings and wishlist entries, then creates the sample listings under a `seed-host` user. When `NODE_ENV=production` it refuses to run; pass `--force` (`node init/index.js --force`) only if you really mean to wipe production data.
 
@@ -299,13 +297,14 @@ _Console output:_ `connected to DB` → `data is initialized!`. With `MAPBOX_TOK
 
 #### Upgrading an existing database
 
-If your database already has listings from an older version (instead of fresh seed data), run the migration once after pulling this version:
+If your database already has data from an older version, apply the outstanding migrations once after pulling:
 
 ```bash
-node init/migrate.js
+npm run migrate:status   # what has run
+npm run migrate          # apply the rest
 ```
 
-It sets `currency` to `INR` on listings that have none and prints how many listings still have no category or map pin, so you can fix those by editing them. It never deletes data, and running it again changes nothing. Like the seeder, it refuses to run when `NODE_ENV=production` unless you pass `--force`.
+Each migration runs once and is safe to repeat. See `docs/RUNBOOK.md`.
 
 ### Step 5: Start the Application Server
 
@@ -325,17 +324,26 @@ http://localhost:8080/listings
 
 ## 🔐 Environment Variables
 
-| Variable           |  Type  | Required | Description                                                    | Example                                |
-| :----------------- | :----: | :------: | :------------------------------------------------------------- | :------------------------------------- |
-| `ATLAS`            | String | **Yes**  | MongoDB connection string (Local or MongoDB Atlas)             | `mongodb://127.0.0.1:27017/wanderlust` |
-| `SECRET`           | String | **Yes**  | Cryptographic secret for signing session cookies               | `supersecretkey987654`                 |
-| `CLOUD_NAME`       | String | **Yes**  | Cloudinary account cloud identifier                            | `dqxyz123`                             |
-| `CLOUD_API_KEY`    | String | **Yes**  | Cloudinary public API credential key                           | `123456789012345`                      |
-| `CLOUD_API_SECRET` | String | **Yes**  | Cloudinary private secret key                                  | `aBcDeF9876_xYz`                       |
-| `MAPBOX_TOKEN`     | String |    No    | Mapbox **public** token (`pk.…`) for maps and geocoding. Restrict it to your site URL in the Mapbox dashboard. Without it, maps are hidden and addresses are not geocoded. | `pk.eyJ1Ijoi…`                         |
-| `MAPBOX_SERVER_TOKEN` | String |    No    | Mapbox **secret** token (`sk.…`) used only for server-side geocoding, so the public token can stay URL-restricted. Falls back to `MAPBOX_TOKEN` when unset. Never expose it to the browser. | `sk.eyJ1Ijoi…`                         |
-| `NODE_ENV`         | String |    No    | Runtime environment (`development` / `production`). Production trusts the first proxy, marks the session cookie `Secure` and makes the seeder require `--force`. | `development`                          |
-| `PORT`             | Number |    No    | Port on which the HTTP server binds (Default: `8080`)          | `8080`                                 |
+The full table is in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) section 12, and `.env.example` lists every name.
+
+| Variable                                                                                     | Required in production | Purpose                                                              |
+| :------------------------------------------------------------------------------------------- | :--------------------: | :------------------------------------------------------------------- |
+| `ATLAS`, `SECRET`                                                                            |        **Yes**         | Database, session signing                                            |
+| `APP_URL`                                                                                    |        **Yes**         | Links in email, canonical URLs, sitemap                              |
+| `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`                                           |        **Yes**         | Email (`SMTP_PORT`, `SMTP_SECURE` optional)                          |
+| `SUPPORT_EMAIL`                                                                              |        **Yes**         | Receives contact messages and listing reports                        |
+| `CLOUD_NAME`, `CLOUD_API_KEY`, `CLOUD_API_SECRET`                                            |        **Yes**         | Photos                                                               |
+| `MAPBOX_TOKEN`, `MAPBOX_SERVER_TOKEN`                                                        |           No           | Maps, address lookup                                                 |
+| `APP_TIMEZONE`                                                                               |           No           | What "today" means. Default `Asia/Kolkata`                           |
+| `LEGAL_ENTITY_NAME`, `LEGAL_ADDRESS`, `GRIEVANCE_OFFICER`, `GOVERNING_LAW`, `LEGAL_REVIEWED` |     Before launch      | Legal pages show placeholders and a draft notice until these are set |
+| `SOCIAL_FACEBOOK_URL`, `SOCIAL_INSTAGRAM_URL`, `SOCIAL_LINKEDIN_URL`                         |           No           | Footer icons                                                         |
+| `ALLOW_DESTRUCTIVE_SEED`, `PROTECTED_DB_MARKERS`                                             |           No           | Seed script safety                                                   |
+| `SENTRY_DSN`                                                                                 |           No           | Error tracking                                                       |
+| `NODE_ENV`, `PORT`                                                                           |           No           | Runtime environment, port (default `8080`)                           |
+
+### Health check and operations
+
+`GET /health` returns `{"status":"ok"}` when the database is connected and a 503 otherwise. Deploying, backups, rotating secrets and incidents are in [`docs/RUNBOOK.md`](docs/RUNBOOK.md). The checks against real services are in [`docs/STAGING_CHECKLIST.md`](docs/STAGING_CHECKLIST.md).
 
 ---
 
@@ -387,6 +395,7 @@ http://localhost:8080/listings
 npm test                 # run the whole suite
 npm run test:coverage    # with coverage report
 npm run test:watch       # watch mode
+npx playwright test      # browser tests: axe, keyboard, three widths in both themes
 ```
 
 - **Stack:** Jest, Supertest, and `mongodb-memory-server` (a throw-away in-memory MongoDB; no database setup needed — the first run downloads a `mongod` binary, or set `MONGOMS_SYSTEM_BINARY=/path/to/mongod` to use an installed one).
