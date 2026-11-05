@@ -1,0 +1,27 @@
+<% layout("/layouts/boilerplate") %>
+<div class="wl-page wl-page--form">
+  <a class="wl-back-link" href="/listings/<%= listing._id %>">← Back to the stay</a>
+  <h1 class="wl-page-title">Report this listing</h1>
+  <p class="wl-page-lede">Tell us what is wrong with <strong><%= listing.title %></strong>. The host is not told who reported it. If you feel unsafe, call the local emergency services first.</p>
+  <form action="/listings/<%= listing._id %>/report" method="POST" class="wl-panel wl-auth-form" data-auth-form data-busy-label="Sending…" novalidate>
+    <%- include("../includes/csrf.ejs") %>
+    <div class="wl-field">
+      <label for="reason">Reason</label>
+      <div class="wl-input wl-input--select">
+        <select id="reason" name="reason" required data-label="reason" data-empty="Choose a reason.">
+          <option value="">Choose a reason</option>
+          <% for (const reason of reasons) { %><option value="<%= reason %>"><%= reason %></option><% } %>
+        </select>
+      </div>
+      <p class="wl-field__error" id="reason-error" hidden></p>
+    </div>
+    <div class="wl-field">
+      <label for="details">Details (optional)</label>
+      <div class="wl-input wl-input--textarea">
+        <textarea id="details" name="details" rows="4" maxlength="1000" data-label="details"></textarea>
+      </div>
+      <p class="wl-field__error" id="details-error" hidden></p>
+    </div>
+    <button type="submit" class="wl-auth-btn wl-auth-btn--primary wl-auth-btn--block"><span data-btn-label>Send report</span></button>
+  </form>
+</div>

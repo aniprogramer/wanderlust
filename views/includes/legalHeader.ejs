@@ -1,0 +1,19 @@
+<%# Expects: title, intro, sections (array of [id, heading]) %>
+<% if (!site.LEGAL_REVIEWED) { %>
+<div class="wl-auth-alert wl-auth-alert--warning" role="note">
+  <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+  <span>Draft: this page is awaiting legal review.</span>
+</div>
+<% } %>
+<h1 class="wl-page-title wl-prose__title"><%= title %></h1>
+<p class="wl-page-lede"><%= intro %></p>
+<% if (sections.length > 3) { %>
+<nav class="wl-toc" aria-label="On this page">
+  <h2 class="wl-toc__title">On this page</h2>
+  <ol>
+    <% for (const [id, heading] of sections) { %>
+    <li><a href="#<%= id %>"><%= heading %></a></li>
+    <% } %>
+  </ol>
+</nav>
+<% } %>

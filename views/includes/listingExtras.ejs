@@ -1,13 +1,65 @@
-<%# Category, property type and map location picker. `listing` is optional (edit form). %>
-<% const current = typeof listing !== "undefined" && listing ? listing : {}; %>
-<div class="mb-3">
-  <label for="currency" class="form-label">Currency</label>
-  <select id="currency" name="listing[currency]" class="form-select">
-    <% for (const code of currencies) { %>
-    <option value="<%= code %>" <%= (current.currency || "INR") === code ? "selected" : "" %>><%= code %></option>
+<%# Space, price rules, amenities, category, type and the map picker. `listing` is optional (edit form). %>
+<% const current = typeof listing !== "undefined" && listing ? listing : {};
+   const has = (key) => (current.amenities || []).includes(key); %>
+<fieldset class="wl-fieldset">
+  <legend class="wl-section-title">Space</legend>
+  <div class="row">
+    <div class="mb-3 col-6 col-md-3">
+      <label for="maxGuests" class="form-label">Guests</label>
+      <input type="number" id="maxGuests" name="listing[maxGuests]" class="form-control" min="1" max="16" step="1" value="<%= current.maxGuests ?? 2 %>" required />
+      <div class="invalid-feedback">From 1 to 16.</div>
+    </div>
+    <div class="mb-3 col-6 col-md-3">
+      <label for="bedrooms" class="form-label">Bedrooms</label>
+      <input type="number" id="bedrooms" name="listing[bedrooms]" class="form-control" min="0" max="20" step="1" value="<%= current.bedrooms ?? 1 %>" required />
+      <div class="invalid-feedback">From 0 to 20.</div>
+    </div>
+    <div class="mb-3 col-6 col-md-3">
+      <label for="beds" class="form-label">Beds</label>
+      <input type="number" id="beds" name="listing[beds]" class="form-control" min="1" max="30" step="1" value="<%= current.beds ?? 1 %>" required />
+      <div class="invalid-feedback">From 1 to 30.</div>
+    </div>
+    <div class="mb-3 col-6 col-md-3">
+      <label for="bathrooms" class="form-label">Bathrooms</label>
+      <input type="number" id="bathrooms" name="listing[bathrooms]" class="form-control" min="0" max="20" step="0.5" value="<%= current.bathrooms ?? 1 %>" required />
+      <div class="invalid-feedback">From 0 to 20, in steps of 0.5.</div>
+    </div>
+  </div>
+</fieldset>
+
+<fieldset class="wl-fieldset">
+  <legend class="wl-section-title">Price rules</legend>
+  <div class="row">
+    <div class="mb-3 col-12 col-md-4">
+      <label for="currency" class="form-label">Currency</label>
+      <select id="currency" name="listing[currency]" class="form-select">
+        <% for (const code of currencies) { %>
+        <option value="<%= code %>" <%= (current.currency || "INR") === code ? "selected" : "" %>><%= code %></option>
+        <% } %>
+      </select>
+    </div>
+    <div class="mb-3 col-6 col-md-4">
+      <label for="cleaningFee" class="form-label">Cleaning fee (optional)</label>
+      <input type="number" id="cleaningFee" name="listing[cleaningFee]" class="form-control" min="0" step="1" value="<%= current.cleaningFee || "" %>" />
+    </div>
+    <div class="mb-3 col-6 col-md-4">
+      <label for="minNights" class="form-label">Minimum nights</label>
+      <input type="number" id="minNights" name="listing[minNights]" class="form-control" min="1" max="30" step="1" value="<%= current.minNights || 1 %>" />
+    </div>
+  </div>
+</fieldset>
+
+<fieldset class="wl-fieldset">
+  <legend class="wl-section-title">Amenities</legend>
+  <div class="wl-check-grid">
+    <% for (const [key, info] of Object.entries(amenities)) { %>
+    <label class="wl-check">
+      <input type="checkbox" name="listing[amenities]" value="<%= key %>" <%= has(key) ? "checked" : "" %> />
+      <span><i class="fa-solid <%= info[1] %>" aria-hidden="true"></i> <%= info[0] %></span>
+    </label>
     <% } %>
-  </select>
-</div>
+  </div>
+</fieldset>
 
 <div class="row">
   <div class="mb-3 col-12 col-md-6">

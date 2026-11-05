@@ -1,12 +1,16 @@
 <% layout("/layouts/boilerplate") %>
-<h3 class="my-4">My Trips</h3>
-<% if (!bookings.length) { %>
-<div class="text-center text-muted py-5">
-  <p>You have no reservations yet.</p>
-  <a href="/listings" class="btn btn-dark wanderlust-btn">Find a stay</a>
+<div class="wl-page">
+  <h1 class="wl-page-title">Trips</h1>
+  <p class="wl-page-lede">Your requests and stays. <a href="/help">Need help?</a></p>
+  <% if (!bookings.length) { %>
+  <div class="wl-empty">
+    <h2 class="wl-empty__title">No trips yet</h2>
+    <p class="wl-empty__text">When you send a booking request, it shows up here.</p>
+    <a href="/listings" class="wl-auth-btn wl-auth-btn--primary">Find a stay</a>
+  </div>
+  <% } %>
+  <% bookings.forEach((booking) => { %>
+  <%- include("../includes/bookingRow.ejs", { booking, today, hosting: false }) %>
+  <% }) %>
+  <%- include("../includes/pagination.ejs", { qs: (o) => `?page=${o.page}` }) %>
 </div>
-<% } %>
-<% bookings.forEach((booking) => { %>
-<%- include("../includes/bookingRow.ejs", { booking, today, hosting: false }) %>
-<% }) %>
-<%- include("../includes/pagination.ejs", { qs: (o) => `?page=${o.page}` }) %>

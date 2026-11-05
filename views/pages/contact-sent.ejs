@@ -1,0 +1,8 @@
+<% layout("/layouts/boilerplate") %>
+<div class="wl-page wl-page--read">
+  <div class="wl-empty">
+    <h1 class="wl-empty__title">Message received</h1>
+    <p class="wl-empty__text">We will reply by email.<% if (reference) { %> Your reference is <strong class="wl-reference"><%= reference %></strong>. Please quote it if you write again.<% } %></p>
+    <a class="wl-auth-btn wl-auth-btn--outline" href="/listings">Back to stays</a>
+  </div>
+</div>

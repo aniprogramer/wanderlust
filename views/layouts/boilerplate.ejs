@@ -4,44 +4,36 @@
     <!-- Main layout head: meta tags, external CSS, fonts, and local styles -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WanderLust</title>
+    <title><%= typeof pageTitle !== 'undefined' ? pageTitle + ' | ' : '' %>Wanderlust</title>
 
-    <!-- Brand Favicon -->
-    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
-    <link rel="alternate icon" href="/assets/favicon.ico">
-    <link rel="apple-touch-icon" href="/assets/favicon.svg">
+    <!-- Brand Favicon & Web Manifest -->
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=2" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png?v=2" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png?v=2" />
+    <link rel="shortcut icon" href="/favicon.ico?v=2" />
+    <link rel="apple-touch-icon" href="/assets/favicon-180x180.png?v=2" />
+    <link rel="manifest" href="/site.webmanifest?v=2" />
+    <%- include("../includes/seoTags.ejs") %>
+    <meta name="theme-color" content="<%= themeColor %>" />
 
-    <!-- Bootstrap CSS (CDN) -->
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-      integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
-      crossorigin="anonymous"
-    />
+    <!-- Self-hosted libraries: see public/vendor -->
+    <link rel="stylesheet" href="/vendor/bootstrap/5.3.8/bootstrap.min.css" />
+    <link rel="stylesheet" href="/vendor/fontawesome/7.0.1/css/all.min.css" />
 
-    <!-- Bootstrap icons -->
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
-      rel="stylesheet"
-    />
-
-    <!-- Font Awesome (CDN) -->
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
-      integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-    />
-
-    <!-- Plus Jakarta Sans is self-hosted from /fonts (see @font-face in style.css) -->
-    <link rel="preload" href="/fonts/plus-jakarta-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <!-- Self-hosted fonts (see @font-face in style.css) -->
+    <link rel="preload" href="/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/instrument-serif-latin.woff2" as="font" type="font/woff2" crossorigin />
 
     <!-- Local stylesheets -->
-    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="<%= asset('/css/tokens.css') %>" />
+    <%- block("vendorCss").toString() %>
+    <link rel="stylesheet" href="<%= asset('/css/style.css') %>" />
   </head>
-  <body class="<%= typeof isHomePage !== 'undefined' && isHomePage ? 'wl-home-body' : '' %>">
-    <% if (typeof isHomePage !== 'undefined' && isHomePage) { %>
+  <body class="<%= typeof isAuthPage !== 'undefined' && isAuthPage ? 'wl-auth-body' : (typeof isHomePage !== 'undefined' && isHomePage ? 'wl-home-body' : '') %>">
+    <a class="wl-skip-link" href="#main-content">Skip to content</a>
+    <% if (typeof isAuthPage !== 'undefined' && isAuthPage) { %>
+      <%- body %>
+    <% } else if (typeof isHomePage !== 'undefined' && isHomePage) { %>
       <div class="wl-app-shell">
         <%- include("../includes/sidebar.ejs") %>
         <main class="wl-main-canvas" id="main-content">
@@ -49,6 +41,7 @@
             <%- include("../includes/flash.ejs") %>
           </div>
           <%- body %>
+          <%- include("../includes/footer.ejs") %>
         </main>
       </div>
     <% } else { %>
@@ -56,22 +49,20 @@
       <%- include("../includes/navbar.ejs") %>
 
       <!-- Page container: shows flash messages and the page-specific body -->
-      <div class="container">
+      <main class="container" id="main-content">
         <%- include("../includes/flash.ejs") %> <%- body %>
-      </div>
+      </main>
 
       <!-- Site footer: included EJS partial -->
       <%- include("../includes/footer.ejs") %>
     <% } %>
 
-    <!-- Scripts: Bootstrap JS bundle (CDN) and local JS -->
-    <script
-      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
-      integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
-      crossorigin="anonymous"
-    ></script>
-    <script src="/js/script.js"></script>
-    <script src="/js/flash.js"></script>
-    <script src="/js/confirm.js"></script>
+    <!-- Scripts: Bootstrap JS bundle and local JS -->
+    <script src="/vendor/bootstrap/5.3.8/bootstrap.bundle.min.js"></script>
+    <script src="<%= asset('/js/script.js') %>"></script>
+    <script src="<%= asset('/js/datepicker.js') %>"></script>
+    <script src="<%= asset('/js/flash.js') %>"></script>
+    <script src="<%= asset('/js/confirm.js') %>"></script>
+    <script src="<%= asset('/js/auth.js') %>"></script>
   </body>
 </html>

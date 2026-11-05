@@ -1,11 +1,13 @@
 <% layout("/layouts/boilerplate") %>
   <div class="row">
     <div class="col-12 col-md-8 offset-md-2">
-      <h3 id="edit-page-h3">
-        Update
-        <b><%= listing.title %></b>
-        Listing
-      </h3>
+      <h1 id="edit-page-h3" class="wl-page-title">Edit <%= listing.title %></h1>
+      <% if (listing.capacityDefaulted) { %>
+      <div class="wl-auth-alert wl-auth-alert--warning" role="alert">
+        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+        <span><strong>Confirm your listing details.</strong> We filled in the guest and room numbers below with a best guess. Check them and save.</span>
+      </div>
+      <% } %>
       <form
         action="/listings/<%= listing._id %>?_method=PUT"
         method="post"
@@ -43,21 +45,39 @@
           <div class="valid-feedback">Looks good!</div>
         </div>
 
-        <div class="mb-3">
-          <label for="og_img">Original Image</label>
-          <br />
-          <img id="og_img" src="<%= originalImageUrl %>" alt="Listing Image" />
-        </div>
-
-        <div class="mb-3">
-          <label for="img" class="form-label">Edit Image</label>
+        <fieldset class="wl-fieldset">
+          <legend class="wl-section-title">Photos</legend>
+          <% const photos = listing.gallery; %>
+          <ul class="wl-photos">
+            <% photos.forEach((photo, i) => { %>
+            <li class="wl-photo" data-photo>
+              <img src="<%= photoUrl(photo.url, 400) %>" alt="Photo <%= i + 1 %>" loading="lazy" />
+              <label class="wl-check wl-check--small">
+                <input type="radio" name="coverImage" value="<%= photo.filename %>" <%= i === 0 ? "checked" : "" %> />
+                <span>Make cover</span>
+              </label>
+              <label class="wl-check wl-check--small">
+                <input type="checkbox" name="removeImages" value="<%= photo.filename %>" data-photo-remove />
+                <span>Remove</span>
+              </label>
+            </li>
+            <% }) %>
+          </ul>
+          <label for="img" class="form-label">Add photos</label>
+          <p class="wl-field__hint" id="img-hint">Up to 6 photos in total. JPEG, PNG or WebP, 5 MB each.</p>
           <input
             type="file"
             id="img"
-            name="listing[image]"
+            name="listing[images]"
             class="form-control"
+            accept="image/jpeg,image/png,image/webp"
+            aria-describedby="img-hint"
+            data-max="6"
+            multiple
           />
-        </div>
+          <ul class="wl-photos" id="new-photo-list" aria-label="Photos to upload"></ul>
+          <p class="wl-field__error" id="photo-note" role="status"></p>
+        </fieldset>
 
         <div class="row">
           <div class="mb-3 col-12 col-md-4">
@@ -105,9 +125,50 @@
 
         <%- include("../includes/listingExtras.ejs") %>
 
-        <button type="submit" class="btn btn-dark wanderlust-btn">
-          Update Listing
+        <button type="submit" class="wl-auth-btn wl-auth-btn--primary">
+          Save changes
         </button>
       </form>
+
+      <section id="availability" class="wl-panel wl-account-section" aria-labelledby="availability-title">
+        <h2 class="wl-section-title" id="availability-title">Availability</h2>
+        <p>Block nights when you are away. Guests cannot request them. Both dates are nights, and both are included.</p>
+        <% if (listing.blockedRanges.length) { %>
+        <ul class="wl-date-list">
+          <% listing.blockedRanges.forEach((range) => { %>
+          <li>
+            <span><%= range.from.toISOString().slice(0, 10) %> to <%= range.to.toISOString().slice(0, 10) %></span>
+            <% if (range.note) { %><span class="wl-note">· <%= range.note %></span><% } %>
+            <form action="/listings/<%= listing._id %>/blocks/<%= range._id %>?_method=DELETE" method="POST">
+              <%- include("../includes/csrf.ejs") %>
+              <button class="wl-text-btn" aria-label="Open <%= range.from.toISOString().slice(0, 10) %> to <%= range.to.toISOString().slice(0, 10) %> again">Remove</button>
+            </form>
+          </li>
+          <% }) %>
+        </ul>
+        <% } else { %>
+        <p class="wl-muted">No dates are blocked.</p>
+        <% } %>
+        <form action="/listings/<%= listing._id %>/blocks" method="POST" class="row g-3 align-items-end">
+          <%- include("../includes/csrf.ejs") %>
+          <div class="col-6 col-md-3">
+            <label for="block-from" class="form-label">First night</label>
+            <input type="date" class="form-control" id="block-from" name="from" min="<%= today %>" data-date-input data-today="<%= today %>" required />
+          </div>
+          <div class="col-6 col-md-3">
+            <label for="block-to" class="form-label">Last night</label>
+            <input type="date" class="form-control" id="block-to" name="to" min="<%= today %>" data-date-input data-today="<%= today %>" required />
+          </div>
+          <div class="col-12 col-md-3">
+            <label for="block-note" class="form-label">Note (only you see this)</label>
+            <input type="text" class="form-control" id="block-note" name="note" maxlength="100" />
+          </div>
+          <div class="col-12 col-md-3">
+            <button class="wl-auth-btn wl-auth-btn--outline">Block dates</button>
+          </div>
+        </form>
+      </section>
     </div>
   </div>
+<%- include("../includes/flatpickr.ejs") %>
+<script src="<%= asset('/js/listingForm.js') %>" defer></script>

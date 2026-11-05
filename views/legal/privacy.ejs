@@ -1,0 +1,72 @@
+<% layout("/layouts/boilerplate") %>
+<% const sections = [
+  ["collect", "What we collect"],
+  ["why", "Why we collect it"],
+  ["processors", "Who processes it"],
+  ["retention", "How long we keep it"],
+  ["rights", "Your rights"],
+  ["cookies", "Cookies"],
+  ["children", "Children"],
+  ["contact", "Contact and grievances"],
+  ["changes", "Changes"],
+]; %>
+<article class="wl-page wl-page--read wl-prose">
+  <%- include("../includes/legalHeader", { title: "Privacy Policy", intro: `This explains what ${site.legalEntity} collects when you use Wanderlust, why, and what you can do about it.`, sections }) %>
+
+  <h2 id="collect">What we collect</h2>
+  <ul>
+    <li><strong>Account details:</strong> your username, email address and a hashed form of your password. We never store the password itself.</li>
+    <li><strong>Bookings:</strong> the stays you request, dates, number of guests, the price shown and any message you send the host.</li>
+    <li><strong>Reviews and saved stays:</strong> what you write about a stay and the stays you save.</li>
+    <li><strong>Listings:</strong> what hosts publish, including photos they upload and the address they choose to show.</li>
+    <li><strong>Support messages:</strong> what you send us through the contact form.</li>
+    <li><strong>Technical logs:</strong> request times, pages requested, status codes and internal user ids, kept to run and secure the service.</li>
+  </ul>
+  <p>We do not take or store payment details. Payment happens at the property.</p>
+
+  <h2 id="why">Why we collect it</h2>
+  <ul>
+    <li>To run your account and let you sign in.</li>
+    <li>To send booking requests between guests and hosts, and tell both of you what happens next.</li>
+    <li>To show listings, reviews and availability.</li>
+    <li>To answer support messages and keep the service secure.</li>
+  </ul>
+
+  <h2 id="processors">Who processes it</h2>
+  <p>We use a small number of service providers, and share only what each one needs:</p>
+  <ul>
+    <li><strong>MongoDB Atlas:</strong> stores the database.</li>
+    <li><strong>Cloudinary:</strong> stores and delivers listing photos.</li>
+    <li><strong>Mapbox:</strong> draws maps and turns addresses into map positions.</li>
+    <li><strong>Our email provider:</strong> delivers account and booking emails.</li>
+  </ul>
+  <p>Hosts see the name of guests who send them a request. A host sees a guest's email address, and a guest sees the host's, only once a booking is confirmed.</p>
+
+  <h2 id="retention">How long we keep it</h2>
+  <p>We keep account data while your account is open. When you delete your account we remove your listings and saved stays, show your reviews as "Deleted user", and remove your personal details from past bookings. Hosts keep the dates and price of those bookings for their records.</p>
+  <p>[Retention periods for technical logs and support messages, to be confirmed.]</p>
+
+  <h2 id="rights">Your rights</h2>
+  <p>You can use these rights yourself from your <a href="/account">account page</a>:</p>
+  <ul>
+    <li><strong>Access and portability:</strong> download a copy of your data.</li>
+    <li><strong>Correction:</strong> change your username and email address.</li>
+    <li><strong>Deletion:</strong> delete your account.</li>
+  </ul>
+  <p>Depending on where you live, India's Digital Personal Data Protection Act 2023 or the EU and UK GDPR may give you further rights, such as objecting to processing, withdrawing consent, nominating someone to act for you, or complaining to a regulator. To use any of these, contact the person named below.</p>
+  <p>[Lawful bases for processing and the data protection contact for EU and UK visitors, to be confirmed.]</p>
+
+  <h2 id="cookies">Cookies</h2>
+  <p>We set one cookie: a session cookie that keeps you signed in and protects forms. It is created only when you sign in or submit a form. We do not use analytics or advertising cookies.</p>
+
+  <h2 id="children">Children</h2>
+  <p>Wanderlust is not meant for children. [Minimum age, to be confirmed.] You must be old enough to enter into a contract where you live.</p>
+
+  <h2 id="contact">Contact and grievances</h2>
+  <p>Data fiduciary or controller: <%= site.legalEntity %>, <%= site.legalAddress %>.</p>
+  <p>Grievance officer or data protection contact: <%= site.grievanceOfficer %>.</p>
+  <p>Support: <%= site.supportEmail %>, or use the <a href="/contact">contact form</a>.</p>
+
+  <h2 id="changes">Changes</h2>
+  <p>If this policy changes in a way that matters, we will update this page and tell account holders by email.</p>
+</article>

@@ -1,110 +1,180 @@
 <% layout("/layouts/boilerplate") %>
+<% const isHost = currUser && listing.owner && currUser._id.equals(listing.owner._id);
+   const photos = listing.gallery;
+   const coords = listing.geometry && listing.geometry.coordinates;
+   const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`; %>
+<article class="wl-stay">
+  <a class="wl-back-link" href="/listings">← All stays</a>
+  <h1 class="wl-page-title wl-stay__title"><%= listing.title %></h1>
+  <p class="wl-stay__place">
+    <%= listing.location %>, <%= listing.country %>
+    <% if (listing.reviewCount) { %>
+    · <span class="wl-rating"><i class="fa-solid fa-star" aria-hidden="true"></i> <strong><%= listing.avgRating.toFixed(1) %></strong> (<%= plural(listing.reviewCount, "review") %>)</span>
+    <% } else { %>
+    · <span>No reviews yet</span>
+    <% } %>
+  </p>
+  <% if (listing.status === "hidden") { %>
+  <div class="wl-auth-alert wl-auth-alert--warning" role="note">
+    <i class="fa-solid fa-eye-slash" aria-hidden="true"></i>
+    <span>This listing is hidden. Only you and the Wanderlust team can see it.</span>
+  </div>
+  <% } %>
 
-<h3 id="show-page-h3"><%= listing.title %> Details</h3>
-
-<div class="container">
-  <!-- Listing Card -->
-  <div class="card show-card mb-5">
-    <div class="row g-4">
-      <!-- LEFT: Image -->
-      <div class="col-12 col-md-6">
-        <img
-          src="<%= listing.image.url %>"
-          alt="listing-image"
-          class="img-fluid rounded-start"
-        />
-      </div>
-
-      <!-- RIGHT: Details -->
-      <div class="col-12 col-md-6 ps-md-4">
-        <div class="card-body">
-          <p class="card-text">
-            Listed By:
-            <i><u><%= listing.owner ? listing.owner.username : "Unknown host" %></u></i>
-          </p>
-          <p class="card-text"><%= listing.description %></p>
-
-          <ul class="list-group list-group-flush mb-3">
-            <li class="list-group-item d-flex align-items-center">
-              <i class="bi bi-cash me-2 text-muted"></i>
-              <strong class="me-1">Price:</strong>
-              <%= money(listing.price, listing.currency) %>
-              / night
-            </li>
-
-            <li class="list-group-item d-flex align-items-center">
-              <i class="bi bi-geo-alt me-2 text-muted"></i>
-              <strong class="me-1">Location:</strong>
-              <%= listing.location %>
-            </li>
-
-            <li class="list-group-item d-flex align-items-center">
-              <i class="bi bi-globe me-2 text-muted"></i>
-              <strong class="me-1">Country:</strong>
-              <%= listing.country %>
-            </li>
-
-            <% if (listing.category || listing.propertyType) { %>
-            <li class="list-group-item d-flex align-items-center flex-wrap gap-2">
-              <i class="bi bi-tag me-2 text-muted"></i>
-              <% if (listing.category) { %>
-              <a class="badge text-bg-light border text-decoration-none" href="/listings?category=<%= encodeURIComponent(listing.category) %>"><%= listing.category %></a>
-              <% } %>
-              <% if (listing.propertyType) { %>
-              <a class="badge text-bg-light border text-decoration-none" href="/listings?propertyType=<%= encodeURIComponent(listing.propertyType) %>"><%= listing.propertyType %></a>
-              <% } %>
-            </li>
-            <% } %>
-
-            <% if (listing.reviewCount) { %>
-            <li class="list-group-item d-flex align-items-center">
-              <i class="bi bi-star-fill me-2 text-warning"></i>
-              <strong class="me-1"><%= listing.avgRating.toFixed(1) %></strong>
-              (<%= listing.reviewCount %> review<%= listing.reviewCount === 1 ? "" : "s" %>)
-            </li>
-            <% } %>
-          </ul>
-
-          <!-- Action Buttons -->
-          <% if(currUser && listing.owner && currUser._id.equals(listing.owner._id)) { %>
-          <div class="card-btn d-flex gap-2">
-            <form action="/listings/<%= listing._id %>/edit" method="GET">
-              <button type="submit" class="btn btn-dark show-btn">
-                <i class="bi bi-pencil-square me-1"></i>
-                Edit
-              </button>
-            </form>
-
-            <form
-              action="/listings/<%= listing._id %>?_method=DELETE"
-              method="POST"
-              data-confirm="Are you sure you want to delete this listing?"
-            >
-              <%- include("../includes/csrf.ejs") %>
-              <button type="submit" class="btn btn-danger show-btn">
-                <i class="bi bi-trash me-1"></i>
-                Delete Listing
-              </button>
-            </form>
-          </div>
-          <% } %>
-        </div>
-      </div>
+  <div class="wl-gallery" data-gallery>
+    <div class="wl-gallery__main">
+      <img
+        id="gallery-main"
+        src="<%= photoUrl(photos[0].url, 1200) %>"
+        srcset="<%= photoSrcset(photos[0].url, [800, 1200, 1600]) %>"
+        sizes="(max-width: 1024px) 100vw, 1000px"
+        alt="<%= photos[0].caption || `Photo 1 of ${listing.title}` %>"
+        fetchpriority="high"
+      />
     </div>
+    <% if (photos.length > 1) { %>
+    <ul class="wl-gallery__thumbs" aria-label="Photos of this stay">
+      <% photos.forEach((photo, i) => { %>
+      <li>
+        <button
+          type="button"
+          class="wl-gallery__thumb"
+          aria-label="Show photo <%= i + 1 %> of <%= photos.length %>"
+          aria-pressed="<%= i === 0 %>"
+          data-gallery-thumb
+          data-src="<%= photoUrl(photo.url, 1200) %>"
+          data-srcset="<%= photoSrcset(photo.url, [800, 1200, 1600]) %>"
+          data-alt="<%= photo.caption || `Photo ${i + 1} of ${listing.title}` %>"
+        >
+          <img src="<%= photoUrl(photo.url, 160) %>" alt="" loading="lazy" />
+        </button>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
   </div>
 
-  <% const isHost = currUser && listing.owner && currUser._id.equals(listing.owner._id); %>
+  <div class="wl-stay__layout">
+    <div class="wl-stay__main">
+      <ul class="wl-stay__facts">
+        <li><%= plural(listing.maxGuests, "guest") %></li>
+        <li><%= plural(listing.bedrooms, "bedroom") %></li>
+        <li><%= plural(listing.beds, "bed") %></li>
+        <li><%= plural(listing.bathrooms, "bathroom") %></li>
+        <% if (listing.minNights > 1) { %><li><%= listing.minNights %> night minimum</li><% } %>
+      </ul>
+      <p class="wl-stay__host">Hosted by @<%= listing.owner ? listing.owner.username : "Unknown host" %></p>
 
-  <!-- Booking -->
-  <div class="row justify-content-center mb-5">
-    <div class="col-12 col-lg-8">
-      <div class="card border p-4" id="booking-card">
-        <h4 class="mb-3">Book your stay</h4>
+      <% if (listing.category || listing.propertyType) { %>
+      <p class="wl-stay__tags">
+        <% if (listing.category) { %><a class="wl-badge wl-badge--neutral" href="/listings?category=<%= encodeURIComponent(listing.category) %>"><%= listing.category %></a><% } %>
+        <% if (listing.propertyType) { %><a class="wl-badge wl-badge--neutral" href="/listings?propertyType=<%= encodeURIComponent(listing.propertyType) %>"><%= listing.propertyType %></a><% } %>
+      </p>
+      <% } %>
+
+      <p class="wl-stay__description"><%= listing.description %></p>
+
+      <% if (isHost) { %>
+      <div class="wl-actions wl-stay__owner">
+        <a class="wl-auth-btn wl-auth-btn--outline" href="/listings/<%= listing._id %>/edit">Edit listing</a>
+        <form action="/listings/<%= listing._id %>?_method=DELETE" method="POST" data-confirm="Are you sure you want to delete this listing?">
+          <%- include("../includes/csrf.ejs") %>
+          <button type="submit" class="wl-auth-btn wl-auth-btn--danger">Delete listing</button>
+        </form>
+      </div>
+      <% } %>
+
+      <% if (listing.amenities.length) { %>
+      <section aria-labelledby="amenities-title">
+        <h2 class="wl-section-title" id="amenities-title">What this place offers</h2>
+        <ul class="wl-amenities">
+          <% for (const key of listing.amenities) { %>
+          <li><i class="fa-solid <%= amenityInfo[key][1] %>" aria-hidden="true"></i> <%= amenityInfo[key][0] %></li>
+          <% } %>
+        </ul>
+      </section>
+      <% } %>
+
+      <% if (mapboxToken && coords) { %>
+      <section aria-labelledby="map-title">
+        <h2 class="wl-section-title" id="map-title">Where you'll be</h2>
+        <%- include("../includes/mapbox.ejs") %>
+        <div
+          id="map"
+          class="wl-map"
+          data-mode="show"
+          data-token="<%= mapboxToken %>"
+          data-lng="<%= coords[0] %>"
+          data-lat="<%= coords[1] %>"
+          data-title="<%= listing.title %>"
+        ></div>
+        <p class="wl-note"><%= listing.location %>, <%= listing.country %></p>
+      </section>
+      <% } %>
+
+      <section aria-labelledby="reviews-title" class="wl-reviews">
+        <h2 class="wl-section-title" id="reviews-title">Reviews</h2>
+
+        <% if (reviewState === "form") { %>
+        <form action="/listings/<%= listing._id %>/reviews" method="POST" class="wl-panel needs-validation" novalidate>
+          <%- include("../includes/csrf.ejs") %>
+          <fieldset class="wl-fieldset">
+            <legend class="wl-field-legend">How was your stay?</legend>
+            <div class="star-rating">
+              <% for (let i = 5; i >= 1; i--) { %>
+              <input type="radio" id="star-<%= i %>" value="<%= i %>" name="review[rating]" required />
+              <label for="star-<%= i %>" title="<%= i %> out of 5" aria-label="<%= i %> out of 5">★</label>
+              <% } %>
+            </div>
+          </fieldset>
+          <div class="mb-3">
+            <label for="comment" class="form-label">Your review</label>
+            <textarea id="comment" name="review[comment]" class="form-control" rows="4" maxlength="1000" placeholder="What should the next guest know?" required></textarea>
+          </div>
+          <button type="submit" class="wl-auth-btn wl-auth-btn--outline">Post review</button>
+        </form>
+        <% } else if (reviewState === "wait") { %>
+        <p class="wl-empty__text wl-review-note">You can review this stay after you have stayed here.</p>
+        <% } %>
+
+        <% if (!listing.reviews.length) { %>
+        <div class="wl-empty">
+          <h3 class="wl-empty__title">No reviews yet</h3>
+          <p class="wl-empty__text">Guests can review this stay after a confirmed visit.</p>
+        </div>
+        <% } %>
+        <ul class="wl-review-list">
+          <% listing.reviews.forEach((review) => { %>
+          <li class="review-card">
+            <div class="wl-review__head">
+              <strong><%= review.author ? `@${review.author.username}` : "Deleted user" %></strong>
+              <% if (review.verifiedStay) { %><span class="wl-badge wl-badge--success"><i class="fa-solid fa-check" aria-hidden="true"></i> Verified stay</span><% } %>
+            </div>
+            <div class="wl-rating" aria-label="<%= review.rating %> out of 5">
+              <% for (let i = 1; i <= review.rating; i++) { %><i class="fa-solid fa-star" aria-hidden="true"></i><% } %>
+              <span><%= review.rating %></span>
+            </div>
+            <p class="review-text"><%= review.comment %></p>
+            <% if (currUser && review.author && currUser._id.equals(review.author._id)) { %>
+            <form action="/listings/<%= listing._id %>/reviews/<%= review._id %>?_method=DELETE" method="POST" data-confirm="Delete your review?">
+              <%- include("../includes/csrf.ejs") %>
+              <button class="wl-text-btn wl-text-btn--danger">Delete</button>
+            </form>
+            <% } %>
+          </li>
+          <% }) %>
+        </ul>
+      </section>
+      <% if (currUser && !isHost) { %>
+      <p class="wl-note wl-stay__report"><a href="/listings/<%= listing._id %>/report">Report this listing</a></p>
+      <% } %>
+    </div>
+
+    <aside class="wl-stay__aside">
+      <div class="wl-panel" id="booking-card">
+        <p class="wl-stay__price"><strong><%= money(listing.price, listing.currency) %></strong> <span>/ night</span></p>
         <% if (isHost) { %>
-        <p class="text-muted mb-0">
-          This is your listing. Manage guests under
-          <a href="/bookings/hosting">Hosting</a>.
-        </p>
+        <p class="wl-note">This is your listing. Manage guests under <a href="/bookings/hosting">Hosting</a>.</p>
         <% } else { %>
         <form
           action="/listings/<%= listing._id %>/bookings"
@@ -112,39 +182,68 @@
           id="booking-form"
           data-price="<%= listing.price %>"
           data-currency="<%= listing.currency %>"
+          data-cleaning-fee="<%= listing.cleaningFee || 0 %>"
+          data-min-nights="<%= listing.minNights || 1 %>"
           data-booked="<%= JSON.stringify(bookedNights) %>"
           data-today="<%= serverToday %>"
         >
           <% if (currUser) { %><%- include("../includes/csrf.ejs") %><% } %>
-          <input id="date-range" class="form-control mb-2" aria-label="Select dates" readonly />
+          <input id="date-range" class="form-control mb-2" aria-label="Select dates" placeholder="Choose your dates" readonly />
           <input type="hidden" name="booking[checkIn]" />
           <input type="hidden" name="booking[checkOut]" />
-          <div class="booking-legend small text-muted mb-2">
+          <div class="booking-legend wl-note">
             <span class="legend-dot booked"></span> Unavailable
             <span class="legend-dot selected ms-3"></span> Selected
           </div>
-          <p id="booking-summary" class="fw-medium mb-3" aria-live="polite"></p>
+          <p class="wl-note">Dates are local to the property.<% if (listing.minNights > 1) { %> <%= listing.minNights %> night minimum.<% } %></p>
+
+          <div class="wl-field">
+            <label for="booking-guests">Guests</label>
+            <div class="wl-input wl-input--select">
+              <select id="booking-guests" name="booking[guests]">
+                <% for (let n = 1; n <= listing.maxGuests; n++) { %>
+                <option value="<%= n %>"><%= plural(n, "guest") %></option>
+                <% } %>
+              </select>
+            </div>
+          </div>
           <% if (currUser) { %>
-          <button type="submit" class="btn btn-dark wanderlust-btn m-0" id="reserve-btn" disabled>Reserve</button>
-          <% } else { %>
-          <a href="/login" class="btn btn-dark wanderlust-btn m-0">Log in to reserve</a>
+          <div class="wl-field">
+            <label for="booking-message">Message to the host (optional)</label>
+            <div class="wl-input wl-input--textarea">
+              <textarea id="booking-message" name="booking[message]" rows="3" maxlength="500"></textarea>
+            </div>
+          </div>
           <% } %>
+
+          <p id="booking-summary" class="wl-booking-summary" aria-live="polite"></p>
+          <dl id="booking-breakdown" class="wl-breakdown" hidden></dl>
+          <% if (currUser) { %>
+          <button type="submit" class="wl-auth-btn wl-auth-btn--primary wl-auth-btn--block" id="reserve-btn" disabled>Request to book</button>
+          <% } else { %>
+          <a href="/login" class="wl-auth-btn wl-auth-btn--primary wl-auth-btn--block">Log in to request</a>
+          <% } %>
+          <ul class="wl-booking-terms">
+            <li>You send a request. The stay is booked only when confirmed by the host, usually within 48 hours.</li>
+            <li>You pay at the property. Nothing is charged here.</li>
+            <li><%= taxNotice %></li>
+            <li><a href="/cancellation-policy">Cancellation policy</a></li>
+          </ul>
         </form>
         <% } %>
 
         <% if (bookings.length) { %>
         <hr />
-        <h6 class="fw-semibold"><%= isHost ? "Upcoming reservations" : "Unavailable dates" %></h6>
-        <ul class="list-unstyled mb-0 small">
+        <h3 class="wl-field-legend"><%= isHost ? "Upcoming reservations" : "Unavailable dates" %></h3>
+        <ul class="wl-date-list">
           <% bookings.forEach((b) => { %>
-          <li class="d-flex flex-wrap align-items-center gap-2 py-1">
-            <i class="bi bi-calendar-event text-muted"></i>
-            <%= b.checkIn.toISOString().slice(0, 10) %> → <%= b.checkOut.toISOString().slice(0, 10) %>
+          <li>
+            <span><%= b.checkIn.toISOString().slice(0, 10) %> → <%= b.checkOut.toISOString().slice(0, 10) %></span>
             <% if (isHost) { %>
-            <span class="text-muted">· @<%= b.guest ? b.guest.username : "guest" %> · <%= money(b.totalPrice, listing.currency) %></span>
-            <form action="/bookings/<%= b._id %>?_method=DELETE" method="POST" class="ms-auto" data-confirm="Cancel this reservation?">
+            <span class="wl-note">· @<%= b.guest ? b.guest.username : "Deleted user" %> · <%= money(b.totalPrice, b.currency || listing.currency) %></span>
+            <form action="/bookings/<%= b._id %>?_method=DELETE" method="POST" data-confirm="Cancel this reservation?">
               <%- include("../includes/csrf.ejs") %>
-              <button class="btn btn-sm btn-outline-danger">Cancel</button>
+              <button class="wl-text-btn wl-text-btn--danger">Cancel</button>
             </form>
             <% } %>
           </li>
@@ -152,134 +251,10 @@
         </ul>
         <% } %>
       </div>
-    </div>
+    </aside>
   </div>
+</article>
 
-  <!-- Map -->
-  <% if (mapboxToken && listing.geometry && listing.geometry.coordinates) { %>
-  <div class="row justify-content-center mb-5">
-    <div class="col-12 col-lg-8">
-      <h4 class="mb-3">Where you'll be</h4>
-      <%- include("../includes/mapbox.ejs") %>
-      <div
-        id="map"
-        class="wl-map"
-        data-mode="show"
-        data-token="<%= mapboxToken %>"
-        data-lng="<%= listing.geometry.coordinates[0] %>"
-        data-lat="<%= listing.geometry.coordinates[1] %>"
-        data-title="<%= listing.title %>"
-      ></div>
-      <p class="text-muted small mt-2 mb-0"><%= listing.location %>, <%= listing.country %></p>
-    </div>
-  </div>
-  <% } %>
-
-  <!-- Reviews Section -->
-  <div class="row justify-content-center">
-    <div class="col-12 col-lg-8">
-      <div class="card border">
-        <div class="card-body p-4">
-          <% if (currUser) { %>
-          <h4 class="card-title mb-4">Leave a Review</h4>
-
-          <form
-            action="/listings/<%= listing._id %>/reviews"
-            method="POST"
-            class="needs-validation"
-            novalidate
-          >
-            <%- include("../includes/csrf.ejs") %>
-            <!-- Rating -->
-            <div class="mb-4">
-              <label class="form-label fw-medium d-block mb-2">Rating</label>
-
-              <div class="star-rating">
-                <% for (let i = 5; i >= 1; i--) { %>
-                <input
-                  type="radio"
-                  id="star-<%= i %>"
-                  value="<%= i %>"
-                  name="review[rating]"
-                  required
-                />
-                <label for="star-<%= i %>" title="<%= i %> stars">★</label>
-                <% } %>
-              </div>
-            </div>
-
-            <!-- Comment -->
-            <div class="mb-4">
-              <label for="comment" class="form-label fw-medium">Comments</label>
-
-              <textarea
-                id="comment"
-                name="review[comment]"
-                class="form-control"
-                rows="5"
-                placeholder="Share your experience..."
-                required
-              ></textarea>
-            </div>
-
-            <!-- Submit -->
-            <div class="text-end">
-              <button type="submit" class="btn btn-primary px-4">
-                <i class="bi bi-send me-2"></i>
-                Add Review
-              </button>
-            </div>
-          </form>
-          <% } %>
-
-          <hr />
-
-          <!-- All Reviews -->
-          <h4 class="mb-4 fw-semibold">All Reviews</h4>
-
-          <div class="row g-4">
-            <% listing.reviews.forEach((review) => { %>
-            <div class="col-12 col-md-6">
-              <div class="review-card p-4 h-100">
-                <!-- Header -->
-                <div class="d-flex align-items-center mb-3">
-                  <div class="review-avatar me-3">
-                    <i class="bi bi-person-fill"></i>
-                  </div>
-
-                  <div>
-                    <h6 class="mb-0 fw-semibold">
-                      @<%= review.author ? review.author.username : "traveler" %>
-                    </h6>
-                    <div class="review-stars">
-                      <% for (let i = 1; i <= review.rating; i++) { %> ★ <% } %>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Review Text -->
-                <p class="review-text mb-4"><%= review.comment %></p>
-
-                <!-- Actions -->
-                <% if (currUser && review.author && currUser._id.equals(review.author._id)) { %>
-                <form
-                  action="/listings/<%= listing._id %>/reviews/<%= review._id %>?_method=DELETE"
-                  method="POST"
-                >
-                  <%- include("../includes/csrf.ejs") %>
-                  <button class="btn btn-sm btn-outline-danger">Delete</button>
-                </form>
-                <% } %>
-              </div>
-            </div>
-            <% }) %>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" />
-<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
-<script src="/js/booking.js" defer></script>
+<% if (!isHost) { %><%- include("../includes/flatpickr.ejs") %><% } %>
+<script src="<%= asset('/js/booking.js') %>" defer></script>
+<script src="<%= asset('/js/gallery.js') %>" defer></script>

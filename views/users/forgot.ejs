@@ -1,0 +1,26 @@
+<% layout("/layouts/boilerplate") %>
+<main class="wl-auth" id="main-content">
+  <%- include("../includes/auth/hero") %>
+  <div class="wl-auth-panel">
+    <%- include("../includes/auth/topbar", { prompt: "Remembered it?", href: "/login", label: "Sign in" }) %>
+    <div class="wl-auth-card">
+      <%- include("../includes/auth/mark", { size: 56, cls: "wl-auth-card__mark" }) %>
+      <h1 class="wl-auth-card__title">Reset your password</h1>
+      <p class="wl-auth-card__sub">Enter your email and we will send you a link to choose a new one.</p>
+      <%- include("../includes/auth/alerts") %>
+      <form action="/forgot-password" method="POST" class="wl-auth-form" data-auth-form data-busy-label="Sending…" novalidate>
+        <%- include("../includes/csrf.ejs") %>
+        <%- include("../includes/auth/field", { id: "email", name: "email", label: "Email", type: "email", icon: "fa-regular fa-envelope", placeholder: "you@example.com", autocomplete: "email" }) %>
+        <button type="submit" class="wl-auth-btn wl-auth-btn--primary wl-auth-btn--block">
+          <span data-btn-label>Send reset link</span>
+          <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+        </button>
+      </form>
+      <hr class="wl-auth-rule" />
+      <p class="wl-auth-switch">
+        <a class="wl-auth-link" href="/login"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back to sign in</a>
+      </p>
+    </div>
+    <%- include("../includes/auth/footer") %>
+  </div>
+</main>

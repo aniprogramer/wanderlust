@@ -1,0 +1,58 @@
+<% layout("/layouts/boilerplate") %>
+<div class="wl-page">
+  <h1 class="wl-page-title">Admin</h1>
+
+  <h2 class="wl-section-title">Reports</h2>
+  <div class="wl-admin-table">
+    <% if (!reports.length) { %><p class="wl-muted">No open reports.</p><% } %>
+    <% reports.forEach((report) => { %>
+    <div class="wl-admin-row">
+      <div class="wl-row__main">
+        <% if (report.listing) { %><a class="wl-row__title" href="/listings/<%= report.listing._id %>"><%= report.listing.title %></a><% } else { %>Listing removed<% } %>
+        <div class="wl-row__meta"><%= report.reference %> · <%= report.reason %></div>
+        <% if (report.details) { %><div class="wl-row__meta"><%= report.details %></div><% } %>
+      </div>
+      <form action="/admin/reports/<%= report._id %>/resolve" method="POST">
+        <%- include("../includes/csrf.ejs") %>
+        <button class="wl-text-btn">Mark resolved</button>
+      </form>
+    </div>
+    <% }) %>
+  </div>
+
+  <h2 class="wl-section-title">Support messages</h2>
+  <div class="wl-admin-table">
+    <% if (!messages.length) { %><p class="wl-muted">No open messages.</p><% } %>
+    <% messages.forEach((message) => { %>
+    <div class="wl-admin-row">
+      <div class="wl-row__main">
+        <span class="wl-row__title"><%= message.topic %></span>
+        <div class="wl-row__meta"><%= message.reference %> · <%= message.name %> · <a href="mailto:<%= message.email %>"><%= message.email %></a><% if (message.bookingReference) { %> · <%= message.bookingReference %><% } %></div>
+        <div class="wl-row__meta"><%= message.message %></div>
+      </div>
+      <form action="/admin/support/<%= message._id %>/resolve" method="POST">
+        <%- include("../includes/csrf.ejs") %>
+        <button class="wl-text-btn">Mark resolved</button>
+      </form>
+    </div>
+    <% }) %>
+  </div>
+
+  <h2 class="wl-section-title">Recent listings</h2>
+  <div class="wl-admin-table">
+    <% if (!listings.length) { %><p class="wl-muted">No listings yet.</p><% } %>
+    <% listings.forEach((listing) => { %>
+    <div class="wl-admin-row">
+      <div class="wl-row__main">
+        <a class="wl-row__title" href="/listings/<%= listing._id %>"><%= listing.title %></a>
+        <div class="wl-row__meta"><%= listing.location %> · @<%= listing.owner ? listing.owner.username : "Unknown host" %></div>
+      </div>
+      <% if (listing.status === "hidden") { %><span class="wl-badge wl-badge--warning">Hidden</span><% } %>
+      <form action="/admin/listings/<%= listing._id %>/<%= listing.status === "hidden" ? "unhide" : "hide" %>" method="POST">
+        <%- include("../includes/csrf.ejs") %>
+        <button class="wl-text-btn"><%= listing.status === "hidden" ? "Unhide" : "Hide" %></button>
+      </form>
+    </div>
+    <% }) %>
+  </div>
+</div>

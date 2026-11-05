@@ -1,7 +1,8 @@
 <% layout("/layouts/boilerplate") %>
   <div class="row">
     <div class="col-12 col-md-8 offset-md-2">
-      <h3 id="new-page-title">Create A New Listing</h3>
+      <h1 id="new-page-title" class="wl-page-title">List your stay</h1>
+      <p class="wl-page-lede">Guests send you a request and you decide. They pay you at the property.</p>
       <form
         action="/listings"
         method="POST"
@@ -38,13 +39,21 @@
         </div>
 
         <div class="mb-3">
-          <label for="img" class="form-label">Upload Listing Image</label>
+          <label for="img" class="form-label">Photos</label>
+          <p class="wl-field__hint" id="img-hint">Up to 6 JPEG, PNG or WebP photos, 5 MB each. The first is the cover.</p>
           <input
             type="file"
             id="img"
-            name="listing[image]"
+            name="listing[images]"
             class="form-control"
+            accept="image/jpeg,image/png,image/webp"
+            aria-describedby="img-hint"
+            data-max="6"
+            multiple
+            required
           />
+          <ul class="wl-photos" id="new-photo-list" aria-label="Photos to upload"></ul>
+          <p class="wl-field__error" id="photo-note" role="status"></p>
         </div>
 
         <div class="row">
@@ -93,9 +102,10 @@
 
         <%- include("../includes/listingExtras.ejs") %>
 
-        <button type="submit" class="btn btn-dark wanderlust-btn">
-          Add Listing
+        <button type="submit" class="wl-auth-btn wl-auth-btn--primary">
+          Publish listing
         </button>
       </form>
     </div>
   </div>
+<script src="<%= asset('/js/listingForm.js') %>" defer></script>

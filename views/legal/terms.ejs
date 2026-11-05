@@ -1,0 +1,69 @@
+<% layout("/layouts/boilerplate") %>
+<% const sections = [
+  ["service", "The service"],
+  ["booking", "Requests and bookings"],
+  ["payment", "Payment"],
+  ["accounts", "Accounts"],
+  ["hosts", "Host responsibilities"],
+  ["guests", "Guest responsibilities"],
+  ["content", "Listings and reviews"],
+  ["conduct", "What is not allowed"],
+  ["cancellation", "Cancellation"],
+  ["liability", "Liability"],
+  ["law", "Governing law"],
+  ["changes", "Changes"],
+]; %>
+<article class="wl-page wl-page--read wl-prose">
+  <%- include("../includes/legalHeader", { title: "Terms of Service", intro: `These terms apply when you use Wanderlust, operated by ${site.legalEntity}, ${site.legalAddress}.`, sections }) %>
+
+  <h2 id="service">The service</h2>
+  <p>Wanderlust is a platform that connects guests with hosts of places to stay. We do not own, manage or inspect the places listed. The agreement for a stay is between the guest and the host.</p>
+
+  <h2 id="booking">Requests and bookings</h2>
+  <p>Wanderlust works by request. A guest sends a request for specific dates. The host accepts or declines. A request that gets no answer within 48 hours expires.</p>
+  <p>A stay is booked only when the host confirms it. Until then the dates are not held and another guest may be confirmed for them.</p>
+
+  <h2 id="payment">Payment</h2>
+  <p>The platform takes no payment. Guests pay the host at the property, in the listing's currency. Prices shown do not include taxes; the host will confirm any applicable taxes. Wanderlust is not a party to that payment and cannot refund it.</p>
+
+  <h2 id="accounts">Accounts</h2>
+  <p>You need an account to send a request or list a stay, and you need to confirm your email address first. Keep your password private. You are responsible for what happens under your account. You can delete your account at any time from your <a href="/account">account page</a>.</p>
+
+  <h2 id="hosts">Host responsibilities</h2>
+  <ul>
+    <li>Describe your place honestly, with real photographs, the correct capacity and the correct price.</li>
+    <li>Have the right to host, and follow local laws, permits, safety rules and tax duties.</li>
+    <li>Keep your calendar up to date and respond to requests within 48 hours.</li>
+    <li>Honour confirmed bookings.</li>
+  </ul>
+
+  <h2 id="guests">Guest responsibilities</h2>
+  <ul>
+    <li>Send accurate details, including the number of guests.</li>
+    <li>Pay the host as agreed and treat the place with care.</li>
+    <li>Follow the <a href="/house-rules">house rules</a>.</li>
+  </ul>
+
+  <h2 id="content">Listings and reviews</h2>
+  <p>You keep ownership of what you post and give us permission to show it on Wanderlust. Reviews come from guests who have completed a stay. We may remove content that breaks these terms.</p>
+
+  <h2 id="conduct">What is not allowed</h2>
+  <ul>
+    <li>False listings, false reviews or impersonating anyone.</li>
+    <li>Harassment or discrimination.</li>
+    <li>Using the service for anything illegal.</li>
+    <li>Attacking, scraping or overloading the service.</li>
+  </ul>
+
+  <h2 id="cancellation">Cancellation</h2>
+  <p>See the <a href="/cancellation-policy">cancellation policy</a>.</p>
+
+  <h2 id="liability">Liability</h2>
+  <p>[Limits of liability, to be written and confirmed by legal counsel.]</p>
+
+  <h2 id="law">Governing law</h2>
+  <p><%= site.jurisdiction %>.</p>
+
+  <h2 id="changes">Changes</h2>
+  <p>If these terms change in a way that matters, we will update this page and tell account holders by email. Contact us at <%= site.supportEmail %>.</p>
+</article>

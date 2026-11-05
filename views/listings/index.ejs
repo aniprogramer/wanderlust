@@ -8,29 +8,12 @@
   <header class="wl-hero-header d-flex justify-content-between align-items-center">
     <!-- Mobile Brand Display (shown only on mobile/tablet) -->
     <div class="wl-mobile-brand d-lg-none d-flex align-items-center gap-2">
-      <svg width="28" height="28" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M4 27L12 9L18 21L24 9L32 27H26L24 22L18 31L12 22L10 27H4Z" fill="#F5AD59" />
-        <circle cx="18" cy="6" r="3" fill="#F5AD59" />
-      </svg>
-      <span class="text-white fw-bold fs-5">wanderlust</span>
+      <%- include("../includes/auth/mark", { size: 28, cls: "wl-mark--band" }) %>
+      <span class="wl-mobile-brand__word">Wanderlust</span>
     </div>
 
     <!-- Top Right Actions -->
     <div class="wl-hero-top-actions ms-auto d-flex align-items-center gap-3">
-      <!-- Currency Selector -->
-      <div class="dropdown">
-        <button class="wl-hero-pill-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-          <i class="fa-solid fa-globe me-1"></i>
-          <span>INR</span>
-          <i class="fa-solid fa-chevron-down ms-1 small"></i>
-        </button>
-        <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow">
-          <li><span class="dropdown-item active">₹ INR (Indian Rupee)</span></li>
-          <li><span class="dropdown-item disabled">$ USD (US Dollar)</span></li>
-          <li><span class="dropdown-item disabled">€ EUR (Euro)</span></li>
-        </ul>
-      </div>
-
       <!-- Become a Host Link -->
       <a href="/listings/new" class="wl-hero-host-link text-decoration-none">
         Become a host
@@ -43,6 +26,7 @@
           type="button"
           id="userMenuBtn"
           data-bs-toggle="dropdown"
+          data-bs-offset="[0, 10]"
           aria-expanded="false"
           aria-label="User Account Menu"
         >
@@ -56,23 +40,23 @@
             </div>
           <% } %>
         </button>
-        <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow-lg" aria-labelledby="userMenuBtn">
+        <ul class="dropdown-menu dropdown-menu-end shadow-lg wl-dropdown-menu" aria-labelledby="userMenuBtn">
           <% if (!currUser) { %>
             <li><a class="dropdown-item py-2" href="/login"><b>Log in</b></a></li>
             <li><a class="dropdown-item py-2" href="/signup">Sign up</a></li>
-            <li><hr class="dropdown-divider border-secondary" /></li>
+            <li><hr class="dropdown-divider" /></li>
             <li><a class="dropdown-item py-2" href="/listings/new">Host your home</a></li>
           <% } else { %>
-            <li class="dropdown-header text-light fw-bold">Hello, <%= currUser.username %></li>
+            <li class="dropdown-header fw-bold">Hello, <%= currUser.username %></li>
             <li><a class="dropdown-item py-2" href="/wishlist"><i class="fa-regular fa-bookmark me-2"></i>Saved Wishlist</a></li>
             <li><a class="dropdown-item py-2" href="/bookings"><i class="fa-solid fa-suitcase-rolling me-2"></i>My Trips</a></li>
             <li><a class="dropdown-item py-2" href="/bookings/hosting"><i class="fa-solid fa-house-chimney me-2"></i>Hosting Dashboard</a></li>
             <li><a class="dropdown-item py-2" href="/listings/new"><i class="fa-solid fa-plus me-2"></i>Create Listing</a></li>
-            <li><hr class="dropdown-divider border-secondary" /></li>
+            <li><hr class="dropdown-divider" /></li>
             <li>
               <form action="/logout" method="POST" class="m-0">
                 <%- include("../includes/csrf.ejs") %>
-                <button type="submit" class="dropdown-item py-2 text-danger"><b>Log out</b></button>
+                <button type="submit" class="dropdown-item py-2 wl-dropdown-item-danger"><b>Log out</b></button>
               </form>
             </li>
           <% } %>
@@ -84,26 +68,15 @@
   <!-- Hero Editorial Headline & Copy -->
   <div class="wl-hero-body">
     <div class="wl-hero-eyebrow">
-      STAYS &middot; EXPERIENCES &middot; DESTINATIONS
+      HOMES &middot; CABINS &middot; VILLAS
     </div>
     <h1 class="wl-hero-headline">
-      Discover places<br />
-      that stay with <em>you</em>
+      Stays worth<br />
+      the <em>journey.</em>
     </h1>
     <p class="wl-hero-subtitle">
-      Unique homes, incredible experiences and destinations around the world.
+      Homes, cabins and villas around the world. Send a request and the host confirms your stay.
     </p>
-  </div>
-
-  <!-- Lower-right Editorial Badge -->
-  <div class="wl-hero-side-quote d-none d-xl-flex flex-column align-items-end text-end">
-    <span class="wl-quote-script">More than just a stay</span>
-    <div class="wl-quote-tags d-flex flex-column gap-1">
-      <span>People</span>
-      <span>Places</span>
-      <span>Culture</span>
-      <span>Experiences</span>
-    </div>
   </div>
 
   <!-- Overlapping Destination Search Panel -->
@@ -130,58 +103,105 @@
       <div class="wl-field-divider d-none d-md-block"></div>
 
       <!-- Field 2: Check in -->
-      <div class="wl-search-field wl-field-date">
-        <i class="fa-regular fa-calendar wl-search-icon"></i>
+      <div class="wl-search-field wl-field-date" id="check-in-field" role="button" tabindex="0" aria-haspopup="dialog" aria-expanded="false" aria-label="Check in: <%= filters.checkIn || 'add date' %>" data-label="Check in">
+        <i class="fa-regular fa-calendar wl-search-icon" aria-hidden="true"></i>
         <div class="wl-field-text">
-          <label for="check-in-input" class="wl-field-label">Check in</label>
-          <input
-            type="date"
-            id="check-in-input"
-            name="checkIn"
-            value="<%= filters.checkIn || '' %>"
-            min="<%= new Date().toISOString().slice(0, 10) %>"
-            class="wl-field-input wl-date-input"
-          />
+          <span class="wl-field-label">Check in</span>
+          <span class="wl-field-input wl-date-value <%= filters.checkIn ? '' : 'is-empty' %>" data-date-value><%= filters.checkIn || 'Add date' %></span>
+          <input type="hidden" id="check-in-input" name="checkIn" value="<%= filters.checkIn || '' %>" />
         </div>
       </div>
 
       <div class="wl-field-divider d-none d-md-block"></div>
 
       <!-- Field 3: Check out -->
-      <div class="wl-search-field wl-field-date">
+      <div class="wl-search-field wl-field-date" id="check-out-field" role="button" tabindex="0" aria-haspopup="dialog" aria-expanded="false" aria-label="Check out: <%= filters.checkOut || 'add date' %>" data-label="Check out">
+        <i class="fa-regular fa-calendar wl-search-icon" aria-hidden="true"></i>
         <div class="wl-field-text">
-          <label for="check-out-input" class="wl-field-label">Check out</label>
-          <input
-            type="date"
-            id="check-out-input"
-            name="checkOut"
-            value="<%= filters.checkOut || '' %>"
-            class="wl-field-input wl-date-input"
-          />
+          <span class="wl-field-label">Check out</span>
+          <span class="wl-field-input wl-date-value <%= filters.checkOut ? '' : 'is-empty' %>" data-date-value><%= filters.checkOut || 'Add date' %></span>
+          <input type="hidden" id="check-out-input" name="checkOut" value="<%= filters.checkOut || '' %>" />
         </div>
       </div>
 
       <div class="wl-field-divider d-none d-lg-block"></div>
 
-      <!-- Field 4: Guests -->
-      <div class="wl-search-field wl-field-guests d-none d-sm-flex">
+      <!-- Field 4: Guests (Custom Wanderlust Selector) -->
+      <div class="wl-search-field wl-field-guests position-relative" id="guests-field">
         <i class="fa-regular fa-user wl-search-icon"></i>
         <div class="wl-field-text">
-          <label for="guests-select" class="wl-field-label">Guests</label>
-          <select id="guests-select" name="guests" class="wl-field-select">
-            <option value="1">1 guest</option>
-            <option value="2" selected>2 guests</option>
-            <option value="3">3 guests</option>
-            <option value="4">4+ guests</option>
-          </select>
+          <label for="guests-trigger-btn" id="guests-label" class="wl-field-label">Guests</label>
+          <button
+            type="button"
+            id="guests-trigger-btn"
+            class="wl-field-btn d-flex align-items-center justify-content-between w-100 p-0 border-0 bg-transparent text-start"
+            aria-haspopup="dialog"
+            aria-expanded="false"
+            aria-labelledby="guests-label guests-display"
+          >
+            <span id="guests-display"><%= !filters.guests ? "Add guests" : filters.guests == 1 ? "1 guest" : filters.guests + " guests" %></span>
+            <i class="fa-solid fa-chevron-down wl-chevron-icon ms-1" aria-hidden="true"></i>
+          </button>
+          <input type="hidden" name="guests" id="guests-input" value="<%= filters.guests || '' %>" />
+        </div>
+
+        <!-- Custom Branded Guests Popover Panel -->
+        <div class="wl-guests-popover shadow-lg" id="guests-popover" role="dialog" aria-modal="false" aria-label="Guests selector" hidden>
+          <div class="wl-guests-header mb-3">
+            <span class="wl-guests-title d-block fw-bold">Guests</span>
+            <span class="wl-guests-subtitle small text-muted">Up to 16 guests</span>
+          </div>
+
+          <!-- Adults counter -->
+          <div class="wl-guest-row d-flex align-items-center justify-content-between py-2 border-bottom">
+            <div class="wl-guest-info">
+              <div class="wl-guest-type fw-semibold">Adults</div>
+              <div class="wl-guest-desc small text-muted">Ages 13 or above</div>
+            </div>
+            <div class="wl-guest-stepper d-flex align-items-center gap-3">
+              <button type="button" class="wl-stepper-btn" id="adults-dec-btn" aria-label="Decrease adults" data-action="dec" data-type="adults">
+                <i class="fa-solid fa-minus" aria-hidden="true"></i>
+              </button>
+              <span class="wl-stepper-count fw-bold" id="adults-count"><%= filters.guests || 1 %></span>
+              <button type="button" class="wl-stepper-btn" id="adults-inc-btn" aria-label="Increase adults" data-action="inc" data-type="adults">
+                <i class="fa-solid fa-plus" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Children counter -->
+          <div class="wl-guest-row d-flex align-items-center justify-content-between py-2 border-bottom">
+            <div class="wl-guest-info">
+              <div class="wl-guest-type fw-semibold">Children</div>
+              <div class="wl-guest-desc small text-muted">Ages 0 to 12</div>
+            </div>
+            <div class="wl-guest-stepper d-flex align-items-center gap-3">
+              <button type="button" class="wl-stepper-btn" id="children-dec-btn" aria-label="Decrease children" data-action="dec" data-type="children" disabled>
+                <i class="fa-solid fa-minus" aria-hidden="true"></i>
+              </button>
+              <span class="wl-stepper-count fw-bold" id="children-count">0</span>
+              <button type="button" class="wl-stepper-btn" id="children-inc-btn" aria-label="Increase children" data-action="inc" data-type="children">
+                <i class="fa-solid fa-plus" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="wl-guests-footer d-flex justify-content-end pt-3">
+            <button type="button" class="btn btn-sm wl-btn-done" id="guests-done-btn">Done</button>
+          </div>
         </div>
       </div>
 
-      <!-- Submit Action Button -->
+      <!-- Submit Action Button: Magnifying Glass in Primary Teal -->
       <div class="wl-search-action">
         <button type="submit" class="wl-search-btn" aria-label="Search Stays">
-          <i class="fa-solid fa-arrow-right"></i>
+          <i class="fa-solid fa-magnifying-glass"></i>
         </button>
+      </div>
+
+      <!-- Custom Premium Date Range Picker Popover Panel -->
+      <div class="wl-calendar-popover shadow-lg" id="calendar-popover" role="dialog" aria-modal="true" aria-label="Choose stay dates. Dates are local to the property." data-today="<%= serverToday %>" hidden>
+        <!-- Injected and managed by datepicker.js -->
       </div>
     </form>
   </div>
@@ -201,8 +221,13 @@
             : `/listings${qs({ category: undefined, page: undefined })}`;
         %>
         <a href="<%= targetUrl %>" class="wl-category-item <%= isSelected ? 'selected' : '' %> text-decoration-none">
-          <div class="wl-cat-thumb-wrapper">
+          <div class="wl-cat-thumb-wrapper position-relative">
             <img src="<%= cat.image %>" alt="<%= cat.label %>" class="wl-cat-thumb" loading="lazy" />
+            <% if (cat.icon) { %>
+              <div class="wl-cat-icon-badge" aria-hidden="true">
+                <i class="<%= cat.icon %>"></i>
+              </div>
+            <% } %>
           </div>
           <span class="wl-cat-label"><%= cat.label %></span>
         </a>
@@ -216,22 +241,29 @@
 </section>
 
 <!-- ==============================================
-     FEATURED STAYS SECTION
+     CURATED FOR YOU / EXCEPTIONAL STAYS SECTION
      ============================================== -->
-<section class="wl-featured-section">
+<section class="wl-featured-section" id="explore-stays">
   <!-- Section Header -->
   <div class="wl-featured-header d-flex flex-wrap justify-content-between align-items-end mb-4">
     <div>
-      <span class="wl-featured-eyebrow">HANDPICKED FOR YOU</span>
-      <h2 class="wl-featured-title">Featured Stays</h2>
+      <span class="wl-featured-eyebrow">ALL STAYS</span>
+      <h2 class="wl-featured-title">Places to stay</h2>
     </div>
 
     <!-- Discovery Controls -->
     <div class="wl-featured-controls d-flex align-items-center gap-3">
-      <span class="wl-stays-count text-muted fw-semibold"><%= total === 1 ? '1 stay' : (total > 20 ? total + '+ stays' : total + ' stays') %></span>
+      <!-- Stays Count -->
+      <span class="wl-stays-count text-muted fw-semibold"><%= total === 1 ? '1 stay' : total + ' stays' %></span>
 
-      <!-- Previous / Next Controls -->
-      <div class="wl-arrow-controls d-none d-sm-flex align-items-center gap-1">
+      <!-- View All Stays Link -->
+      <a href="/listings" class="wl-view-all-link text-decoration-none d-none d-md-inline-flex align-items-center gap-1">
+        <span>View all stays</span>
+        <i class="fa-solid fa-arrow-right small"></i>
+      </a>
+
+      <!-- Previous / Next Pagination Arrow Controls -->
+      <div class="wl-arrow-controls d-flex align-items-center gap-1">
         <% if (page > 1) { %>
           <a href="/listings<%= qs({ page: page - 1 }) %>" class="wl-nav-circle-btn" aria-label="Previous Page">
             <i class="fa-solid fa-chevron-left"></i>
@@ -277,9 +309,9 @@
   <!-- Collapsible Advanced Filters Drawer -->
   <div class="collapse mb-4" id="advancedFilterPanel">
     <form action="/listings" method="GET" class="card card-body filter-panel p-4 shadow-sm border-0 rounded-4">
-      <!-- Preserve destination search query if set -->
-      <% if (filters.q) { %>
-        <input type="hidden" name="q" value="<%= filters.q %>" />
+      <%# Keeps what the other controls chose, so applying a filter never drops them %>
+      <% for (const key of ["guests", "checkIn", "checkOut", "category", "propertyType"]) { %>
+        <% if (filters[key]) { %><input type="hidden" name="<%= key %>" value="<%= filters[key] %>" /><% } %>
       <% } %>
       <div class="row g-3">
         <div class="col-12 col-md-6 col-lg-3">
@@ -295,14 +327,41 @@
             <% } %>
           </select>
         </div>
-        <div class="col-6 col-lg-3">
-          <label class="form-label fw-bold small" for="f-min">Min Price</label>
+        <div class="col-12 col-md-4 col-lg-2">
+          <label class="form-label fw-bold small" for="f-currency">Price in</label>
+          <select class="form-select" id="f-currency" name="currency">
+            <% for (const code of currencies) { %>
+              <option value="<%= code %>" <%= (filters.currency || "INR") === code ? "selected" : "" %>><%= code %></option>
+            <% } %>
+          </select>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+          <label class="form-label fw-bold small" for="f-min">Min price (<%= filters.currency || "INR" %>)</label>
           <input type="number" class="form-control" id="f-min" name="minPrice" value="<%= filters.minPrice != null ? filters.minPrice : '' %>" min="0" placeholder="0" />
         </div>
-        <div class="col-6 col-lg-3">
-          <label class="form-label fw-bold small" for="f-max">Max Price</label>
+        <div class="col-6 col-md-4 col-lg-2">
+          <label class="form-label fw-bold small" for="f-max">Max price (<%= filters.currency || "INR" %>)</label>
           <input type="number" class="form-control" id="f-max" name="maxPrice" value="<%= filters.maxPrice != null ? filters.maxPrice : '' %>" min="0" placeholder="No max" />
         </div>
+        <div class="col-12 col-md-4 col-lg-3">
+          <label class="form-label fw-bold small" for="f-sort">Sort by</label>
+          <select class="form-select" id="f-sort" name="sort">
+            <% for (const [key, label] of Object.entries(sorts)) { %>
+              <option value="<%= key %>" <%= (filters.sort || "recommended") === key ? "selected" : "" %>><%= label %></option>
+            <% } %>
+          </select>
+        </div>
+        <fieldset class="col-12 wl-fieldset">
+          <legend class="form-label fw-bold small">Amenities</legend>
+          <div class="wl-check-grid">
+            <% for (const [key, info] of Object.entries(amenityInfo)) { %>
+            <label class="wl-check wl-check--small">
+              <input type="checkbox" name="amenities" value="<%= key %>" <%= (filters.amenities || []).includes(key) ? "checked" : "" %> />
+              <span><%= info[0] %></span>
+            </label>
+            <% } %>
+          </div>
+        </fieldset>
       </div>
       <div class="d-flex justify-content-end gap-2 mt-3">
         <a href="/listings" class="btn btn-outline-secondary btn-sm rounded-pill px-3">Reset All</a>
@@ -313,11 +372,10 @@
 
   <!-- Empty State -->
   <% if (!allListings.length) { %>
-    <div class="text-center py-5 my-4 bg-white rounded-4 shadow-sm">
-      <i class="fa-solid fa-compass fs-1 mb-3 text-secondary" style="color: var(--wl-color-amber) !important;"></i>
-      <h4 class="fw-bold">No stays found</h4>
-      <p class="text-muted">No stays match your criteria. Try adjusting your destination, dates, or filters.</p>
-      <a href="/listings" class="btn btn-dark rounded-pill px-4 mt-2">Clear all filters</a>
+    <div class="wl-empty">
+      <h3 class="wl-empty__title">No stays found</h3>
+      <p class="wl-empty__text">Try different dates, a wider price range or fewer filters.</p>
+      <a href="/listings" class="wl-auth-btn wl-auth-btn--outline">Clear all filters</a>
     </div>
   <% } %>
 
@@ -325,7 +383,7 @@
   <div class="row row-cols-xxl-4 row-cols-xl-4 row-cols-lg-3 row-cols-md-2 row-cols-1 g-4 mb-5">
     <% for (let listing of allListings) { %>
       <div class="col">
-        <%- include("../includes/listingCard.ejs", { listing }) %>
+        <%- include("../includes/listingCard.ejs", { listing, eager: listing === allListings[0] }) %>
       </div>
     <% } %>
   </div>
@@ -336,4 +394,74 @@
       <%- include("../includes/pagination.ejs", { base: "/listings" }) %>
     </div>
   <% } %>
+</section>
+
+<!-- ==============================================
+     EDITORIAL PANELS (MAP, UNIQUE STAYS, HOSTING)
+     ============================================== -->
+<section class="wl-editorial-panels-section mt-2 mb-5">
+  <div class="row g-4">
+    <!-- Panel 1: Destinations -->
+    <div class="col-12 col-lg-4">
+      <div class="wl-editorial-card wl-card-destinations">
+        <img
+          src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80"
+          alt=""
+          class="wl-editorial-bg"
+          loading="lazy"
+        />
+        <div class="wl-editorial-overlay">
+          <div class="wl-editorial-copy">
+            <span class="wl-editorial-eyebrow">MAP</span>
+            <h3 class="wl-editorial-title">See every stay<br />on the map.</h3>
+          </div>
+          <a href="/listings/map" class="wl-editorial-arrow-btn" aria-label="Open the map">
+            <i class="fa-solid fa-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel 2: Experiences -->
+    <div class="col-12 col-lg-4">
+      <div class="wl-editorial-card wl-card-experiences">
+        <img
+          src="https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=800&q=80"
+          alt=""
+          class="wl-editorial-bg"
+          loading="lazy"
+        />
+        <div class="wl-editorial-overlay">
+          <div class="wl-editorial-copy">
+            <span class="wl-editorial-eyebrow">UNIQUE STAYS</span>
+            <h3 class="wl-editorial-title">Treehouses, castles and tiny homes</h3>
+          </div>
+          <a href="/listings?category=Unique%20Stays" class="wl-editorial-arrow-btn" aria-label="Browse unique stays">
+            <i class="fa-solid fa-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel 3: Become a Host -->
+    <div class="col-12 col-lg-4">
+      <div class="wl-editorial-card wl-card-hosting">
+        <img
+          src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80"
+          alt=""
+          class="wl-editorial-bg"
+          loading="lazy"
+        />
+        <div class="wl-editorial-overlay">
+          <div class="wl-editorial-copy">
+            <span class="wl-editorial-eyebrow">BECOME A HOST</span>
+            <h3 class="wl-editorial-title">Share a unique place</h3>
+          </div>
+          <a href="/listings/new" class="wl-editorial-arrow-btn" aria-label="Become a Host">
+            <i class="fa-solid fa-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>

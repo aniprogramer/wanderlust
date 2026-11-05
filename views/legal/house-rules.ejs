@@ -1,0 +1,36 @@
+<% layout("/layouts/boilerplate") %>
+<% const sections = [
+  ["guests", "For guests"],
+  ["hosts", "For hosts"],
+  ["everyone", "For everyone"],
+  ["problems", "If something goes wrong"],
+]; %>
+<article class="wl-page wl-page--read wl-prose">
+  <%- include("../includes/legalHeader", { title: "House Rules", intro: "A short list of what we expect from guests and hosts. Each host's listing may add its own.", sections }) %>
+
+  <h2 id="guests">For guests</h2>
+  <ul>
+    <li>Bring only the number of guests you requested, up to the listing's maximum.</li>
+    <li>Treat the place and the neighbours with care.</li>
+    <li>Leave when your stay ends, and tell the host if your plans change.</li>
+    <li>Pay the host as agreed at the property.</li>
+  </ul>
+
+  <h2 id="hosts">For hosts</h2>
+  <ul>
+    <li>Make sure the listing matches the place: photos, capacity, amenities and price.</li>
+    <li>Respond to requests within 48 hours and keep your calendar correct.</li>
+    <li>Have the place clean, safe and ready at check-in.</li>
+    <li>Tell guests about any taxes or local charges before they arrive.</li>
+  </ul>
+
+  <h2 id="everyone">For everyone</h2>
+  <ul>
+    <li>Be honest and respectful. No harassment or discrimination.</li>
+    <li>Follow local laws.</li>
+    <li>Reviews must be about a real stay.</li>
+  </ul>
+
+  <h2 id="problems">If something goes wrong</h2>
+  <p>Talk to the other party first. If that does not work, or you feel unsafe, <a href="/contact">contact us</a>. In an emergency, call the local emergency services.</p>
+</article>

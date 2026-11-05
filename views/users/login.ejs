@@ -1,31 +1,29 @@
 <% layout("/layouts/boilerplate") %>
-  <h1 class="mt-2 text-center">Login to Wanderlust</h1>
-  <div class="row mt-3">
-    <div class="col-12 col-md-6 offset-md-3">
-      <form action="/login" method="POST" class="needs-validation" novalidate>
-<%- include("../includes/csrf.ejs") %>
-        <div class="mb-3">
-          <label for="username" class="form-label">Username</label>
-          <input
-            type="text"
-            id="username"
-            name="username"
-            class="form-control"
-            required
-          />
-        </div>
-        <div class="mb-3">
-          <label for="password" class="form-label">Password</label>
-          <input
-            type="password"
-            id="password"
-            name="password"
-            class="form-control"
-            required
-          />
-        </div>
-
-        <button type="submit" class="btn btn-dark wanderlust-btn">Login</button>
+<main class="wl-auth" id="main-content">
+  <%- include("../includes/auth/hero") %>
+  <div class="wl-auth-panel">
+    <%- include("../includes/auth/topbar", { prompt: "New here?", href: "/signup", label: "Create an account" }) %>
+    <div class="wl-auth-card">
+      <%- include("../includes/auth/mark", { size: 56, cls: "wl-auth-card__mark" }) %>
+      <h1 class="wl-auth-card__title">Welcome back</h1>
+      <p class="wl-auth-card__sub">Sign in to continue your journey.</p>
+      <%- include("../includes/auth/alerts") %>
+      <form action="/login" method="POST" class="wl-auth-form" data-auth-form data-busy-label="Signing in…" novalidate>
+        <%- include("../includes/csrf.ejs") %>
+        <%- include("../includes/auth/field", { id: "username", name: "username", label: "Email or username", noun: "email or username", icon: "fa-regular fa-envelope", placeholder: "Enter your email or username", autocomplete: "username" }) %>
+        <%- include("../includes/auth/field", { id: "password", name: "password", label: "Password", type: "password", icon: "fa-solid fa-lock", placeholder: "Enter your password", autocomplete: "current-password", maxlength: 128 }) %>
+        <a class="wl-auth-link wl-auth-forgot" href="/forgot-password">Forgot password?</a>
+        <button type="submit" class="wl-auth-btn wl-auth-btn--primary wl-auth-btn--block">
+          <span data-btn-label>Sign in</span>
+          <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+        </button>
       </form>
+      <hr class="wl-auth-rule" />
+      <p class="wl-auth-switch">
+        New to Wanderlust?
+        <a class="wl-auth-link" href="/signup">Create an account <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+      </p>
     </div>
+    <%- include("../includes/auth/footer") %>
   </div>
+</main>

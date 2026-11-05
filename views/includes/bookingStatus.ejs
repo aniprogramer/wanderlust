@@ -1,0 +1,7 @@
+<%# Expects: booking, today. Every status has words, not only a colour. %>
+<% const state = booking.effectiveStatus;
+   const started = state === "confirmed" && booking.checkIn <= today;
+   const finished = started && booking.checkOut <= today;
+   const labels = { pending: ["Waiting for the host", "warning"], declined: ["Declined", "neutral"], cancelled: ["Cancelled", "neutral"], expired: ["Expired", "neutral"], confirmed: ["Confirmed by the host", "success"] };
+   const [label, tone] = finished ? ["Completed", "neutral"] : started ? ["Stay in progress", "success"] : labels[state]; %>
+<span class="badge wl-badge wl-badge--<%= tone %>"><%= label %></span>

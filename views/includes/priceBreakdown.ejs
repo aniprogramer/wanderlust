@@ -1,0 +1,12 @@
+<%# Expects: booking. Shows the stored price, never today's listing price. %>
+<% const currency = booking.currency || (booking.listing && booking.listing.currency) || "INR";
+   const nights = booking.nights.length; %>
+<dl class="wl-breakdown">
+  <% if (booking.nightlyPrice != null) { %>
+  <div><dt><%= money(booking.nightlyPrice, currency) %> × <%= nights %> night<%= nights === 1 ? "" : "s" %></dt><dd><%= money(booking.subtotal, currency) %></dd></div>
+  <% } %>
+  <% if (booking.cleaningFee) { %>
+  <div><dt>Cleaning fee</dt><dd><%= money(booking.cleaningFee, currency) %></dd></div>
+  <% } %>
+  <div class="wl-breakdown__total"><dt>Total, paid at the property</dt><dd><%= money(booking.totalPrice, currency) %></dd></div>
+</dl>

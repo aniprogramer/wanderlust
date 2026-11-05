@@ -1,0 +1,11 @@
+<%- heading %>
+
+<% for (const line of lines) { %><%- line %>
+
+<% } %><% for (const [label, value] of facts) { %><%- label %>: <%- value %>
+<% } %><% if (facts.length) { %>
+<% } %><% if (action) { %><%- action.label %>: <%- action.url %>
+
+<% } %><% if (note) { %><%- note %>
+
+<% } %>Questions? <%- helpUrl %>

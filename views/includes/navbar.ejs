@@ -1,22 +1,10 @@
-<nav class="navbar navbar-expand-md bg-body border-bottom sticky-top">
+<nav class="navbar navbar-expand-xl bg-body border-bottom sticky-top">
   <div class="container-fluid">
-    <a class="navbar-brand d-flex align-items-center gap-2 text-decoration-none" href="/">
-      <!-- Wanderlust Vector Symbol -->
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="34" height="34" fill="none">
-        <!-- Map Pin Top -->
-        <circle cx="24" cy="11" r="5" fill="#FF385C" />
-        <!-- Continuous 'W' Motif -->
-        <path 
-          d="M 10 16 L 17 36 L 24 22 L 31 36 L 38 16" 
-          stroke="#FF385C" 
-          stroke-width="5.5" 
-          stroke-linecap="round" 
-          stroke-linejoin="round" 
-        />
-      </svg>
+    <a class="navbar-brand d-flex align-items-center gap-2 text-decoration-none" href="/listings">
+      <%- include("./auth/mark", { size: 32 }) %>
       <!-- Premium Wordmark -->
       <span class="wl-wordmark">
-        wanderlust
+        Wanderlust
       </span>
     </a>
     <button
@@ -24,12 +12,16 @@
       type="button"
       data-bs-toggle="collapse"
       data-bs-target="#navbarNavAltMarkup"
+      aria-controls="navbarNavAltMarkup"
+      aria-expanded="false"
+      aria-label="Menu"
     >
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
       <div class="navbar-nav">
         <a class="nav-link" href="/listings">Explore</a>
+        <a class="nav-link" href="/listings/map">Map</a>
       </div>
       <div class="navbar-nav ms-auto">
         <form class="d-flex" role="search" action="/listings" method="GET">
@@ -48,7 +40,7 @@
           </button>
         </form>
       </div>
-      <div class="navbar-nav ms-auto">
+      <div class="navbar-nav ms-auto align-items-center gap-2">
         <a class="nav-link" href="/listings/new">Become a host</a>
         <% if (!currUser) { %>
         <a class="nav-link" href="/signup"><b>SignUp</b></a>
@@ -57,6 +49,8 @@
         <% if (currUser) { %>
         <a class="nav-link" href="/wishlist"><i class="fa-regular fa-heart"></i> Wishlist</a>
         <a class="nav-link" href="/bookings">Trips</a>
+        <a class="nav-link" href="/account">Account</a>
+        <% if (currUser.isAdmin) { %><a class="nav-link" href="/admin">Admin</a><% } %>
         <a class="nav-link" href="/bookings/hosting">Hosting</a>
         <form action="/logout" method="POST" class="d-flex">
           <%- include("./csrf.ejs") %>

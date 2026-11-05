@@ -1,0 +1,12 @@
+<% layout("/layouts/boilerplate") %>
+<div class="wl-page wl-page--read">
+  <div class="wl-empty">
+    <h1 class="wl-empty__title">Confirm your email</h1>
+    <p class="wl-empty__text">You need a confirmed address to send a booking request or list a stay, so we can tell you what happens next. We sent a link to <strong><%= currUser.email %></strong>. You can still browse and save stays.</p>
+    <form action="/verify-email/resend" method="POST">
+      <%- include("../includes/csrf.ejs") %>
+      <button class="wl-auth-btn wl-auth-btn--primary">Resend the link</button>
+    </form>
+    <p class="wl-empty__text wl-empty__text--small">Wrong address? Change it on your <a class="wl-auth-link" href="/account">Account</a> page.</p>
+  </div>
+</div>

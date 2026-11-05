@@ -1,0 +1,63 @@
+<% layout("/layouts/boilerplate") %>
+<% const state = booking.effectiveStatus;
+   const canCancel = ["pending", "confirmed"].includes(state) && booking.checkIn > today;
+   const isHost = role === "host";
+   const listing = booking.listing;
+   const nextSteps = {
+     pending: isHost
+       ? "Accept or decline this request on your Hosting page before it expires."
+       : "The host has up to 48 hours to reply. These dates are not held until the host confirms. We will email you.",
+     confirmed: isHost
+       ? "The guest pays you at the property. Contact them if you need to arrange anything."
+       : "Your stay is confirmed by the host. You pay at the property.",
+     declined: isHost ? "You declined this request." : "The host could not accept this request. You have not been charged.",
+     cancelled: `This was cancelled by the ${booking.cancelledBy || "guest or host"}. No payment was taken online.`,
+     expired: "The host did not reply in time, so this request has expired. No payment was taken.",
+   }; %>
+<div class="wl-page wl-page--read">
+  <a class="wl-back-link" href="<%= isHost ? "/bookings/hosting" : "/bookings" %>">← Back to <%= isHost ? "Hosting" : "Trips" %></a>
+  <h1 class="wl-page-title"><%= listing ? listing.title : "Listing no longer available" %></h1>
+  <p class="wl-page-lede">Reference <strong class="wl-reference"><%= booking.reference %></strong> <%- include("../includes/bookingStatus.ejs", { booking, today }) %></p>
+
+  <div class="wl-panel">
+    <dl class="wl-facts">
+      <div><dt>Check-in</dt><dd><%= booking.checkIn.toISOString().slice(0, 10) %></dd></div>
+      <div><dt>Check-out</dt><dd><%= booking.checkOut.toISOString().slice(0, 10) %></dd></div>
+      <div><dt>Guests</dt><dd><%= booking.guests || 1 %></dd></div>
+      <% if (isHost) { %><div><dt>Guest</dt><dd>@<%= booking.guest ? booking.guest.username : "Deleted user" %></dd></div><% } %>
+      <% if (isHost && booking.guest && state === "confirmed") { %><div><dt>Guest email</dt><dd><a href="mailto:<%= booking.guest.email %>"><%= booking.guest.email %></a></dd></div><% } %>
+      <% if (!isHost && host) { %><div><dt>Host</dt><dd>@<%= host.username %></dd></div><div><dt>Host email</dt><dd><a href="mailto:<%= host.email %>"><%= host.email %></a></dd></div><% } %>
+    </dl>
+    <%- include("../includes/priceBreakdown.ejs", { booking }) %>
+    <p class="wl-note"><%= taxNotice %></p>
+  </div>
+
+  <h2 class="wl-section-title">What happens next</h2>
+  <p><%= nextSteps[state] %></p>
+  <% if (booking.declineReason) { %><p>Reason given: <%= booking.declineReason %></p><% } %>
+  <% if (booking.cancelReason) { %><p>Reason given: <%= booking.cancelReason %></p><% } %>
+  <% if (isHost && booking.guestMessage) { %><p>The guest wrote: <%= booking.guestMessage %></p><% } %>
+  <p class="wl-page-lede"><a href="/cancellation-policy">Cancellation policy</a> · <a href="/contact?booking=<%= booking.reference %>">Need help?</a></p>
+
+  <% if (isHost && state === "pending") { %>
+  <div class="wl-actions">
+    <form action="/bookings/<%= booking._id %>/accept" method="POST">
+      <%- include("../includes/csrf.ejs") %>
+      <button class="wl-auth-btn wl-auth-btn--primary">Accept</button>
+    </form>
+    <form action="/bookings/<%= booking._id %>/decline" method="POST" class="wl-inline-form" data-confirm="Decline this request?">
+      <%- include("../includes/csrf.ejs") %>
+      <label for="decline-reason">Reason (optional)</label>
+      <div class="wl-input wl-input--textarea"><textarea id="decline-reason" name="reason" rows="2" maxlength="300"></textarea></div>
+      <button class="wl-auth-btn wl-auth-btn--outline">Decline</button>
+    </form>
+  </div>
+  <% } else if (canCancel) { %>
+  <form action="/bookings/<%= booking._id %>?_method=DELETE" method="POST" class="wl-inline-form" data-confirm="<%= state === "pending" ? "Withdraw this request?" : "Cancel this booking?" %>">
+    <%- include("../includes/csrf.ejs") %>
+    <label for="cancel-reason">Reason (optional, shared with the other party)</label>
+    <div class="wl-input wl-input--textarea"><textarea id="cancel-reason" name="reason" rows="2" maxlength="300"></textarea></div>
+    <button class="wl-auth-btn wl-auth-btn--danger"><%= state === "pending" ? "Withdraw request" : "Cancel booking" %></button>
+  </form>
+  <% } %>
+</div>

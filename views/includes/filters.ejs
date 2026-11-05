@@ -40,6 +40,7 @@
 
 <div class="collapse mb-4" id="filter-panel">
   <form action="<%= action %>" method="GET" class="card card-body filter-panel p-3">
+    <% if (filters.guests) { %><input type="hidden" name="guests" value="<%= filters.guests %>" /><% } %>
     <div class="row g-3">
       <div class="col-12 col-md-6 col-lg-3">
         <label class="form-label" for="f-q">Keywords</label>
@@ -72,12 +73,20 @@
           <% } %>
         </select>
       </div>
+      <div class="col-12 col-md-4 col-lg-2">
+        <label class="form-label" for="f-currency">Price in</label>
+        <select class="form-select" id="f-currency" name="currency">
+          <% for (const code of currencies) { %>
+          <option value="<%= code %>" <%= (filters.currency || "INR") === code ? "selected" : "" %>><%= code %></option>
+          <% } %>
+        </select>
+      </div>
       <div class="col-6 col-lg-2">
-        <label class="form-label" for="f-min">Min price (₹)</label>
+        <label class="form-label" for="f-min">Min price (<%= filters.currency || "INR" %>)</label>
         <input class="form-control" type="number" min="0" id="f-min" name="minPrice" value="<%= filters.minPrice ?? '' %>" />
       </div>
       <div class="col-6 col-lg-2">
-        <label class="form-label" for="f-max">Max price (₹)</label>
+        <label class="form-label" for="f-max">Max price (<%= filters.currency || "INR" %>)</label>
         <input class="form-control" type="number" min="0" id="f-max" name="maxPrice" value="<%= filters.maxPrice ?? '' %>" />
       </div>
       <div class="col-12 col-md-4 col-lg-2">

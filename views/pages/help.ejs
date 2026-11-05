@@ -1,0 +1,28 @@
+<% layout("/layouts/boilerplate") %>
+<% const faqs = [
+  ["How does booking work?", ["Choose your dates and number of guests, then send a request. The host has 48 hours to accept or decline. Your dates are held only once the host confirms."]],
+  ["When do I pay?", ["You pay the host at the property. Wanderlust takes no payment online. Taxes are not included; the host will confirm any applicable taxes."]],
+  ["How do I cancel?", ["Open the booking from Trips and choose Cancel. You can cancel any time before the check-in day. The host is told by email."]],
+  ["How do I list my place?", ["Create an account, confirm your email address and choose Become a host. Add your photos, price, capacity and the dates you are away. New requests arrive on your Hosting page and by email."]],
+  ["I forgot my password", ["Use the Forgot password link on the sign-in page. We will email you a link that works once and lasts an hour."]],
+  ["Why do I need to confirm my email?", ["We need a working address to tell you about your bookings. You can browse and save stays without it, but you need it to send a request or list a stay."]],
+  ["How do I delete my account?", ["Go to Account, then Delete account. If you have upcoming confirmed stays, cancel them first. You can download a copy of your data from the same page."]],
+  ["How do I report a problem?", ["Use the contact form below and choose Report a problem. If you feel unsafe, call the local emergency services first."]],
+]; %>
+<div class="wl-page wl-page--read">
+  <h1 class="wl-page-title">Help</h1>
+  <p class="wl-page-lede">Short answers to the questions we hear most.</p>
+  <div class="wl-disclosure-group">
+    <% for (const [question, answers] of faqs) { %>
+    <details class="wl-disclosure">
+      <summary><%= question %></summary>
+      <% for (const answer of answers) { %><p><%= answer %></p><% } %>
+    </details>
+    <% } %>
+  </div>
+  <div class="wl-empty">
+    <h2 class="wl-empty__title">Still need help?</h2>
+    <p class="wl-empty__text">Write to us and we will reply by email.</p>
+    <a class="wl-auth-btn wl-auth-btn--primary" href="/contact">Contact us</a>
+  </div>
+</div>

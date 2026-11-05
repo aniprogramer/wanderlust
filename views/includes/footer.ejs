@@ -1,14 +1,20 @@
-<footer>
-  <div class="f-info">
-    <div class="f-info-socials">
-      <i class="fa-brands fa-square-facebook"></i>
-      <i class="fa-brands fa-square-instagram"></i>
-      <i class="fa-brands fa-linkedin"></i>
-    </div>
-    <div class="f-info-brand">&copy; Wanderlust Private Limited</div>
-    <div class="f-info-links">
-      <a href="#">Privacy</a>
-      <a href="#">Terms</a>
-    </div>
+<footer class="f-info">
+  <% if (site.socialLinks.length) { %>
+  <div class="f-info-socials">
+    <% for (const social of site.socialLinks) { %>
+    <a href="<%= social.url %>" target="_blank" rel="noopener noreferrer" aria-label="Wanderlust on <%= social.name %>">
+      <i class="fa-brands <%= social.icon %>" aria-hidden="true"></i>
+    </a>
+    <% } %>
   </div>
+  <% } %>
+  <nav class="f-info-links" aria-label="Footer">
+    <a href="/help">Help</a>
+    <a href="/contact">Contact</a>
+    <a href="/privacy">Privacy</a>
+    <a href="/terms">Terms</a>
+    <a href="/cancellation-policy">Cancellation policy</a>
+    <a href="/house-rules">House rules</a>
+  </nav>
+  <div class="f-info-brand">&copy; <%= new Date().getFullYear() %> <%= site.legalEntity %></div>
 </footer>

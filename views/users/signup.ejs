@@ -1,49 +1,34 @@
 <% layout("/layouts/boilerplate") %>
-  <h1 class="mt-2 text-center">Signup on Wanderlust</h1>
-  <div class="row mt-3">
-    <div class="col-12 col-md-6 offset-md-3">
-      <form action="/signup" method="POST" class="needs-validation" novalidate>
-<%- include("../includes/csrf.ejs") %>
-        <div class="mb-3">
-          <label for="username" class="form-label">Username</label>
-          <input
-            type="text"
-            id="username"
-            name="username"
-            class="form-control"
-            required
-          />
-          <div class="valid-feedback">Looks good!</div>
-          <div class="invalid-feedback">Please Enter a valid username</div>
+<main class="wl-auth" id="main-content">
+  <%- include("../includes/auth/hero") %>
+  <div class="wl-auth-panel">
+    <%- include("../includes/auth/topbar", { prompt: "Already a member?", href: "/login", label: "Sign in" }) %>
+    <div class="wl-auth-card">
+      <%- include("../includes/auth/mark", { size: 56, cls: "wl-auth-card__mark" }) %>
+      <h1 class="wl-auth-card__title">Create your account</h1>
+      <p class="wl-auth-card__sub">Join Wanderlust and start exploring.</p>
+      <%- include("../includes/auth/alerts") %>
+      <form action="/signup" method="POST" class="wl-auth-form" data-auth-form data-busy-label="Creating account…" novalidate>
+        <%- include("../includes/csrf.ejs") %>
+        <%- include("../includes/auth/field", { id: "username", name: "username", label: "Username", icon: "fa-regular fa-user", placeholder: "Choose a username", autocomplete: "username", maxlength: 30, minlength: 3 }) %>
+        <%- include("../includes/auth/field", { id: "email", name: "email", label: "Email", type: "email", icon: "fa-regular fa-envelope", placeholder: "you@example.com", autocomplete: "email" }) %>
+        <%- include("../includes/auth/field", { id: "password", name: "password", label: "Password", type: "password", icon: "fa-solid fa-lock", placeholder: "At least 8 characters", autocomplete: "new-password", maxlength: 128, minlength: 8, hint: "Use 8 to 128 characters with at least one letter and one digit.", newPassword: true }) %>
+        <div class="wl-check">
+          <input type="checkbox" id="terms" name="terms" value="on" required data-required-check="Accept the Terms and Privacy Policy to create an account." />
+          <label for="terms">I agree to the <a class="wl-auth-link" href="/terms" target="_blank" rel="noopener">Terms</a> and <a class="wl-auth-link" href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</label>
         </div>
-        <div class="mb-3">
-          <label for="email" class="form-label">Email</label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            class="form-control"
-            required
-          />
-          <div class="valid-feedback">Looks good!</div>
-          <div class="invalid-feedback">Please Enter a valid email</div>
-        </div>
-        <div class="mb-3">
-          <label for="password" class="form-label">Password</label>
-          <input
-            type="password"
-            id="password"
-            name="password"
-            class="form-control"
-            required
-          />
-          <div class="valid-feedback">Looks good!</div>
-          <div class="invalid-feedback">Please Enter a valid password</div>
-        </div>
-
-        <button type="submit" class="btn btn-dark wanderlust-btn">
-          Signup
+        <p class="wl-field__error" id="terms-error" hidden></p>
+        <button type="submit" class="wl-auth-btn wl-auth-btn--primary wl-auth-btn--block">
+          <span data-btn-label>Create account</span>
+          <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
         </button>
       </form>
+      <hr class="wl-auth-rule" />
+      <p class="wl-auth-switch">
+        Already a member?
+        <a class="wl-auth-link" href="/login">Sign in <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+      </p>
     </div>
+    <%- include("../includes/auth/footer") %>
   </div>
+</main>

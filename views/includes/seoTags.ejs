@@ -1,0 +1,14 @@
+<% const description = typeof pageDescription !== "undefined" && pageDescription ? pageDescription : "Stays worth the journey. Send a request to the host and pay at the property.";
+   const fullTitle = typeof pageTitle !== "undefined" && pageTitle ? `${pageTitle} | Wanderlust` : "Wanderlust";
+   const canonical = typeof canonicalPath !== "undefined" && canonicalPath ? siteUrl(canonicalPath) : canonicalUrl; %>
+<meta name="description" content="<%= description %>" />
+<% if (typeof noindex !== "undefined" && noindex) { %><meta name="robots" content="noindex" /><% } %>
+<link rel="canonical" href="<%= canonical %>" />
+<meta property="og:site_name" content="Wanderlust" />
+<meta property="og:title" content="<%= fullTitle %>" />
+<meta property="og:description" content="<%= description %>" />
+<meta property="og:type" content="<%= typeof ogType !== "undefined" ? ogType : "website" %>" />
+<meta property="og:url" content="<%= canonical %>" />
+<% if (typeof ogImage !== "undefined" && ogImage) { %><meta property="og:image" content="<%= ogImage %>" /><% } %>
+<meta name="twitter:card" content="<%= typeof ogImage !== "undefined" && ogImage ? "summary_large_image" : "summary" %>" />
+<% if (typeof jsonLd !== "undefined" && jsonLd) { %><script type="application/ld+json"><%- jsonLd %></script><% } %>

@@ -1,11 +1,72 @@
 <% layout("/layouts/boilerplate") %>
-<h3 class="my-4">Reservations at your listings</h3>
-<% if (!bookings.length) { %>
-<div class="text-center text-muted py-5">
-  <p>No guests have booked your listings yet.</p>
+<div class="wl-page">
+  <h1 class="wl-page-title">Hosting</h1>
+  <p class="wl-page-lede">Requests and reservations at your stays. <a href="/help">Need help?</a></p>
+
+  <% if (toConfirm.length) { %>
+  <div class="wl-auth-alert wl-auth-alert--warning" role="alert">
+    <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+    <div>
+      <strong>Confirm your listing details.</strong> We filled in guest and room numbers for these stays with a best guess. Please check them:
+      <% toConfirm.forEach((listing, i) => { %><a class="wl-auth-link" href="/listings/<%= listing._id %>/edit"><%= listing.title %></a><%= i < toConfirm.length - 1 ? ", " : "." %><% }) %>
+    </div>
+  </div>
+  <% } %>
+
+  <div class="wl-stats">
+    <div class="wl-stat"><span class="wl-stat__value"><%= summary.pending %></span><span class="wl-stat__label">Requests waiting</span></div>
+    <div class="wl-stat"><span class="wl-stat__value"><%= summary.upcoming %></span><span class="wl-stat__label">Upcoming stays</span></div>
+    <div class="wl-stat"><span class="wl-stat__value"><%= summary.completed %></span><span class="wl-stat__label">Completed this year</span></div>
+    <div class="wl-stat">
+      <span class="wl-stat__value">
+        <% if (!summary.earnings.length) { %><%= money(0, "INR") %><% } %>
+        <% summary.earnings.forEach((row) => { %><span class="wl-stat__line"><%= money(row.total, row._id) %></span><% }) %>
+      </span>
+      <span class="wl-stat__label">Estimated, paid at the property</span>
+    </div>
+  </div>
+
+  <h2 class="wl-section-title">Requests</h2>
+  <% if (!requests.length) { %>
+  <p class="wl-muted">No requests are waiting for a reply.</p>
+  <% } %>
+  <% requests.forEach((booking) => { %>
+  <div class="wl-panel wl-request" data-request>
+    <div class="wl-row">
+      <div class="wl-row__main">
+        <a class="wl-row__title" href="/bookings/<%= booking._id %>"><%= booking.listing.title %></a>
+        <div class="wl-row__meta">
+          @<%= booking.guest ? booking.guest.username : "Deleted user" %>
+          · <%= booking.checkIn.toISOString().slice(0, 10) %> → <%= booking.checkOut.toISOString().slice(0, 10) %>
+          · <%= booking.guests %> guest<%= booking.guests === 1 ? "" : "s" %>
+          · <%= money(booking.totalPrice, booking.currency) %>
+        </div>
+        <% if (booking.guestMessage) { %><p class="wl-request__message"><%= booking.guestMessage %></p><% } %>
+        <div class="wl-row__meta">Reply by <%= booking.expiresAt.toISOString().slice(0, 16).replace("T", " ") %> UTC, or the request expires.</div>
+      </div>
+      <div class="wl-row__actions">
+        <form action="/bookings/<%= booking._id %>/accept" method="POST">
+          <%- include("../includes/csrf.ejs") %>
+          <button class="wl-auth-btn wl-auth-btn--primary">Accept</button>
+        </form>
+        <form action="/bookings/<%= booking._id %>/decline" method="POST" data-confirm="Decline this request?">
+          <%- include("../includes/csrf.ejs") %>
+          <button class="wl-auth-btn wl-auth-btn--outline">Decline</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <% }) %>
+
+  <h2 class="wl-section-title">Reservations</h2>
+  <% if (!bookings.length) { %>
+  <div class="wl-empty">
+    <h3 class="wl-empty__title">No reservations yet</h3>
+    <p class="wl-empty__text">When you accept a request, the stay shows up here.</p>
+  </div>
+  <% } %>
+  <% bookings.forEach((booking) => { %>
+  <%- include("../includes/bookingRow.ejs", { booking, today, hosting: true }) %>
+  <% }) %>
+  <%- include("../includes/pagination.ejs", { qs: (o) => `?page=${o.page}` }) %>
 </div>
-<% } %>
-<% bookings.forEach((booking) => { %>
-<%- include("../includes/bookingRow.ejs", { booking, today, hosting: true }) %>
-<% }) %>
-<%- include("../includes/pagination.ejs", { qs: (o) => `?page=${o.page}` }) %>

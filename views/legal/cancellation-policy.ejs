@@ -1,0 +1,31 @@
+<% layout("/layouts/boilerplate") %>
+<% const sections = [
+  ["before", "Before check-in"],
+  ["requests", "Requests that have not been confirmed"],
+  ["hosts", "When hosts may cancel"],
+  ["refunds", "Refunds"],
+  ["notices", "Notices"],
+]; %>
+<article class="wl-page wl-page--read wl-prose">
+  <%- include("../includes/legalHeader", { title: "Cancellation Policy", intro: "How guests and hosts cancel a stay on Wanderlust.", sections }) %>
+
+  <h2 id="before">Before check-in</h2>
+  <p>A guest or a host may cancel a confirmed booking at any time before the check-in date, from the booking page. Once the check-in day has started, a booking can no longer be cancelled here. <a href="/contact">Contact us</a> if something has gone wrong.</p>
+
+  <h2 id="requests">Requests that have not been confirmed</h2>
+  <p>A guest can withdraw a request until the host responds. A host can decline. A request with no answer expires after 48 hours.</p>
+
+  <h2 id="hosts">When hosts may cancel</h2>
+  <p>Guests plan around a confirmed stay, so a host should not cancel one without a good reason, such as:</p>
+  <ul>
+    <li>Damage or a problem that makes the place unsafe or unusable.</li>
+    <li>An emergency or a serious illness.</li>
+    <li>A reasonable concern about safety or a breach of the house rules.</li>
+  </ul>
+
+  <h2 id="refunds">Refunds</h2>
+  <p>The platform takes no payment, so no refunds are handled by Wanderlust. If you paid a host anything directly, sort out any refund with that host.</p>
+
+  <h2 id="notices">Notices</h2>
+  <p>When one party cancels, the other is told by email, with the reason if one was given.</p>
+</article>

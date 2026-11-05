@@ -1,0 +1,39 @@
+<% layout("/layouts/boilerplate") %>
+<div class="wl-page wl-page--form">
+  <h1 class="wl-page-title">Contact us</h1>
+  <p class="wl-page-lede">Tell us what is going on and we will reply by email. For quick answers, see <a href="/help">Help</a>.</p>
+  <% if (errorCount) { %>
+  <div class="wl-auth-alert wl-auth-alert--error wl-form-summary" role="alert" id="form-error" tabindex="-1">
+    <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+    <span>Fix <%= errorCount %> field<%= errorCount === 1 ? "" : "s" %> to continue.</span>
+  </div>
+  <% } %>
+  <form action="/contact" method="POST" class="wl-panel wl-auth-form" data-auth-form data-busy-label="Sending…" novalidate>
+    <%- include("../includes/csrf.ejs") %>
+    <%- include("../includes/auth/field", { id: "name", name: "name", label: "Your name", noun: "name", icon: "fa-regular fa-user", placeholder: "Your name", autocomplete: "name", maxlength: 100, value: values.name, fieldError: errors.name }) %>
+    <%- include("../includes/auth/field", { id: "email", name: "email", label: "Email", noun: "email address", type: "email", icon: "fa-regular fa-envelope", placeholder: "you@example.com", autocomplete: "email", value: values.email, fieldError: errors.email }) %>
+    <div class="wl-field">
+      <label for="topic">Topic</label>
+      <div class="wl-input wl-input--select <%= errors.topic ? 'is-invalid' : '' %>">
+        <select id="topic" name="topic" required data-label="topic" data-empty="Choose a topic." <%= errors.topic ? 'aria-invalid=true aria-describedby=topic-error' : '' %>>
+          <option value="">Choose a topic</option>
+          <% for (const topic of topics) { %>
+          <option value="<%= topic %>" <%= values.topic === topic ? "selected" : "" %>><%= topic %></option>
+          <% } %>
+        </select>
+      </div>
+      <p class="wl-field__error" id="topic-error" <%= errors.topic ? "" : "hidden" %>><%= errors.topic || "" %></p>
+    </div>
+    <%- include("../includes/auth/field", { id: "bookingReference", name: "bookingReference", label: "Booking reference (optional)", noun: "booking reference", icon: "fa-regular fa-file-lines", placeholder: "For example BK-1A2B3C4D", autocomplete: "off", maxlength: 40, value: values.bookingReference, optional: true, fieldError: errors.bookingReference }) %>
+    <div class="wl-field">
+      <label for="message">Message</label>
+      <div class="wl-input wl-input--textarea <%= errors.message ? 'is-invalid' : '' %>">
+        <textarea id="message" name="message" rows="6" maxlength="2000" required data-label="message" data-empty="Tell us what you need help with." <%= errors.message ? 'aria-invalid=true aria-describedby=message-error' : '' %>><%= values.message || "" %></textarea>
+      </div>
+      <p class="wl-field__error" id="message-error" <%= errors.message ? "" : "hidden" %>><%= errors.message || "" %></p>
+    </div>
+    <button type="submit" class="wl-auth-btn wl-auth-btn--primary wl-auth-btn--block">
+      <span data-btn-label>Send message</span>
+    </button>
+  </form>
+</div>

@@ -1,30 +1,36 @@
 <%# Expects: booking, today, hosting (boolean) %>
-<% const upcoming = booking.status === "confirmed" && booking.checkIn > today; %>
+<% const state = booking.effectiveStatus;
+   const canCancel = ["pending", "confirmed"].includes(state) && booking.checkIn > today;
+   const currency = booking.currency || (booking.listing && booking.listing.currency) || "INR"; %>
 <div class="card border p-3 mb-3 booking-row">
-  <div class="d-flex flex-wrap align-items-center gap-3">
+  <div class="wl-row">
     <% if (booking.listing) { %>
-    <img src="<%= booking.listing.image.url %>" alt="" />
-    <div class="flex-grow-1">
-      <a href="/listings/<%= booking.listing._id %>" class="fw-semibold text-dark"><%= booking.listing.title %></a>
-      <div class="text-muted small"><%= booking.listing.location %>, <%= booking.listing.country %></div>
-      <div class="small mt-1">
-        <i class="bi bi-calendar-event"></i>
+    <img class="wl-row__photo" src="<%= booking.listing.image.url %>" alt="" loading="lazy" />
+    <div class="wl-row__main">
+      <a href="/bookings/<%= booking._id %>" class="wl-row__title"><%= booking.listing.title %></a>
+      <div class="wl-row__meta"><%= booking.listing.location %>, <%= booking.listing.country %></div>
+      <div class="wl-row__meta">
         <%= booking.checkIn.toISOString().slice(0, 10) %> → <%= booking.checkOut.toISOString().slice(0, 10) %>
-        · <%= money(booking.totalPrice, booking.listing && booking.listing.currency) %>
-        <% if (hosting) { %> · @<%= booking.guest ? booking.guest.username : "guest" %><% } %>
+        · <%= booking.guests || 1 %> guest<%= (booking.guests || 1) === 1 ? "" : "s" %>
+        · <%= money(booking.totalPrice, currency) %>
+        <% if (hosting) { %> · @<%= booking.guest ? booking.guest.username : "Deleted user" %><% } %>
       </div>
+      <% if (hosting && booking.guest && state === "confirmed") { %>
+      <div class="wl-row__meta"><a href="mailto:<%= booking.guest.email %>"><%= booking.guest.email %></a></div>
+      <% } %>
     </div>
     <% } else { %>
-    <div class="flex-grow-1 text-muted">Listing no longer available</div>
+    <div class="wl-row__main wl-row__meta">Listing no longer available</div>
     <% } %>
-    <span class="badge <%= booking.status === 'confirmed' ? 'text-bg-success' : 'text-bg-secondary' %>">
-      <%= booking.status === "confirmed" && !upcoming ? "completed / in progress" : booking.status %>
-    </span>
-    <% if (upcoming) { %>
-    <form action="/bookings/<%= booking._id %>?_method=DELETE" method="POST" data-confirm="Cancel this booking?">
-      <%- include("./csrf.ejs") %>
-      <button class="btn btn-sm btn-outline-danger">Cancel</button>
-    </form>
-    <% } %>
+    <%- include("./bookingStatus.ejs", { booking, today }) %>
+    <div class="wl-row__actions">
+      <% if (booking.listing) { %><a class="wl-text-btn" href="/bookings/<%= booking._id %>">View</a><% } %>
+      <% if (canCancel) { %>
+      <form action="/bookings/<%= booking._id %>?_method=DELETE" method="POST" data-confirm="Cancel this booking?">
+        <%- include("./csrf.ejs") %>
+        <button class="wl-text-btn wl-text-btn--danger">Cancel</button>
+      </form>
+      <% } %>
+    </div>
   </div>
 </div>

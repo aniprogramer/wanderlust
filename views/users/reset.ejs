@@ -1,0 +1,31 @@
+<% layout("/layouts/boilerplate") %>
+<main class="wl-auth" id="main-content">
+  <%- include("../includes/auth/hero") %>
+  <div class="wl-auth-panel">
+    <%- include("../includes/auth/topbar", { prompt: "Remembered it?", href: "/login", label: "Sign in" }) %>
+    <div class="wl-auth-card">
+      <%- include("../includes/auth/mark", { size: 56, cls: "wl-auth-card__mark" }) %>
+      <% if (tokenValid) { %>
+        <h1 class="wl-auth-card__title">Choose a new password</h1>
+        <p class="wl-auth-card__sub">Pick something you do not use elsewhere.</p>
+        <%- include("../includes/auth/alerts") %>
+        <form action="/reset-password/<%= encodeURIComponent(locals.token || '') %>" method="POST" class="wl-auth-form" data-auth-form data-match="confirmPassword" data-busy-label="Saving…" novalidate>
+          <%- include("../includes/csrf.ejs") %>
+          <%- include("../includes/auth/field", { id: "password", name: "password", label: "New password", noun: "new password", type: "password", icon: "fa-solid fa-lock", placeholder: "At least 8 characters", autocomplete: "new-password", maxlength: 128, minlength: 8, hint: "Use 8 to 128 characters with at least one letter and one digit.", newPassword: true }) %>
+          <%- include("../includes/auth/field", { id: "confirmPassword", name: "confirmPassword", label: "Confirm password", noun: "password confirmation", type: "password", icon: "fa-solid fa-lock", placeholder: "Repeat the new password", autocomplete: "new-password", maxlength: 128 }) %>
+          <button type="submit" class="wl-auth-btn wl-auth-btn--primary wl-auth-btn--block">
+            <span data-btn-label>Update password</span>
+            <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+          </button>
+        </form>
+      <% } else { %>
+        <h1 class="wl-auth-card__title">Link expired</h1>
+        <p class="wl-auth-card__sub">That reset link is invalid or has expired. Reset links work once and last one hour.</p>
+        <a class="wl-auth-btn wl-auth-btn--primary wl-auth-btn--block" href="/forgot-password">
+          Request a new link <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+        </a>
+      <% } %>
+    </div>
+    <%- include("../includes/auth/footer") %>
+  </div>
+</main>
