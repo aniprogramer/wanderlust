@@ -739,32 +739,41 @@ body.wl-home-body {
    -------------------------------------------------------------------------- */
 .wl-app-shell {
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr);
+  grid-template-columns: 240px minmax(0, 1fr);
   width: 100%;
   max-width: 100%;
   min-height: 100vh;
   background-color: var(--bg);
   position: relative;
+  /* clip, not hidden: hidden makes this a scroll container and breaks the sticky sidebar */
+  overflow-x: clip;
 }
 
 .wl-main-canvas {
   min-width: 0;
   width: 100%;
   max-width: 100%;
-  padding: 24px 36px 56px 36px;
+  padding: 0 0 56px 0;
   background-color: var(--bg);
+  overflow-x: clip;
 }
 
 .wl-flash-container {
-  max-width: 1400px;
-  margin: 0 auto 16px auto;
+  max-width: 100%;
+  padding: 16px clamp(20px, 3.5vw, 48px) 0;
+  margin: 0;
+}
+
+.wl-flash-container:empty,
+.wl-flash-container:not(:has(.wl-auth-alert)) {
+  display: none;
 }
 
 /* --------------------------------------------------------------------------
    Left Navigation Sidebar (Deep Lagoon Green)
    -------------------------------------------------------------------------- */
 .wl-sidebar {
-  width: 260px;
+  width: 240px;
   background-color: var(--wl-bg-sidebar);
   align-self: stretch;
   z-index: 100;
@@ -972,19 +981,19 @@ body.wl-home-body {
    Cinematic Mediterranean Travel Hero
    -------------------------------------------------------------------------- */
 .wl-hero-section {
-  border-radius: 24px;
+  border-radius: 0;
   min-height: 500px;
-  padding: 28px 36px 64px 36px;
+  padding: 32px clamp(24px, 4vw, 56px) 72px clamp(24px, 4vw, 56px);
   background-color: var(--band);
-  background-image: url("https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=2000&q=80");
+  background-image: url("https://images.unsplash.com/photo-1782053492003-5977f1337b05?auto=format&fit=crop&w=2400&q=85");
   background-size: cover;
-  background-position: center 30%;
+  background-position: center right;
   position: relative;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  margin-bottom: 56px;
-  box-shadow: var(--shadow-soft);
+  margin: 0 0 52px 0;
+  box-shadow: none;
 }
 
 .wl-hero-section::before {
@@ -992,7 +1001,7 @@ body.wl-home-body {
   position: absolute;
   inset: 0;
   background-color: var(--scrim);
-  border-radius: 24px;
+  border-radius: 0;
   pointer-events: none;
 }
 
@@ -1018,17 +1027,6 @@ body.wl-home-body {
   color: var(--on-band);
 }
 
-.wl-hero-host-link {
-  color: var(--on-band);
-  font-size: 0.88rem;
-  font-weight: 500;
-  transition: color 0.15s ease;
-}
-
-.wl-hero-host-link:hover {
-  color: var(--accent-fill);
-}
-
 .wl-hero-avatar-btn {
   background: none;
   border: none;
@@ -1040,14 +1038,14 @@ body.wl-home-body {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background-color: color-mix(in srgb, var(--on-band) 20%, transparent);
-  border: 1.5px solid var(--on-band);
+  background-color: color-mix(in srgb, var(--band) 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--on-band) 22%, transparent);
   color: var(--on-band);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.88rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .wl-avatar-circle.user-logged-in {
@@ -1056,27 +1054,27 @@ body.wl-home-body {
 }
 
 .wl-hero-body {
-  max-width: 640px;
-  margin-top: 24px;
-  margin-bottom: 48px;
+  max-width: 580px;
+  margin-top: 36px;
+  margin-bottom: 56px;
   position: relative;
   z-index: 5;
 }
 
 .wl-hero-eyebrow {
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   letter-spacing: 0.18em;
   font-weight: 600;
-  color: color-mix(in srgb, var(--on-band) 85%, transparent);
+  color: var(--on-band);
   text-transform: uppercase;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .wl-hero-headline {
   font-family: var(--font-display);
-  font-size: 3.85rem;
-  line-height: 1.02;
+  font-size: clamp(3rem, 4.8vw, 4.4rem);
+  line-height: 1.05;
   font-weight: 400;
   color: var(--on-band);
   margin-bottom: 16px;
@@ -1089,37 +1087,43 @@ body.wl-home-body {
 }
 
 .wl-hero-subtitle {
-  font-size: 1.05rem;
+  font-size: 1.02rem;
   line-height: 1.5;
-  color: color-mix(in srgb, var(--on-band) 90%, transparent);
+  color: var(--on-band);
   font-weight: 400;
   max-width: 480px;
+  margin: 0;
 }
 
-/* Lower-right Story Badge */
 /* --------------------------------------------------------------------------
    Destination Search Panel (Overlapping Hero)
    -------------------------------------------------------------------------- */
 .wl-search-wrapper {
   position: absolute;
-  left: 36px;
-  bottom: -34px;
+  left: 0;
+  right: 0;
+  bottom: -32px;
   z-index: 20;
   display: flex;
-  justify-content: flex-start;
-  width: calc(100% - 72px);
-  max-width: 860px;
+  justify-content: center;
+  width: 100%;
+  padding: 0 24px;
+  pointer-events: none;
 }
 
 .wl-search-panel {
+  pointer-events: auto;
   background-color: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
-  padding: 8px 10px 8px 26px;
+  padding: 8px 10px 8px 24px;
   display: flex;
   align-items: center;
   gap: 16px;
   width: 100%;
+  max-width: 860px;
+  box-shadow: var(--shadow-raised);
+}
   box-shadow: var(--shadow-raised);
 }
 
@@ -1484,12 +1488,13 @@ body.wl-home-body {
 .wl-categories-section {
   margin-top: 56px;
   margin-bottom: 40px;
+  padding: 0 clamp(20px, 3.5vw, 48px);
 }
 
 .wl-categories-container {
   display: flex;
   align-items: center;
-  gap: 16px;
+  justify-content: center;
   position: relative;
   width: 100%;
   max-width: 100%;
@@ -1498,7 +1503,8 @@ body.wl-home-body {
 .wl-categories-track {
   display: flex;
   align-items: flex-start;
-  gap: 18px;
+  justify-content: center;
+  gap: 16px;
   overflow-x: auto;
   scrollbar-width: none;
   scroll-behavior: smooth;
@@ -1528,11 +1534,11 @@ body.wl-home-body {
 }
 
 .wl-cat-thumb-wrapper {
-  width: 84px;
-  height: 56px;
-  border-radius: var(--radius-lg);
+  width: 80px;
+  height: 54px;
+  border-radius: 10px;
   overflow: hidden;
-  border: 2px solid transparent;
+  border: 1.5px solid transparent;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   background-color: var(--surface-sunken);
   position: relative;
@@ -1564,14 +1570,14 @@ body.wl-home-body {
 .wl-cat-label {
   font-size: 0.78rem;
   font-weight: 500;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   transition: color 0.15s ease;
   white-space: nowrap;
 }
 
 .wl-category-item.selected .wl-cat-thumb-wrapper {
-  border-color: var(--primary);
-  box-shadow: var(--shadow-raised);
+  border-color: var(--accent-fill);
+  box-shadow: 0 0 0 1px var(--accent-fill);
 }
 
 .wl-category-item.selected .wl-cat-icon-badge {
@@ -1580,17 +1586,17 @@ body.wl-home-body {
 
 .wl-category-item.selected .wl-cat-label {
   color: var(--text);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .wl-cat-nav-btn {
+  display: none;
   width: 36px;
   height: 36px;
   border-radius: 50%;
   border: 1px solid var(--border);
   background-color: var(--surface);
   color: var(--text);
-  display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.85rem;
@@ -1608,6 +1614,10 @@ body.wl-home-body {
 /* --------------------------------------------------------------------------
    Curated Stays Section & Discovery Controls
    -------------------------------------------------------------------------- */
+.wl-featured-section {
+  padding: 0 clamp(20px, 3.5vw, 48px);
+}
+
 .wl-featured-eyebrow {
   font-family: var(--font-mono);
   font-size: 0.72rem;
@@ -1724,13 +1734,13 @@ body.wl-home-body {
   position: absolute;
   top: 10px;
   left: 10px;
-  background-color: var(--surface);
-  color: var(--text);
+  background-color: color-mix(in srgb, var(--band) 72%, transparent);
+  color: var(--on-band);
   font-size: 0.72rem;
   font-weight: 600;
   padding: 4px 10px;
   border-radius: var(--radius-pill);
-  border: 1px solid var(--border);
+  border: 1px solid color-mix(in srgb, var(--on-band) 15%, transparent);
   box-shadow: var(--shadow-soft);
   z-index: 5;
 }
@@ -1772,10 +1782,11 @@ body.wl-home-body {
 }
 
 .wl-card-title {
-  font-size: 0.98rem;
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 400;
   color: var(--text);
-  line-height: 1.3;
+  line-height: 1.25;
   display: -webkit-box;
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
@@ -1832,20 +1843,21 @@ body.wl-home-body {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  border: 1px solid var(--border);
-  background-color: var(--surface);
-  color: var(--text);
+  border: none;
+  background-color: var(--accent-fill);
+  color: var(--band);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   text-decoration: none;
-  transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+  flex-shrink: 0;
 }
 
 .wl-card-action-btn:hover {
-  background-color: var(--primary);
-  color: var(--on-primary);
+  background-color: var(--accent);
+  color: var(--band);
   transform: translateX(2px);
 }
 
@@ -1855,6 +1867,7 @@ body.wl-home-body {
 .wl-editorial-panels-section {
   margin-top: 24px;
   margin-bottom: 56px;
+  padding: 0 clamp(20px, 3.5vw, 48px);
 }
 
 .wl-editorial-card {
@@ -1929,8 +1942,7 @@ body.wl-home-body {
   color: var(--band);
 }
 
-.wl-card-experiences .wl-editorial-arrow-btn,
-.wl-card-hosting .wl-editorial-arrow-btn {
+.wl-card-experiences .wl-editorial-arrow-btn {
   background-color: color-mix(in srgb, var(--band) 75%, transparent);
   border: 1px solid color-mix(in srgb, var(--on-band) 35%, transparent);
   color: var(--on-band);
@@ -1950,13 +1962,19 @@ body.wl-home-body {
     padding: 24px 14px 20px 14px;
   }
   .wl-main-canvas {
-    padding: 20px 24px 40px 24px;
+    padding: 0 0 40px 0;
   }
   .wl-hero-headline {
     font-size: 3rem;
   }
-  .wl-search-wrapper {
-    max-width: 95%;
+}
+
+@media (max-width: 1100px) {
+  .wl-categories-track {
+    justify-content: flex-start;
+  }
+  .wl-cat-nav-btn {
+    display: flex;
   }
 }
 
@@ -1968,21 +1986,22 @@ body.wl-home-body {
     display: none; /* Collapses to navbar/mobile pattern */
   }
   .wl-main-canvas {
-    padding: 16px 16px 36px 16px;
+    padding: 0 0 36px 0;
   }
   .wl-hero-section {
     min-height: 460px;
     padding: 24px 20px 56px 20px;
-    border-radius: 20px;
     margin-bottom: 48px;
   }
   .wl-hero-headline {
     font-size: 2.5rem;
   }
   .wl-search-wrapper {
-    left: 16px;
+    left: 0;
+    right: 0;
     bottom: -28px;
-    width: calc(100% - 32px);
+    width: 100%;
+    padding: 0 16px;
   }
 }
 
@@ -1996,9 +2015,11 @@ body.wl-home-body {
     font-size: 2.1rem;
   }
   .wl-search-wrapper {
-    left: 12px;
+    left: 0;
+    right: 0;
     bottom: -48px;
-    width: calc(100% - 24px);
+    width: 100%;
+    padding: 0 12px;
   }
   .wl-search-panel {
     border-radius: 24px;
