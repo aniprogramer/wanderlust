@@ -6,6 +6,7 @@ const Listing = require("../models/listing.js");
 const User = require("../models/user.js");
 const removeDependents = require("../models/cascade.js");
 const { geocode } = require("../utils/geocode.js");
+const { seedRefusal, describeTarget } = require("./seedGuard.js");
 
 if (!["production", "test"].includes(process.env.NODE_ENV)) {
   require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
@@ -44,13 +45,15 @@ const initDB = async () => {
 };
 
 async function main() {
-  if (
-    process.env.NODE_ENV === "production" &&
-    !process.argv.includes("--force")
-  ) {
-    console.error(
-      "Refusing to wipe listings when NODE_ENV=production. Pass --force to override.",
-    );
+  const { host, name } = describeTarget(MONGO_URL);
+  console.log(`Seed target: host ${host}, database ${name}`);
+  const refusal = seedRefusal({
+    env: process.env,
+    argv: process.argv,
+    url: MONGO_URL,
+  });
+  if (refusal) {
+    console.error(`Refusing to seed. ${refusal}`);
     process.exit(1);
   }
   await mongoose.connect(MONGO_URL);
