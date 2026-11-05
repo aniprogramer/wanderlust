@@ -1,0 +1,64 @@
+# Render blueprint. Names only: set every value with sync:false in the dashboard.
+services:
+  - type: web
+    name: wanderlust
+    runtime: node
+    plan: starter
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "20"
+      - key: APP_TIMEZONE
+        value: Asia/Kolkata
+      - key: LEGAL_REVIEWED
+        value: "false"
+      - key: ATLAS
+        sync: false
+      - key: SECRET
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: CLOUD_NAME
+        sync: false
+      - key: CLOUD_API_KEY
+        sync: false
+      - key: CLOUD_API_SECRET
+        sync: false
+      - key: MAPBOX_TOKEN
+        sync: false
+      - key: MAPBOX_SERVER_TOKEN
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_SECURE
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: SUPPORT_EMAIL
+        sync: false
+      - key: LEGAL_ENTITY_NAME
+        sync: false
+      - key: LEGAL_ADDRESS
+        sync: false
+      - key: GRIEVANCE_OFFICER
+        sync: false
+      - key: GOVERNING_LAW
+        sync: false
+      - key: SOCIAL_FACEBOOK_URL
+        sync: false
+      - key: SOCIAL_INSTAGRAM_URL
+        sync: false
+      - key: SOCIAL_LINKEDIN_URL
+        sync: false
+      - key: SENTRY_DSN
+        sync: false

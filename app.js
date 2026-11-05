@@ -17,8 +17,21 @@ const LocalStrategy = require("passport-local");
 const User = require("./models/user.js");
 const multer = require("multer");
 const { money } = require("./utils/format.js");
+const { cardBadge, isRecentlyListed } = require("./utils/listingBadge.js");
+const siteInfo = require("./utils/siteInfo.js");
+const { primary: themeColor } = require("./utils/emailTheme.js");
 const helmet = require("helmet");
-const { csrfGuard, csrfTokenFor } = require("./middleware.js");
+const compression = require("compression");
+const asset = require("./utils/assets.js");
+const { requestContext, logRequest, logRoute } = require("./utils/requestLog.js");
+const expireRequests = require("./utils/expireRequests.js");
+const healthCheck = require("./utils/healthCheck.js");
+const { siteUrl } = require("./utils/config.js");
+const {
+  csrfGuard,
+  csrfTokenFor,
+  sessionFreshness,
+} = require("./middleware.js");
 const {
   CATEGORIES,
   PROPERTY_TYPES,
@@ -31,10 +44,18 @@ const reviewRoutes = require("./routes/reviewRoute.js");
 const bookingRoutes = require("./routes/bookingRoute.js");
 const wishlistRoutes = require("./routes/wishlistRoute.js");
 const userRoutes = require("./routes/userRoute.js");
+const pageRoutes = require("./routes/pageRoute.js");
+const accountRoutes = require("./routes/accountRoute.js");
+const adminRoutes = require("./routes/adminRoute.js");
 
 const dbUrl = process.env.ATLAS;
 
 const isProd = process.env.NODE_ENV === "production";
+const logger = require("./utils/logger.js");
+const reportError = require("./utils/reportError.js");
+const { photoUrl, photoSrcset } = require("./utils/cloudinaryUrl.js");
+const { AMENITIES } = require("./utils/constants.js");
+const { assertProductionEnv } = require("./utils/config.js");
 // Fail at load, before any listener exists, rather than signing cookies with "undefined"
 if (isProd && !process.env.SECRET) {
   throw new Error("SECRET must be set when NODE_ENV=production");
@@ -42,20 +63,28 @@ if (isProd && !process.env.SECRET) {
 // Behind Render's proxy the secure cookie flag and client IPs need the forwarded headers.
 if (isProd) app.set("trust proxy", 1);
 
-const CDNS = ["https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"];
 const MAPBOX = [
   "https://api.mapbox.com",
   "https://events.mapbox.com",
   "https://*.tiles.mapbox.com",
 ];
+
+// Before everything else: a request id for the logs, and a health check that needs no
+// session, no rate limit and no log line.
+app.use(requestContext);
+app.get("/health", healthCheck);
+app.use(logRequest);
+app.use(compression());
+
 app.use(
   helmet({
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", ...CDNS, "https://api.mapbox.com"],
-        styleSrc: ["'self'", ...CDNS, "https://api.mapbox.com"],
-        fontSrc: ["'self'", ...CDNS],
+        // Every library is self-hosted under public/vendor
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'"],
+        fontSrc: ["'self'"],
         imgSrc: [
           "'self'",
           "data:",
@@ -82,7 +111,25 @@ app.set("views", path.join(__dirname, "views"));
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
 app.engine("ejs", ejsMate);
-app.use(express.static(path.join(__dirname, "/public")));
+app.locals.asset = asset;
+app.use(
+  express.static(path.join(__dirname, "/public"), {
+    setHeaders: (res, filePath) => {
+      // Versioned paths never change; ?v= changes whenever the file does. Others may change.
+      const permanent =
+        /[\\/](vendor|fonts)[\\/]/.test(filePath) || res.req.query.v;
+      res.setHeader(
+        "Cache-Control",
+        permanent ? "public, max-age=31536000, immutable" : "public, max-age=3600",
+      );
+    },
+  }),
+);
+// Pages can hold personal details, so shared caches keep none of them
+app.use((req, res, next) => {
+  res.setHeader("Cache-Control", "private, no-cache");
+  next();
+});
 
 // Tests use the default in-memory store; real runs persist sessions in MongoDB.
 // The store reuses mongoose's client once startup has connected (see the bottom of
@@ -97,9 +144,7 @@ if (process.env.NODE_ENV !== "test") {
     },
     touchAfter: 24 * 3600,
   });
-  store.on("error", (err) => {
-    console.log("ERROR in MONGO SESSION STORE", err);
-  });
+  store.on("error", (err) => reportError(err, { event: "session.store" }));
 }
 
 app.use(
@@ -120,6 +165,7 @@ app.use(flash());
 
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(sessionFreshness);
 
 passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
@@ -130,15 +176,26 @@ app.use((req, res, next) => {
   const flashed = req.session.flash;
   res.locals.successMsg = flashed ? req.flash("success") : [];
   res.locals.errorMsg = flashed ? req.flash("error") : [];
+  res.locals.infoMsg = flashed ? req.flash("info") : [];
+  res.locals.warningMsg = flashed ? req.flash("warning") : [];
   res.locals.csrfToken = csrfTokenFor(req);
   res.locals.currUser = req.user;
   // Pages that show listing cards fill this in (see savedIdsFor in the controllers)
   res.locals.savedIds = new Set();
   res.locals.money = money;
+  res.locals.cardBadge = cardBadge;
+  res.locals.isRecentlyListed = isRecentlyListed;
+  res.locals.site = siteInfo;
+  res.locals.themeColor = themeColor;
   res.locals.mapboxToken = process.env.MAPBOX_TOKEN;
   res.locals.categories = CATEGORIES;
   res.locals.propertyTypes = PROPERTY_TYPES;
   res.locals.currencies = CURRENCIES;
+  res.locals.amenities = AMENITIES;
+  res.locals.canonicalUrl = siteUrl(req.path);
+  res.locals.siteUrl = siteUrl;
+  res.locals.photoUrl = photoUrl;
+  res.locals.photoSrcset = photoSrcset;
   next();
 });
 
@@ -152,6 +209,9 @@ app.use("/listings", listingRoutes);
 app.use("/listings/:id/reviews", reviewRoutes);
 app.use("/bookings", bookingRoutes);
 app.use("/wishlist", wishlistRoutes);
+app.use("/account", accountRoutes);
+app.use("/admin", adminRoutes);
+app.use("/", pageRoutes);
 app.use("/", userRoutes);
 
 app.use((req, res, next) => {
@@ -167,10 +227,18 @@ app.use((err, req, res, next) => {
     err = new ExpressError(400, err.message);
   const { statusCode = 500 } = err;
   if (statusCode >= 500) {
-    console.error(err);
+    reportError(err, {
+      requestId: res.locals.requestId,
+      route: logRoute(req),
+      userId: req.user && String(req.user._id),
+    });
     err.message = "Something went wrong!";
   }
-  res.status(statusCode).render("error.ejs", { err });
+  res.status(statusCode).render("error.ejs", {
+    err,
+    pageTitle: statusCode === 404 ? "Page not found" : "Something went wrong",
+    noindex: true,
+  });
 });
 
 module.exports = app;
@@ -178,23 +246,34 @@ module.exports = app;
 if (require.main === module) {
   const port = process.env.PORT || 8080;
   (async () => {
+    process.on("unhandledRejection", (err) =>
+      reportError(err, { event: "unhandledRejection" }),
+    );
+    process.on("uncaughtException", (err) => {
+      reportError(err, { event: "uncaughtException" });
+      process.exit(1);
+    });
+    try {
+      assertProductionEnv();
+    } catch (err) {
+      logger.error(err.message);
+      process.exit(1);
+    }
+    if (isProd && !siteInfo.LEGAL_REVIEWED) {
+      logger.warn(
+        "Legal pages are still drafts. Set LEGAL_REVIEWED=true after legal review.",
+      );
+    }
     try {
       await mongoose.connect(dbUrl);
     } catch (err) {
-      console.error("Could not connect to DB:", err.message);
+      logger.error("Could not connect to the database", { errorName: err.name });
       process.exit(1);
     }
-    console.log("connected to DB");
+    logger.info("Connected to the database");
     resolveDbClient(mongoose.connection.getClient());
-    if (process.env.NODE_ENV !== "production") {
-      const Listing = require("./models/listing.js");
-      const count = await Listing.countDocuments();
-      if (count === 0) {
-        console.log("Database has 0 listings. Auto-seeding initial data...");
-        const { initDB } = require("./init");
-        await initDB();
-      }
-    }
-    app.listen(port, () => console.log(`Server is listening to port ${port}`));
+    // No scheduler (see utils/expireRequests.js): catch up on anything that expired while down
+    expireRequests().catch((err) => reportError(err, { event: "startup.sweep" }));
+    app.listen(port, () => logger.info("Server is listening", { port }));
   })();
 }

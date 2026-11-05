@@ -26,3 +26,9 @@ Thumbs.db
 # Playwright
 test-results/
 playwright-report/
+
+# Claude
+CLAUDE.md
+
+# Visual checks
+tests/e2e/__screenshots__/
