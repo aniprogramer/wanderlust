@@ -96,7 +96,7 @@ test("signup asks for the agreement beside the box", async ({ page }) => {
   await page.goto("/signup");
   await page.fill("#username", "newperson");
   await page.fill("#email", "newperson@example.com");
-  await page.fill("#password", "goodpass123");
+  await page.fill("#password", "Goodpass123!");
   await page.locator("input[name=startingMode][value=guest]").check();
   await page.click("form[action='/signup'] button[type=submit]");
   await expect(page.locator("#terms-error")).toBeVisible();

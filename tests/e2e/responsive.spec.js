@@ -60,7 +60,8 @@ const pokingOut = () => {
       const style = getComputedStyle(el);
       if (!box.width || !box.height || style.visibility === "hidden" || style.display === "none") return false;
       if (el.closest("[hidden], .mapboxgl-map, .sr-only, .visually-hidden, .wl-skip-link")) return false;
-      if (style.position === "fixed" && box.right <= width + 1) return false;
+      // A fixed element cannot scroll the page, and a background photo may be mid-animation
+      if (style.position === "fixed") return false;
       return box.right > width + 1 && !scrolls(el);
     })
     .slice(0, 5)

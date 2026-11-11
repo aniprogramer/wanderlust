@@ -71,13 +71,13 @@ test.describe("sign-up", () => {
     await page.fill("#lastName", "Person");
     await page.fill("#username", username);
     await page.fill("#email", `${username}@example.com`);
-    await page.fill("#password", "goodpass123");
-    await page.fill("#confirmPassword", "goodpass123");
+    await page.fill("#password", "Goodpass123!");
+    await page.fill("#confirmPassword", "Goodpass123!");
     await page.check("#terms");
   };
 
   for (const [choice, label, home] of [
-    ["host", "List my home", /\/listings\/mine$/],
+    ["host", "Host stays", /\/listings\/mine$/],
     ["guest", "Find stays", /\/listings$/],
   ]) {
     test(`signing up to "${label}" starts as a ${choice}`, async ({ page }) => {

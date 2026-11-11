@@ -138,13 +138,13 @@ describe("password reset", () => {
     const res = await agent
       .post(`/reset-password/${token}`)
       .type("form")
-      .send({ password: "brand-new-pass1", confirmPassword: "brand-new-pass1" });
+      .send({ password: "Brand-new-pass1!", confirmPassword: "Brand-new-pass1!" });
     expect(res.headers.location).toBe("/login");
 
     const ok = await (await guest(app))
       .post("/login")
       .type("form")
-      .send({ username: "alice", password: "brand-new-pass1" });
+      .send({ username: "alice", password: "Brand-new-pass1!" });
     expect(ok.headers.location).toBe("/listings");
     const old = await (await guest(app))
       .post("/login")
@@ -159,7 +159,7 @@ describe("password reset", () => {
     const again = await agent
       .post(`/reset-password/${token}`)
       .type("form")
-      .send({ password: "another-pass-1", confirmPassword: "another-pass-1" });
+      .send({ password: "Another-pass-1!", confirmPassword: "Another-pass-1!" });
     expect(again.headers.location).toBe("/forgot-password");
   });
 
@@ -187,7 +187,7 @@ describe("password reset", () => {
     const agent = await guest(app);
     for (const body of [
       { password: "short", confirmPassword: "short" },
-      { password: "long-enough-1", confirmPassword: "different-1" },
+      { password: "Long-enough-1!", confirmPassword: "Different-1!" },
     ]) {
       const res = await agent
         .post(`/reset-password/${token}`)
@@ -210,7 +210,7 @@ describe("password reset", () => {
     await (await guest(app))
       .post(`/reset-password/${token}`)
       .type("form")
-      .send({ password: "brand-new-pass1", confirmPassword: "brand-new-pass1" });
+      .send({ password: "Brand-new-pass1!", confirmPassword: "Brand-new-pass1!" });
 
     const res = await stolen.get("/wishlist");
     expect(res.headers.location).toBe("/login");

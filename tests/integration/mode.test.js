@@ -61,10 +61,10 @@ describe("the starting mode is chosen at sign-up, not at login", () => {
     expect(radios.map((_, el) => $(el).attr("value")).get()).toEqual(["guest", "host"]);
     expect(radios.filter("[checked]")).toHaveLength(0);
     expect($("fieldset").text()).toContain("Find stays");
-    expect($("fieldset").text()).toContain("List my home");
+    expect($("fieldset").text()).toContain("Host stays");
 
     const signup = (extra) => ({
-      username: "bob", email: "bob@example.com", password: "secret123", terms: "on", ...extra,
+      username: "bob", email: "bob@example.com", password: "Secret123!", confirmPassword: "Secret123!", terms: "on", ...extra,
     });
     for (const bad of [{}, { startingMode: "admin" }]) {
       const agent = await guest(app);
@@ -81,7 +81,7 @@ describe("the starting mode is chosen at sign-up, not at login", () => {
   ])("signing up to %s saves it, starts there and lands on %s", async (startingMode, home) => {
     const agent = await guest(app);
     const res = await agent.post("/signup").type("form").send({
-      username: "bob", email: "bob@example.com", password: "secret123", terms: "on", startingMode,
+      username: "bob", email: "bob@example.com", password: "Secret123!", confirmPassword: "Secret123!", terms: "on", startingMode,
     });
     expect(res.headers.location).toBe(home);
     expect((await User.findOne({ username: "bob" })).startingMode).toBe(startingMode);

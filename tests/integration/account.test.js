@@ -36,7 +36,8 @@ describe("email verification", () => {
     await agent.post("/signup").type("form").send({
       username: "bob",
       email: "bob@example.com",
-      password: "secret123",
+      password: "Secret123!",
+      confirmPassword: "Secret123!",
       terms: "on",
       startingMode: "guest",
     });
@@ -200,11 +201,11 @@ describe("account page", () => {
     const here = await login(app);
     const there = await login(app);
 
-    await here.post("/account/password").type("form").send({ currentPassword: "wrong-pass1", password: "brand-new-pass1" });
+    await here.post("/account/password").type("form").send({ currentPassword: "wrong-pass1", password: "Brand-new-pass1!" });
     expect((await here.get("/users/alice")).text).toContain("current password is not right");
 
     await new Promise((resolve) => setTimeout(resolve, 5));
-    await here.post("/account/password").type("form").send({ currentPassword: "password123", password: "brand-new-pass1" });
+    await here.post("/account/password").type("form").send({ currentPassword: "password123", password: "Brand-new-pass1!" });
     expect((await here.get("/users/alice")).status).toBe(200);
     expect((await there.get("/account")).headers.location).toBe("/login");
     expect(mailer.outbox.at(-1).subject).toContain("password was changed");

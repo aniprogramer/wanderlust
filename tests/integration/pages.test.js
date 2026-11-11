@@ -68,7 +68,7 @@ describe("legal pages", () => {
 });
 
 describe("signup agreement", () => {
-  const body = { username: "bob", email: "bob@example.com", password: "secret123" };
+  const body = { username: "bob", email: "bob@example.com", password: "Secret123!", confirmPassword: "Secret123!" };
 
   test("is refused without the box ticked", async () => {
     const agent = await guest(app);

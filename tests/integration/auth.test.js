@@ -20,7 +20,8 @@ describe("authentication", () => {
     const res = await agent.post("/signup").type("form").send({
       username: "bob",
       email: "bob@example.com",
-      password: "secret123",
+      password: "Secret123!",
+      confirmPassword: "Secret123!",
       terms: "on",
       startingMode: "guest",
     });
@@ -29,7 +30,7 @@ describe("authentication", () => {
 
     const user = await User.findOne({ username: "bob" }).select("+hash");
     expect(user.hash).toBeDefined();
-    expect(user.hash).not.toContain("secret123");
+    expect(user.hash).not.toContain("Secret123!");
 
     // Session is active: protected page is reachable
     expect((await agent.get("/wishlist")).status).toBe(200);
@@ -40,7 +41,8 @@ describe("authentication", () => {
     const res = await (await guest(app)).post("/signup").type("form").send({
       username: "bob",
       email: "other@example.com",
-      password: "secret123",
+      password: "Secret123!",
+      confirmPassword: "Secret123!",
       terms: "on",
       startingMode: "guest",
     });
@@ -61,7 +63,8 @@ describe("authentication", () => {
       const text = await signup(await guest(app), {
         username: "bobby",
         email: "BOB@Example.com",
-        password: "secret123",
+        password: "Secret123!",
+        confirmPassword: "Secret123!",
       terms: "on",
       startingMode: "guest",
       });
@@ -76,7 +79,8 @@ describe("authentication", () => {
       const text = await signup(await guest(app), {
         username: "bob",
         email: "new@example.com",
-        password: "secret123",
+        password: "Secret123!",
+        confirmPassword: "Secret123!",
       terms: "on",
       startingMode: "guest",
       });
@@ -97,7 +101,8 @@ describe("authentication", () => {
       await (await guest(app)).post("/signup").type("form").send({
         username: "bob",
         email: "  Bob@Example.COM ",
-        password: "secret123",
+        password: "Secret123!",
+        confirmPassword: "Secret123!",
       terms: "on",
       startingMode: "guest",
       });

@@ -156,7 +156,8 @@ describe("signupSchema", () => {
   const user = (over = {}) => ({
     username: "bob_1",
     email: "bob@example.com",
-    password: "longenough1",
+    password: "Longenough1!",
+    confirmPassword: "Longenough1!",
     terms: "on",
     startingMode: "guest",
     ...over,
@@ -172,6 +173,8 @@ describe("signupSchema", () => {
     [{ username: "bad name!" }],
     [{ email: "not-an-email" }],
     [{ password: "short" }],
+    [{ confirmPassword: "Different1!" }],
+    [{ confirmPassword: undefined }],
     [{ startingMode: undefined }],
     [{ startingMode: "" }],
     [{ startingMode: "admin" }],
@@ -181,35 +184,51 @@ describe("signupSchema", () => {
 });
 
 describe("password policy (A1)", () => {
-  const signup = (password) =>
+  const signup = (password, confirmPassword = password) =>
     signupSchema.validate({
       username: "bob_1",
       email: "bob@example.com",
       password,
+      confirmPassword,
       terms: "on",
       startingMode: "host",
     }).error;
 
   test.each([
-    ["all digits", "12345678"],
-    ["all letters", "abcdefgh"],
-    ["129 characters", `a1${"b".repeat(127)}`],
-    ["too short", "abc123"],
-  ])("rejects %s", (_name, password) => {
+    ["all digits", "12345678", /uppercase letter, a lowercase letter, a special character/],
+    ["no uppercase", "abcd1234!", /an uppercase letter/],
+    ["no lowercase", "ABCD1234!", /a lowercase letter/],
+    ["no number", "Abcdefgh!", /a number/],
+    ["no special character", "Abcd12345", /a special character/],
+    ["a space is not a special character", "Abcd 1234", /a special character/],
+    ["too short", "Ab1!", /8 to 128 characters/],
+    ["129 characters", `Ab1!${"b".repeat(125)}`, /8 to 128 characters/],
+  ])("rejects %s", (_name, password, reason) => {
     expect(signup(password)).toBeDefined();
-    expect(signup(password).message).toMatch(/at least one letter and one digit/);
+    expect(signup(password).message).toMatch(reason);
   });
 
-  test.each([["abcd1234"], [`a1${"b".repeat(126)}`]])("accepts %s", (password) => {
+  test.each([["Abcd1234!"], [`Ab1!${"b".repeat(124)}`], ["Pässwörd1?"]])("accepts %s", (password) => {
     expect(signup(password)).toBeUndefined();
+  });
+
+  test("the confirmation has to match", () => {
+    expect(signup("Abcd1234!", "Abcd1234?").message).toMatch(/do not match/);
   });
 
   test("the reset form follows the same rule", () => {
     const reset = (password) =>
       resetSchema.validate({ password, confirmPassword: password }).error;
     expect(reset("12345678")).toBeDefined();
-    expect(reset("abcdefgh")).toBeDefined();
-    expect(reset("abcd1234")).toBeUndefined();
+    expect(reset("abcd1234")).toBeDefined();
+    expect(reset("Abcd1234!")).toBeUndefined();
+  });
+
+  test("the page checklist and the server use one list of rules", () => {
+    const { RULES, failing } = require("../../utils/passwordRules");
+    expect(RULES.map((rule) => rule.id)).toEqual(["length", "upper", "lower", "number", "special"]);
+    expect(failing("Abcd1234!")).toEqual([]);
+    expect(failing("abcd").map((rule) => rule.id)).toEqual(["length", "upper", "number", "special"]);
   });
 });
 

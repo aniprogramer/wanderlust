@@ -11,7 +11,8 @@ describe("liquid glass menus, cards and pagination", () => {
   test("every menu and popover shares one glass surface, including the calendar", () => {
     const rule = /\.dropdown-menu,\s*\.wl-guests-popover,\s*\.wl-calendar-popover\s*\{([^}]*)\}/.exec(tokens)[1];
     expect(rule).toMatch(/background:\s*var\(--glass-bg\)/);
-    expect(tokens).toMatch(/\.wl-calendar-popover\s*\{\s*background:\s*var\(--glass-bg-hover\)/);
+    // The date picker and guests hold small text, so they use the dense glass tone (readable over photos)
+    expect(tokens).toMatch(/\.wl-calendar-popover\s*\{\s*background:\s*var\(--glass-bg-dense\)/);
     expect(rule).toMatch(/backdrop-filter:\s*var\(--glass-backdrop\)/);
     expect(rule).toMatch(/border:\s*1px solid var\(--glass-border\)/);
   });

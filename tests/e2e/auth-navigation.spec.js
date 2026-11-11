@@ -16,25 +16,15 @@ test.describe("Auth Registration & Login Experience", () => {
     await expect(page.locator(".container")).toHaveCount(0);
     await expect(page.locator(".wl-auth")).toHaveCount(1);
 
-    // 2. Test top-right "Sign in" navigation
-    const topbarLink = page.locator(".wl-auth-topbar a");
-    await expect(topbarLink).toBeVisible();
-    await expect(topbarLink).toHaveAttribute("href", "/login");
-    await topbarLink.click();
+    // 2. No site navigation or top-right link: the brand leads home and the card switches pages
+    await expect(page.locator(".wl-auth-topbar")).toHaveCount(0);
+    await expect(page.locator(".wl-auth-nav")).toHaveCount(0);
+    await expect(page.locator(".wl-auth-brandbar a")).toHaveAttribute("href", "/listings");
+    await page.locator(".wl-auth-switch a").click();
     await expect(page).toHaveURL(/\/login/);
-
-    // 3. On /login, test top-right "Create an account" navigation
-    const loginTopbarLink = page.locator(".wl-auth-topbar a");
-    await expect(loginTopbarLink).toBeVisible();
-    await expect(loginTopbarLink).toHaveAttribute("href", "/signup");
-    await loginTopbarLink.click();
+    await page.locator(".wl-auth-switch a").click();
     await expect(page).toHaveURL(/\/signup/);
-
-    // 4. Test in-card "Sign in →" navigation
-    const cardLink = page.locator(".wl-auth-switch a");
-    await expect(cardLink).toBeVisible();
-    await expect(cardLink).toHaveAttribute("href", "/login");
-    await cardLink.click();
+    await page.locator(".wl-auth-switch a").click();
     await expect(page).toHaveURL(/\/login/);
 
     // 5. In-card "Create an account →" navigation back to /signup
@@ -64,7 +54,6 @@ test.describe("Auth Registration & Login Experience", () => {
     await page.goto("/signup");
     await expect(page.locator(".navbar")).toHaveCount(0);
     await expect(page.locator(".wl-auth-card")).toBeVisible();
-    await expect(page.locator(".wl-auth-topbar a")).toBeVisible();
     await expect(page.locator(".wl-auth-switch a")).toBeVisible();
 
     // Tablet viewport

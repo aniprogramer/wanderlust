@@ -57,7 +57,7 @@ test("every admin write needs a CSRF token", async () => {
 
 test("a form cannot grant admin", async () => {
   const visitor = await guest(app);
-  await visitor.post("/signup").type("form").send({ username: "sneaky", email: "s@example.com", password: "secret123", terms: "on", startingMode: "guest", isAdmin: "true" });
+  await visitor.post("/signup").type("form").send({ username: "sneaky", email: "s@example.com", password: "Secret123!", confirmPassword: "Secret123!", terms: "on", startingMode: "guest", isAdmin: "true" });
   expect(await User.countDocuments({ username: "sneaky" })).toBe(0);
   const bob = await login(app, "bob");
   await bob.post("/account/profile").type("form").send({ username: "bob", email: "bob@example.com", isAdmin: "true" });
