@@ -13,7 +13,7 @@ beforeEach(async () => {
   await clearDb();
   owner = await createUser("alice");
   listing = await createListing(owner);
-  agent = await login(app);
+  agent = await login(app, "alice", "host");
 });
 
 const block = (from, to, extra = {}) =>
@@ -86,7 +86,7 @@ test("a range can be opened again, only by its owner", async () => {
   await block(day(10), day(12));
   const { blockedRanges: [range] } = await Listing.findById(listing._id);
   await createUser("bob");
-  await (await login(app, "bob")).delete(`/listings/${listing._id}/blocks/${range._id}`);
+  await (await login(app, "bob", "host")).delete(`/listings/${listing._id}/blocks/${range._id}`);
   expect((await Listing.findById(listing._id)).blockedRanges).toHaveLength(1);
   await agent.delete(`/listings/${listing._id}/blocks/${range._id}`);
   expect((await Listing.findById(listing._id)).blockedRanges).toHaveLength(0);

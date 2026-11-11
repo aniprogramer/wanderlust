@@ -11,15 +11,24 @@ const { day } = require("../helpers");
 
 const listing = (over = {}) => ({
   listing: {
-    title: "t",
-    description: "d",
-    location: "l",
-    country: "c",
+    title: "A valid title",
+    description: "A description that is comfortably longer than the fifty character minimum.",
+    propertyType: "Cabin",
+    category: "Mountains",
+    addressLine: "1 Main Street",
+    city: "Aspen",
+    region: "Colorado",
+    country: "United States",
+    currency: "USD",
     price: 10,
     maxGuests: 2,
     bedrooms: 1,
     beds: 1,
     bathrooms: 1,
+    checkInFrom: "15:00",
+    checkInUntil: "20:00",
+    checkOutBy: "11:00",
+    cancellationPolicy: "flexible",
     ...over,
   },
 });
@@ -27,10 +36,11 @@ const listing = (over = {}) => ({
 describe("listingSchema", () => {
   test("accepts valid input and blank optional fields", () => {
     const { error, value } = listingSchema.validate(
-      listing({ category: "", lat: "", lng: "" }),
+      listing({ otherRules: "", sizeSqm: "", lat: "", lng: "" }),
     );
     expect(error).toBeUndefined();
-    expect(value.listing.category).toBeUndefined();
+    expect(value.listing.otherRules).toBeUndefined();
+    expect(value.listing.sizeSqm).toBeUndefined();
   });
 
   test.each([
@@ -148,6 +158,7 @@ describe("signupSchema", () => {
     email: "bob@example.com",
     password: "longenough1",
     terms: "on",
+    startingMode: "guest",
     ...over,
   });
 
@@ -161,6 +172,9 @@ describe("signupSchema", () => {
     [{ username: "bad name!" }],
     [{ email: "not-an-email" }],
     [{ password: "short" }],
+    [{ startingMode: undefined }],
+    [{ startingMode: "" }],
+    [{ startingMode: "admin" }],
   ])("rejects %j", (over) => {
     expect(signupSchema.validate(user(over)).error).toBeDefined();
   });
@@ -173,6 +187,7 @@ describe("password policy (A1)", () => {
       email: "bob@example.com",
       password,
       terms: "on",
+      startingMode: "host",
     }).error;
 
   test.each([

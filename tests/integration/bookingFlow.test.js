@@ -58,7 +58,7 @@ beforeEach(async () => {
     currency: "EUR",
     maxGuests: 3,
   });
-  hostAgent = await login(app, "host");
+  hostAgent = await login(app, "host", "host");
   bobAgent = await login(app, "bob");
 });
 
@@ -200,7 +200,8 @@ describe("the host's reply", () => {
     expect(mail.to).toBe("bob@example.com");
     expect(mail.text).toContain("host@example.com");
     const $ = cheerio.load((await hostAgent.get(`/listings/${listing._id}`)).text);
-    expect($("#booking-card").text()).toContain("@bob");
+    // Names link to the public profile (display name, no email)
+    expect($("#booking-card a.wl-user-link[href='/users/bob']").text()).toBe("bob");
   });
 
   test("only the host can accept or decline", async () => {
@@ -370,7 +371,9 @@ describe("pages", () => {
     expect(hostView.text).not.toContain("bob@example.com");
     await hostAgent.post(`/bookings/${booking._id}/accept`);
     expect((await bobAgent.get(`/bookings/${booking._id}`)).text).toContain("host@example.com");
-    expect((await hostAgent.get("/bookings/hosting")).text).toContain("bob@example.com");
+    // Contact details live on the booking page only, never in lists
+    expect((await hostAgent.get("/bookings/hosting")).text).not.toContain("bob@example.com");
+    expect((await hostAgent.get(`/bookings/${booking._id}`)).text).toContain("bob@example.com");
   });
 
   test("the dashboard counts and estimates per currency, requests first", async () => {

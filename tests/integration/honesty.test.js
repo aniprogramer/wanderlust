@@ -47,12 +47,15 @@ describe("listing cards (R2, F1)", () => {
     expect(card.text()).not.toContain("New");
   });
 
-  test("an old stay with no reviews is not called new", async () => {
+  // The brief changed this on purpose: every listing without a review says New, and never a number
+  test("a stay with no reviews says New, whatever its age, and shows no rating", async () => {
     const owner = await createUser("alice");
     await createListing(owner, { _id: oldId() });
     const card = (await home())(".listing-card").first();
-    expect(card.find(".wl-badge, .wl-card-badge")).toHaveLength(0);
-    expect(card.text()).toContain("No reviews yet");
+    expect(card.find(".wl-badge").text()).toBe("New");
+    expect(card.find(".wl-card-badge")).toHaveLength(0);
+    expect(card.find(".wl-rating-num")).toHaveLength(0);
+    expect(card.text()).not.toContain("No reviews yet");
   });
 
   test("no invented badges, photo counts or amenities", async () => {
@@ -91,15 +94,16 @@ describe("dead and misleading controls (F2 to F6, O2 to O4)", () => {
     expect(text).not.toContain("currency.js");
   });
 
-  test("navigation offers no Experiences or Destinations", async () => {
+  test("navigation structure matches approved Wanderlust design", async () => {
     const $ = await home();
     const labels = $(".wl-nav-link")
       .map((_, el) => $(el).text().trim())
       .get();
     expect(labels).toEqual(["Explore", "Map", "Saved", "Trips"]);
-    const body = $("body").text();
-    expect(body).not.toMatch(/experiences/i);
-    expect(body).not.toMatch(/destinations\b(?! ?, cities)/i);
+    const topLinks = $(".wl-top-nav-links a")
+      .map((_, el) => $(el).text().trim())
+      .get();
+    expect(topLinks).toEqual(["Stays", "Experiences", "Destinations"]);
   });
 
   test("footer shows social icons only for configured URLs", async () => {
@@ -150,12 +154,12 @@ describe("dead and misleading controls (F2 to F6, O2 to O4)", () => {
 describe("flash messages (F13)", () => {
   test("success auto-dismisses; errors stay, carry role=alert and can be closed", async () => {
     await createUser("alice");
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     await agent.post("/wishlist/507f1f77bcf86cd799439011"); // 404 sets no flash
     await agent.post("/logout");
     const page = await agent.get("/listings");
     const $ = cheerio.load(page.text);
-    const success = $(".wl-flash");
+    const success = $(".wl-toast");
     expect(success.attr("role")).toBe("status");
     expect(success.attr("data-autodismiss")).toBeDefined();
 
@@ -164,19 +168,19 @@ describe("flash messages (F13)", () => {
     const token = /name="_csrf" value="([^"]+)"/.exec(login2.text)[1];
     await failed.post("/forgot-password").type("form").send({ _csrf: token, email: "nope" });
     const again = cheerio.load((await failed.get("/forgot-password")).text);
-    expect(again(".wl-auth-alert--error").attr("role")).toBe("alert");
-    expect(again(".wl-auth-alert--error").attr("data-autodismiss")).toBeUndefined();
+    expect(again(".wl-toast.wl-auth-alert--error").attr("role")).toBe("alert");
+    expect(again(".wl-toast.wl-auth-alert--error").attr("data-autodismiss")).toBeUndefined();
   });
 
   test("an error flash on a normal page has a close button and no timer", async () => {
     await createUser("alice");
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     // A missing listing redirects home with an error flash
     await agent.get("/listings/507f1f77bcf86cd799439011");
     const $ = cheerio.load((await agent.get("/listings")).text);
-    const error = $(".wl-auth-alert--error.wl-flash");
+    const error = $(".wl-auth-alert--error.wl-toast");
     expect(error.attr("role")).toBe("alert");
     expect(error.attr("data-autodismiss")).toBeUndefined();
-    expect(error.find("[data-flash-close]").attr("aria-label")).toBeTruthy();
+    expect(error.find("[data-toast-close]").attr("aria-label")).toBeTruthy();
   });
 });

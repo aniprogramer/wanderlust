@@ -55,7 +55,7 @@ describe("creating bookings", () => {
   });
 
   test("owner cannot book their own listing", async () => {
-    await book(await login(app, "host"), listing._id, day(10), day(12));
+    await book(await login(app, "host", "host"), listing._id, day(10), day(12));
     expect(await Booking.countDocuments()).toBe(0);
   });
 
@@ -119,9 +119,9 @@ describe("viewing and cancelling", () => {
       (await (await login(app, "carol")).get("/bookings")).text,
     ).not.toContain("Cozy Cabin");
 
-    const hosting = await (await login(app, "host")).get("/bookings/hosting");
-    expect(hosting.text).toContain("@bob");
-    expect((await bob.get("/bookings/hosting")).text).not.toContain("@bob");
+    const hosting = await (await login(app, "host", "host")).get("/bookings/hosting");
+    expect(hosting.text).toContain('class="wl-user-link" href="/users/bob"');
+    expect((await (await login(app, "bob", "host")).get("/bookings/hosting")).text).not.toContain('class="wl-user-link" href="/users/bob"');
   });
 
   test("listing page shows unavailable dates publicly, guest names only to host", async () => {
@@ -129,11 +129,11 @@ describe("viewing and cancelling", () => {
     await confirmAll();
     const publicPage = await request(app).get(`/listings/${listing._id}`);
     expect(publicPage.text).toContain(day(10));
-    expect(publicPage.text).not.toContain("@bob");
+    expect(publicPage.text).not.toContain('class="wl-user-link" href="/users/bob"');
     const hostPage = await (
-      await login(app, "host")
+      await login(app, "host", "host")
     ).get(`/listings/${listing._id}`);
-    expect(hostPage.text).toContain("@bob");
+    expect(hostPage.text).toContain('class="wl-user-link" href="/users/bob"');
   });
 
   test("guest and host can cancel; strangers cannot", async () => {
@@ -149,7 +149,7 @@ describe("viewing and cancelling", () => {
     await bob.delete(`/bookings/${first._id}`);
     expect((await Booking.findById(first._id)).status).toBe("cancelled");
 
-    const hostAgent = await login(app, "host");
+    const hostAgent = await login(app, "host", "host");
     await hostAgent.delete(`/bookings/${second._id}`);
     expect((await Booking.findById(second._id)).status).toBe("cancelled");
     expect((await hostAgent.get("/bookings/hosting")).text).toContain(
@@ -195,7 +195,7 @@ describe("pagination", () => {
     expect(rows(page2)).toBe(2);
     expect(page2.text).toContain('href="/bookings?page=1"');
 
-    const hostAgent = await login(app, "host");
+    const hostAgent = await login(app, "host", "host");
     expect(rows(await hostAgent.get("/bookings/hosting"))).toBe(12);
     expect(rows(await hostAgent.get("/bookings/hosting?page=2"))).toBe(2);
   });

@@ -129,32 +129,46 @@ describe("isBookingParty", () => {
 });
 
 describe("validators", () => {
-  test("validateListing passes cleaned body on and rejects bad input with 400", () => {
+  test("validateListing passes cleaned body on, and keeps errors for the form to show", () => {
     const req = {
       body: {
         listing: {
-          title: "t",
-          description: "d",
-          location: "l",
-          country: "c",
+          title: "A valid title",
+          description: "A description comfortably longer than the fifty character minimum.",
+          propertyType: "Cabin",
+          category: "Mountains",
+          addressLine: "1 Main Street",
+          city: "Aspen",
+          region: "Colorado",
+          country: "United States",
+          currency: "USD",
           price: "5",
-          category: "",
+          otherRules: "",
           maxGuests: "2",
           bedrooms: "1",
           beds: "1",
           bathrooms: "1",
+          checkInFrom: "15:00",
+          checkInUntil: "20:00",
+          checkOutBy: "11:00",
+          cancellationPolicy: "strict",
         },
       },
     };
     const next = jest.fn();
     mw.validateListing(req, {}, next);
     expect(next).toHaveBeenCalledWith();
+    expect(req.listingForm).toBeUndefined();
     expect(req.body.listing.price).toBe(5);
-    expect(req.body.listing.category).toBeUndefined();
+    expect(req.body.listing.otherRules).toBeUndefined();
 
-    const bad = jest.fn();
-    mw.validateListing({ body: {} }, {}, bad);
-    expect(bad.mock.calls[0][0]).toMatchObject({ statusCode: 400 });
+    const bad = { body: { listing: { title: "short" } } };
+    const nextBad = jest.fn();
+    mw.validateListing(bad, {}, nextBad);
+    expect(nextBad).toHaveBeenCalledWith();
+    expect(bad.listingForm.errors.title).toContain("10 to 80");
+    expect(bad.listingForm.errors.cancellationPolicy).toBeDefined();
+    expect(bad.listingForm.values.title).toBe("short");
   });
 
   test("validateSearch stores cleaned filters and ignores unknown params", () => {

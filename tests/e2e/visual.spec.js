@@ -21,7 +21,10 @@ const screens = [
   ["not-found", "/no-such-page", null],
   ["booking-guest", `/bookings/${ids.bookingPending}`, "bob"],
   ["booking-host", `/bookings/${ids.bookingPending}`, "alice"],
-  ["account", "/account", "bob"],
+  ["your-profile", "/users/bob", "bob"],
+  ["profile", "/users/alice", "bob"],
+  ["profile-visitor", "/users/bob", null],
+  ["your-listings", "/listings/mine", "alice"],
   ["verify-email", "/verify-email", "bob"],
   ["contact", "/contact", null],
   ["help", "/help", null],
@@ -33,7 +36,11 @@ const screens = [
   ["admin", "/admin", "root"],
 ];
 
-const login = async (page, username) => {
+// Login starts in the account's starting mode (guest here); `mode` then switches in the header
+const hostPage = (path, name) =>
+  /^\/listings\/new|\/edit$|^\/bookings\/hosting|^\/listings\/mine/.test(path) || name === "booking-host";
+
+const login = async (page, username, mode = "guest") => {
   await page.goto("/login");
   await page.fill("#username", username);
   await page.fill("#password", PASSWORD);
@@ -41,6 +48,11 @@ const login = async (page, username) => {
     page.waitForURL(/\/listings/),
     page.click("form[action='/login'] button[type=submit]"),
   ]);
+  if (mode === "host") {
+    // The switch stays on the same page when that page exists in both modes
+    await page.evaluate(() => document.querySelector("form.wl-mode-switch").submit());
+    await page.waitForSelector('.wl-mode-switch[data-mode="host"]', { state: "attached" });
+  }
 };
 
 for (const [name, path, user] of screens) {
@@ -59,7 +71,7 @@ for (const [name, path, user] of screens) {
     await page.route("https://events.mapbox.com/**", (route) =>
       route.fulfill({ status: 204 }),
     );
-    if (user) await login(page, user);
+    if (user) await login(page, user, hostPage(path, name) ? "host" : "guest");
 
     const problems = [];
     page.on("console", (msg) => {
@@ -116,20 +128,20 @@ test("system light mode keeps the Stone ground", async ({ browser }) => {
 
 test("flash: success fades after 5 seconds and pauses on hover; errors stay", async ({ page }) => {
   await login(page, "bob");
-  const flash = page.locator(".wl-flash");
+  const flash = page.locator(".wl-toast:not([data-verify-banner])");
   await expect(flash).toBeVisible();
   await flash.hover();
-  await page.waitForTimeout(5600);
+  await page.waitForTimeout(6600);
   await expect(flash).toBeVisible();
   await page.mouse.move(0, 0);
   await expect(flash).toHaveCount(0, { timeout: 7000 });
 
   await page.goto("/listings/507f1f77bcf86cd799439011");
-  const error = page.locator(".wl-auth-alert--error.wl-flash");
+  const error = page.locator(".wl-auth-alert--error.wl-toast");
   await expect(error).toBeVisible();
-  await page.waitForTimeout(5600);
+  await page.waitForTimeout(6600);
   await expect(error).toBeVisible();
-  const close = error.locator("[data-flash-close]");
+  const close = error.locator("[data-toast-close]");
   const box = await close.boundingBox();
   expect(box.width).toBeGreaterThanOrEqual(44);
   expect(box.height).toBeGreaterThanOrEqual(44);

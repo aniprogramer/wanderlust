@@ -38,7 +38,11 @@ const watch = async (page) => {
   return problems;
 };
 
-const login = async (page, username) => {
+// Login starts in the account's starting mode (guest here); `mode` then switches in the header
+const hostPage = (path, name) =>
+  /^\/listings\/new|\/edit$|^\/bookings\/hosting|^\/listings\/mine/.test(path) || name === "booking-host";
+
+const login = async (page, username, mode = "guest") => {
   await page.goto("/login");
   await page.fill("#username", username);
   await page.fill("#password", PASSWORD);
@@ -46,6 +50,11 @@ const login = async (page, username) => {
     page.waitForURL(/\/listings/),
     page.click("form[action='/login'] button[type=submit]"),
   ]);
+  if (mode === "host") {
+    // The switch stays on the same page when that page exists in both modes
+    await page.evaluate(() => document.querySelector("form.wl-mode-switch").submit());
+    await page.waitForSelector('.wl-mode-switch[data-mode="host"]', { state: "attached" });
+  }
 };
 
 const pages = [
@@ -66,7 +75,7 @@ for (const [path, user] of pages) {
     page,
   }) => {
     const problems = await watch(page);
-    if (user) await login(page, user);
+    if (user) await login(page, user, hostPage(path, "") ? "host" : "guest");
     problems.length = 0; // only count the page under test
     await page.goto(path);
     await page.waitForLoadState("networkidle");
@@ -158,7 +167,7 @@ const mapLoaded = (page) =>
 for (const path of ["/listings/new", `/listings/${ids.pinned}/edit`]) {
   test(`clicking the map fills lat/lng on ${path}`, async ({ page }) => {
     await watch(page);
-    await login(page, "alice");
+    await login(page, "alice", "host");
     await page.goto(path);
     await mapLoaded(page);
     await page.waitForTimeout(500);
@@ -177,13 +186,13 @@ test("editing the address clears the pin and saving re-geocodes", async ({
   await page.route("**/listings/geocode?**", (route) =>
     route.fulfill({ json: { coordinates: null } }),
   );
-  await login(page, "alice");
+  await login(page, "alice", "host");
   await page.goto(`/listings/${ids.pinned}/edit`);
   await mapLoaded(page);
   await expect(page.locator("#lat")).toHaveValue("28.65");
   await expect(page.locator(".mapboxgl-marker")).toHaveCount(1);
 
-  await page.fill("#location", "Mumbai");
+  await page.fill("#city", "Mumbai");
   await expect(page.locator("#lat")).toHaveValue("");
   await expect(page.locator("#lng")).toHaveValue("");
   await expect(page.locator(".mapboxgl-marker")).toHaveCount(0);
@@ -256,7 +265,7 @@ test("declining the delete-listing confirm keeps the listing", async ({
   page,
 }) => {
   await watch(page);
-  await login(page, "alice");
+  await login(page, "alice", "host");
   await page.goto(`/listings/${ids.pinned}`);
   const msg = await declineAndCheck(
     page,
@@ -287,7 +296,7 @@ test("declining the cancel-reservation confirm keeps the reservation", async ({
   page,
 }) => {
   await watch(page);
-  await login(page, "alice");
+  await login(page, "alice", "host");
   await page.goto(`/listings/${ids.pinned}`);
   const cancels = page
     .locator("#booking-card")

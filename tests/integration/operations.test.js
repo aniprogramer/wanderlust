@@ -135,7 +135,9 @@ describe("search engines", () => {
     expect($('meta[name="twitter:card"]').attr("content")).toBe("summary_large_image");
     const data = JSON.parse($('script[type="application/ld+json"]').html());
     expect(data).toMatchObject({ "@type": "LodgingBusiness", name: "Blue <Villa>" });
-    expect(data.geo.latitude).toBe(15.5);
+    // The approximate point, near the pin: search engines must not get the exact one
+    expect(data.geo.latitude).toBeCloseTo(15.5, 1);
+    expect(data.geo.latitude).not.toBe(15.5);
     expect(data.aggregateRating).toBeUndefined();
     // The title's "<" cannot close the script element
     expect($('script[type="application/ld+json"]').html()).not.toContain("<Villa");
@@ -177,8 +179,13 @@ describe("search engines", () => {
     const listing = await createListing(owner);
     const alice = await login(app, "alice");
     const noindex = (text) => cheerio.load(text)('meta[name="robots"]').attr("content") === "noindex";
-    for (const url of ["/account", "/bookings", "/bookings/hosting", "/wishlist", "/no-such-page"]) {
+    for (const url of ["/users/alice", "/bookings", "/wishlist", "/no-such-page"]) {
       expect(noindex((await alice.get(url)).text)).toBe(true);
+    }
+    // Reservations only exist in host mode, so a host-mode session reaches it
+    const hostMode = await login(app, "host", "host");
+    for (const url of ["/bookings/hosting", "/listings/mine"]) {
+      expect(noindex((await hostMode.get(url)).text)).toBe(true);
     }
     const visitor = await guest(app);
     for (const url of ["/login", "/signup", "/forgot-password"]) {
@@ -206,9 +213,9 @@ describe("search engines", () => {
       totalPrice: 1,
     });
     const agent = await login(app, "alice");
-    const hostAgent = await login(app, "host");
+    const hostAgent = await login(app, "host", "host");
     for (const [who, url] of [
-      [agent, "/account"],
+      [agent, "/users/alice"],
       [agent, "/bookings"],
       [agent, `/bookings/${booking._id}`],
       [agent, "/wishlist"],

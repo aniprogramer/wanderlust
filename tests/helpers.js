@@ -57,14 +57,36 @@ exports.guest = async (app) => {
 
 // Returns a supertest agent holding a logged-in session (the session id rotates on login,
 // so the token is read again afterwards).
-exports.login = async (app, username = "alice") => {
+// `mode` is the mode the test acts in. Login uses the account's starting mode (guest for these
+// users), so acting as a host goes through the header switch, as a real user does.
+exports.login = async (app, username = "alice", mode = "guest") => {
   const agent = await exports.guest(app);
-  await agent
-    .post("/login")
-    .type("form")
-    .send({ username, password: "password123" });
-  agent.csrfToken = TOKEN_RE.exec((await agent.get("/wishlist")).text)[1];
+  await agent.post("/login").type("form").send({ username, password: "password123" });
+  agent.csrfToken = TOKEN_RE.exec((await agent.get(`/users/${username}`)).text)[1];
+  if (mode !== "guest") await agent.post("/mode").type("form").send({ mode });
   return agent;
+};
+
+// Everything the listing form requires, as multipart field names
+exports.LISTING_FIELDS = {
+  "listing[title]": "Mountain Lodge",
+  "listing[description]": "A snowy lodge with a stove, big windows and a long view over the valley.",
+  "listing[propertyType]": "Cabin",
+  "listing[category]": "Mountains",
+  "listing[addressLine]": "12 Birch Lane",
+  "listing[city]": "Aspen",
+  "listing[region]": "Colorado",
+  "listing[country]": "United States",
+  "listing[currency]": "USD",
+  "listing[price]": "2500",
+  "listing[maxGuests]": "4",
+  "listing[bedrooms]": "2",
+  "listing[beds]": "2",
+  "listing[bathrooms]": "1.5",
+  "listing[checkInFrom]": "15:00",
+  "listing[checkInUntil]": "20:00",
+  "listing[checkOutBy]": "11:00",
+  "listing[cancellationPolicy]": "moderate",
 };
 
 exports.createListing = (owner, overrides = {}) =>

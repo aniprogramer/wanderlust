@@ -80,7 +80,7 @@ describe("signup agreement", () => {
 
   test("records when and which version was accepted", async () => {
     const agent = await guest(app);
-    await agent.post("/signup").type("form").send({ ...body, terms: "on" });
+    await agent.post("/signup").type("form").send({ ...body, terms: "on", startingMode: "guest" });
     const user = await User.findOne({ username: "bob" });
     expect(user.termsAcceptedAt).toBeInstanceOf(Date);
     expect(user.termsVersion).toBe(TERMS_VERSION);

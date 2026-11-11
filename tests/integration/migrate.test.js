@@ -91,3 +91,90 @@ test("existing reviews are marked as not verified", async () => {
   await migrate(db());
   expect((await db().collection("reviews").findOne()).verifiedStay).toBe(false);
 });
+
+test("users get a display name from their username, once, and keep anything they chose", async () => {
+  const User = require("../../models/user");
+  await User.collection.insertMany([
+    { username: "old_one", email: "a@example.com" },
+    { username: "chosen", email: "b@example.com", displayName: "Chosen Name" },
+    { username: "blank", email: "c@example.com", displayName: "" },
+  ]);
+  await migrate(db());
+  const names = Object.fromEntries((await User.collection.find().toArray()).map((u) => [u.username, u.displayName]));
+  expect(names).toEqual({ old_one: "old_one", chosen: "Chosen Name", blank: "blank" });
+  // The other profile fields stay empty
+  const row = await User.collection.findOne({ username: "old_one" });
+  expect([row.bio, row.city, row.country, row.avatar, row.languages]).toEqual([undefined, undefined, undefined, undefined, undefined]);
+  // Running it again, even after a rename, changes nothing
+  await User.collection.updateOne({ username: "old_one" }, { $set: { displayName: "Renamed" } });
+  await db().collection("migrations").deleteMany({});
+  await migrate(db());
+  expect((await User.collection.findOne({ username: "old_one" })).displayName).toBe("Renamed");
+});
+
+describe("the sign-up and listing details migrations", () => {
+  const User = require("../../models/user");
+
+  test("007 makes existing users guests, and leaves a chosen mode alone", async () => {
+    await User.collection.insertMany([
+      { username: "old", email: "old@example.com" },
+      { username: "chose", email: "chose@example.com", startingMode: "host" },
+    ]);
+    await migrate(db());
+    expect((await User.collection.findOne({ username: "old" })).startingMode).toBe("guest");
+    expect((await User.collection.findOne({ username: "chose" })).startingMode).toBe("host");
+  });
+
+  test("008 sets defaults and detailsIncomplete, and invents no house rules", async () => {
+    await Listing.collection.insertOne({
+      title: "Old",
+      price: 1,
+      location: "Goa",
+      country: "India",
+      amenities: ["pets_allowed", "workspace"],
+      geometry: { type: "Point", coordinates: [73.8, 15.5] },
+    });
+    await migrate(db());
+    const row = await Listing.collection.findOne();
+    expect(row).toMatchObject({
+      city: "Goa",
+      cancellationPolicy: "flexible",
+      maxNights: 30,
+      checkInFrom: "15:00",
+      checkInUntil: "20:00",
+      checkOutBy: "11:00",
+      hasWorkspace: true,
+      petsAllowed: true,
+      detailsIncomplete: true,
+    });
+    expect(row.approxGeometry.coordinates).toHaveLength(2);
+    expect(row.approxGeometry.coordinates).not.toEqual(row.geometry.coordinates);
+    expect(row.smokingAllowed).toBeUndefined();
+    expect(row.stepFreeAccess).toBeUndefined();
+    expect(row.smokeAlarm).toBeUndefined();
+  });
+
+  test("008 is safe to run twice, and skips a listing already saved through the new form", async () => {
+    await Listing.collection.insertOne({ title: "Old", price: 1, location: "Goa", country: "India", geometry: { type: "Point", coordinates: [73.8, 15.5] } });
+    await Listing.collection.insertOne({ title: "New", price: 1, location: "Pune", country: "India", cancellationPolicy: "strict" });
+    await migrate(db());
+    const first = await Listing.collection.findOne({ title: "Old" });
+    await Listing.collection.updateOne({ title: "Old" }, { $unset: { detailsIncomplete: 1 } });
+    await db().collection("migrations").deleteMany({});
+    await migrate(db());
+    const again = await Listing.collection.findOne({ title: "Old" });
+    expect(again.detailsIncomplete).toBeUndefined();
+    expect(again.approxGeometry).toEqual(first.approxGeometry);
+    const fresh = await Listing.collection.findOne({ title: "New" });
+    expect(fresh.cancellationPolicy).toBe("strict");
+    expect(fresh.detailsIncomplete).toBeUndefined();
+  });
+
+  test("a migrated listing without a stated rule loads and reads through the model", async () => {
+    await Listing.collection.insertOne({ title: "Old", price: 1, location: "Goa", country: "India" });
+    await migrate(db());
+    const listing = await Listing.findOne();
+    expect(listing.detailsIncomplete).toBe(true);
+    expect(listing.petsAllowed).toBeUndefined();
+  });
+});

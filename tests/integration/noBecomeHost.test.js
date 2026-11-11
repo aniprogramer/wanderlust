@@ -19,7 +19,7 @@ describe('no "Become a host" call to action', () => {
   test("signed-in user sees none on home, trips and account", async () => {
     await createUser();
     const agent = await login(app);
-    for (const url of ["/listings", "/bookings", "/account", "/bookings/hosting"]) {
+    for (const url of ["/listings", "/bookings", "/users/alice", "/bookings/hosting"]) {
       const res = await agent.get(url);
       expect(res.text).not.toMatch(PHRASE);
     }

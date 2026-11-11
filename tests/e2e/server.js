@@ -10,7 +10,7 @@ process.env.MAPBOX_TOKEN = "pk.eyJ1IjoiZTJlIiwiYSI6ImR1bW15In0.e2e";
 // Server-side geocoding is faked before the controllers capture it.
 const geocoder = require("../../utils/geocode");
 geocoder.geocode = async (q) =>
-  q.startsWith("Mumbai") ? [72.87, 19.07] : null;
+  q.includes("Mumbai") ? [72.87, 19.07] : null;
 
 const mongoose = require("mongoose");
 const { MongoMemoryServer } = require("mongodb-memory-server");
@@ -74,11 +74,31 @@ const stay = (_id, guest, from, to, over = {}) =>
   await Listing.create({
     _id: ids.pinned,
     title: "Pinned Haveli",
-    description: "Old courtyard house",
+    description: "An old courtyard house with carved doors, a shaded terrace and a quiet lane outside.",
     price: 1500,
     location: "Old Delhi",
+    addressLine: "4 Kucha Pati Ram",
+    city: "Old Delhi",
+    region: "Delhi",
     country: "India",
     category: "Cities",
+    propertyType: "House",
+    checkInFrom: "14:00",
+    checkInUntil: "21:00",
+    checkOutBy: "11:00",
+    quietHoursStart: "22:00",
+    quietHoursEnd: "07:00",
+    cancellationPolicy: "moderate",
+    petsAllowed: true,
+    smokingAllowed: false,
+    partiesAllowed: false,
+    childrenWelcome: true,
+    otherRules: "Please take your shoes off in the courtyard.",
+    stepFreeAccess: true,
+    smokeAlarm: true,
+    wifiMbps: 50,
+    sizeSqm: 120,
+    cleaningFee: 0,
     owner: alice._id,
     images: [
       { url: "https://images.unsplash.com/photo-1705672323412-e971e3e6a9a6?w=1157", filename: "one" },

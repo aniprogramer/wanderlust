@@ -38,6 +38,7 @@ describe("email verification", () => {
       email: "bob@example.com",
       password: "secret123",
       terms: "on",
+      startingMode: "guest",
     });
     return agent;
   };
@@ -87,8 +88,9 @@ describe("email verification", () => {
       const listing = await createListing(owner);
       await createUser("bob");
       const agent = await login(app, "bob");
+      const hostAgent = await login(app, "bob", "host");
       process.env.NODE_ENV = "production";
-      const newForm = await agent.get("/listings/new");
+      const newForm = await hostAgent.get("/listings/new");
       const post = await agent
         .post(`/listings/${listing._id}/bookings`)
         .type("form")
@@ -122,6 +124,7 @@ describe("account page", () => {
       await agent.get("/account"),
       await agent.get("/account/export"),
       await agent.post("/account/profile"),
+      await agent.post("/account/email"),
       await agent.post("/account/password"),
       await agent.post("/account/delete"),
     ]) {
@@ -132,7 +135,7 @@ describe("account page", () => {
   test("requires a CSRF token on every write", async () => {
     await createUser("alice");
     const agent = await login(app);
-    for (const url of ["/account/profile", "/account/password", "/account/delete"]) {
+    for (const url of ["/account/profile", "/account/email", "/account/password", "/account/delete"]) {
       // The helper adds the token, so these go out without it through a raw cookie-carrying agent
       const res = await request(app).post(url).set("Cookie", agent.jar.getCookies({ path: "/", domain: "127.0.0.1", secure: false, script: false }).toValueString());
       expect(res.status).toBe(403);
@@ -140,32 +143,56 @@ describe("account page", () => {
     expect(await User.countDocuments()).toBe(1);
   });
 
-  test("a rename keeps the session working", async () => {
+  test("a rename keeps the session working, and the chosen mode", async () => {
     await createUser("alice");
-    const agent = await login(app);
-    await agent.post("/account/profile").type("form").send({ username: "alicia", email: "alice@example.com" });
+    const agent = await login(app, "alice", "host");
+    await agent.post("/account/profile").type("form").send({ username: "alicia" });
     expect(await User.countDocuments({ username: "alicia" })).toBe(1);
-    expect((await agent.get("/account")).status).toBe(200);
+    expect((await agent.get("/users/alicia")).status).toBe(200);
+    expect((await agent.get("/listings/mine")).status).toBe(200);
   });
 
-  test("a new email must be confirmed again", async () => {
+  test("a new email waits for its link; the old one stays active until then", async () => {
     const user = await createUser("alice");
     await User.updateOne({ _id: user._id }, { emailVerifiedAt: new Date() });
     const agent = await login(app);
-    await agent.post("/account/profile").type("form").send({ username: "alice", email: "new@example.com" });
-    const updated = await User.findById(user._id);
-    expect(updated.email).toBe("new@example.com");
-    expect(updated.emailVerifiedAt).toBeUndefined();
+    await agent.post("/account/email").type("form").send({ email: "new@example.com", currentPassword: "password123" });
+    const waiting = await User.findById(user._id);
+    expect(waiting.email).toBe("alice@example.com");
+    expect(waiting.pendingEmail).toBe("new@example.com");
+    expect(waiting.emailVerifiedAt).toBeInstanceOf(Date);
     expect(mailer.outbox.at(-1).to).toBe("new@example.com");
+    expect((await agent.get("/users/alice")).text).toContain("Waiting for you to confirm");
+
+    // Using the link swaps the address
+    const link = await agent.get(`/verify-email/${tokenIn(mailer.outbox.at(-1))}`);
+    expect(link.headers.location).toBe("/users/alice");
+    const done = await User.findById(user._id);
+    expect(done.email).toBe("new@example.com");
+    expect(done.pendingEmail).toBeUndefined();
+    expect(await User.countDocuments({ email: "alice@example.com" })).toBe(0);
   });
 
-  test("a taken username or email is explained", async () => {
+  test("an email change needs the current password and an unused address", async () => {
     await createUser("alice");
     await createUser("bob");
     const agent = await login(app);
-    await agent.post("/account/profile").type("form").send({ username: "alice", email: "bob@example.com" });
-    expect((await agent.get("/account")).text).toContain("already registered");
-    expect((await User.findOne({ username: "alice" })).email).toBe("alice@example.com");
+    await agent.post("/account/email").type("form").send({ email: "new@example.com", currentPassword: "wrong-pass1" });
+    expect((await agent.get("/users/alice")).text).toContain("current password is not right");
+    expect((await User.findOne({ username: "alice" })).pendingEmail).toBeUndefined();
+    await agent.post("/account/email").type("form").send({ email: "bob@example.com", currentPassword: "password123" });
+    expect((await agent.get("/users/alice")).text).toContain("already registered");
+    expect((await User.findOne({ username: "alice" })).pendingEmail).toBeUndefined();
+    expect(mailer.outbox).toHaveLength(0);
+  });
+
+  test("a taken username is explained and changes nothing", async () => {
+    await createUser("alice");
+    await createUser("bob");
+    const agent = await login(app);
+    await agent.post("/account/profile").type("form").send({ username: "bob" });
+    expect((await agent.get("/users/alice")).text).toContain("username is taken");
+    expect(await User.countDocuments({ username: "alice" })).toBe(1);
   });
 
   test("changing the password needs the current one and signs out other devices", async () => {
@@ -174,11 +201,11 @@ describe("account page", () => {
     const there = await login(app);
 
     await here.post("/account/password").type("form").send({ currentPassword: "wrong-pass1", password: "brand-new-pass1" });
-    expect((await here.get("/account")).text).toContain("current password is not right");
+    expect((await here.get("/users/alice")).text).toContain("current password is not right");
 
     await new Promise((resolve) => setTimeout(resolve, 5));
     await here.post("/account/password").type("form").send({ currentPassword: "password123", password: "brand-new-pass1" });
-    expect((await here.get("/account")).status).toBe(200);
+    expect((await here.get("/users/alice")).status).toBe(200);
     expect((await there.get("/account")).headers.location).toBe("/login");
     expect(mailer.outbox.at(-1).subject).toContain("password was changed");
   });
@@ -246,7 +273,7 @@ describe("deleting an account", () => {
     const agent = await login(app);
     await remove(agent);
     expect(await User.countDocuments({ username: "alice" })).toBe(1);
-    expect((await agent.get("/account")).text).toContain("upcoming confirmed stays");
+    expect((await agent.get("/users/alice")).text).toContain("upcoming confirmed stays");
   });
 
   test("removes the account and listings, anonymises reviews and past stays", async () => {

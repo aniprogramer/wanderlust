@@ -55,7 +55,7 @@ describe("CSRF", () => {
   test("method-override deletes need a token too", async () => {
     const owner = await createUser("alice");
     const listing = await createListing(owner);
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     const tokenless = request.agent(app);
     tokenless.jar.setCookies(
       agent.jar.getCookies({
@@ -71,7 +71,7 @@ describe("CSRF", () => {
 
   test("multipart uploads are checked after parsing and the temp file is removed", async () => {
     await createUser("alice");
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     agent.csrfToken = "wrong";
     const count = () =>
       fs.existsSync("uploads") ? fs.readdirSync("uploads").length : 0;
@@ -87,7 +87,7 @@ describe("CSRF", () => {
   test("multipart is refused on routes that never parse it", async () => {
     const owner = await createUser("alice");
     const listing = await createListing(owner);
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     const res = await agent
       .post(`/listings/${listing._id}?_method=DELETE`)
       .field("x", "y");
@@ -96,7 +96,7 @@ describe("CSRF", () => {
 
   test("logout is POST only", async () => {
     await createUser("alice");
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     expect((await agent.get("/logout")).status).toBe(404);
     expect((await agent.post("/logout")).headers.location).toBe("/listings");
   });
@@ -120,7 +120,7 @@ describe("headers and session", () => {
   test("pages render no inline scripts or handlers", async () => {
     const owner = await createUser("alice");
     const listing = await createListing(owner);
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     for (const path of [
       "/listings",
       `/listings/${listing._id}`,

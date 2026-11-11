@@ -13,7 +13,8 @@ test.beforeEach(async ({ page }) => {
   );
 });
 
-const login = async (page, username) => {
+// Login starts in the account's starting mode (guest here); `mode` then switches in the header
+const login = async (page, username, mode = "guest") => {
   await page.goto("/login");
   await page.fill("#username", username);
   await page.fill("#password", PASSWORD);
@@ -21,6 +22,11 @@ const login = async (page, username) => {
     page.waitForURL(/\/listings/),
     page.click("form[action='/login'] button[type=submit]"),
   ]);
+  if (mode === "host") {
+    // The switch stays on the same page when that page exists in both modes
+    await page.evaluate(() => document.querySelector("form.wl-mode-switch").submit());
+    await page.waitForSelector('.wl-mode-switch[data-mode="host"]', { state: "attached" });
+  }
 };
 
 const pick = (page, ymd) =>
@@ -48,7 +54,7 @@ test("the summary and the breakdown use the listing's currency and the same tota
 });
 
 test("the host sees the request first and can open it", async ({ page }) => {
-  await login(page, "alice");
+  await login(page, "alice", "host");
   await page.goto("/bookings/hosting");
   const request = page.locator("[data-request]").first();
   await expect(request).toContainText("We would arrive in the evening.");
@@ -58,12 +64,12 @@ test("the host sees the request first and can open it", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Accept" })).toBeVisible();
 });
 
-test("the verification banner can be closed, and is back on the next page", async ({ page }) => {
+test("the email reminder pop-up can be closed, and is back on the next page", async ({ page }) => {
   await login(page, "bob");
   await page.goto("/wishlist");
   const banner = page.locator("[data-verify-banner]");
   await expect(banner).toBeVisible();
-  await banner.locator("[data-flash-close]").click();
+  await banner.locator("[data-toast-close]").click();
   await expect(banner).toHaveCount(0);
   await page.goto("/help");
   await expect(page.locator("[data-verify-banner]")).toBeVisible();
@@ -91,6 +97,7 @@ test("signup asks for the agreement beside the box", async ({ page }) => {
   await page.fill("#username", "newperson");
   await page.fill("#email", "newperson@example.com");
   await page.fill("#password", "goodpass123");
+  await page.locator("input[name=startingMode][value=guest]").check();
   await page.click("form[action='/signup'] button[type=submit]");
   await expect(page.locator("#terms-error")).toBeVisible();
   await expect(page).toHaveURL(/\/signup$/);

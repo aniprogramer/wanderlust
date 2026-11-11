@@ -24,6 +24,7 @@ const {
   login,
   createListing,
   day,
+  LISTING_FIELDS,
 } = require("../helpers");
 
 beforeAll(connectDb);
@@ -37,18 +38,7 @@ beforeEach(async () => {
 const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
 
 const submit = (agent, method, url, fields = {}, withImage = true) => {
-  const base = {
-    "listing[title]": "Mountain Lodge",
-    "listing[description]": "Snowy",
-    "listing[location]": "Aspen",
-    "listing[country]": "United States",
-    "listing[price]": "2500",
-    "listing[maxGuests]": "4",
-    "listing[bedrooms]": "2",
-    "listing[beds]": "2",
-    "listing[bathrooms]": "1.5",
-    ...fields,
-  };
+  const base = { ...LISTING_FIELDS, ...fields };
   let req = agent[method](url);
   for (const [k, v] of Object.entries(base)) req = req.field(k, v);
   return withImage
@@ -68,7 +58,7 @@ describe("listing CRUD", () => {
 
   test("create geocodes the address, uploads the image and sets the owner", async () => {
     const owner = await createUser("alice");
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     const res = await submit(agent, "post", "/listings", {
       "listing[category]": "Mountains",
     });
@@ -79,12 +69,12 @@ describe("listing CRUD", () => {
     expect(listing.geometry.coordinates).toEqual([-106.82, 39.19]);
     expect(listing.category).toBe("Mountains");
     expect(listing.image.url).toBe("https://cdn.test/new.png");
-    expect(geocode).toHaveBeenCalledWith("Aspen, United States");
+    expect(geocode).toHaveBeenCalledWith("12 Birch Lane, Aspen, Colorado, United States");
   });
 
   test("create prefers picker coordinates over geocoding", async () => {
     await createUser("alice");
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     await submit(agent, "post", "/listings", {
       "listing[lat]": "10.5",
       "listing[lng]": "20.25",
@@ -94,19 +84,32 @@ describe("listing CRUD", () => {
     expect(geocode).not.toHaveBeenCalled();
   });
 
-  test("create with an unknown location is rejected gracefully", async () => {
+  // The brief changed this on purpose: an address we cannot place no longer loses the host's work
+  test("an unknown location is kept as a draft with a No pin yet message", async () => {
     await createUser("alice");
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     geocode.mockResolvedValue(null);
     const res = await submit(agent, "post", "/listings");
-    expect(res.headers.location).toBe("/listings/new");
-    expect(await Listing.countDocuments()).toBe(0);
-    expect(cloudinary.uploader.upload).not.toHaveBeenCalled();
+    const listing = await Listing.findOne({ title: "Mountain Lodge" });
+    expect(listing.status).toBe("draft");
+    expect(listing.geometry?.coordinates).toBeUndefined();
+    expect(res.headers.location).toBe(`/listings/${listing._id}/edit`);
+    expect((await agent.get(res.headers.location)).text).toContain("No pin yet");
+  });
+
+  test("the No pin yet box publishes a listing the geocoder cannot place", async () => {
+    await createUser("alice");
+    const agent = await login(app, "alice", "host");
+    geocode.mockResolvedValue(null);
+    await submit(agent, "post", "/listings", { "listing[noPinAck]": "on" });
+    const listing = await Listing.findOne({ title: "Mountain Lodge" });
+    expect(listing.status).toBe("published");
+    expect(listing.noPinAck).toBe(true);
   });
 
   test("create still works when the geocoder is down", async () => {
     await createUser("alice");
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     geocode.mockRejectedValue(new Error("network"));
     jest.spyOn(console, "error").mockImplementation(() => {});
     await submit(agent, "post", "/listings");
@@ -117,31 +120,32 @@ describe("listing CRUD", () => {
 
   test("create validates input (400) and requires an image", async () => {
     await createUser("alice");
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     expect(
       (await submit(agent, "post", "/listings", { "listing[price]": "0" }))
         .status,
     ).toBe(400);
     const noImage = await submit(agent, "post", "/listings", {}, false);
-    expect(noImage.headers.location).toBe("/listings/new");
+    expect(noImage.status).toBe(400);
+    expect(noImage.text).toContain("Add at least one photo.");
     expect(await Listing.countDocuments()).toBe(0);
   });
 
-  test("owner can update; blank category clears it; new image replaces old", async () => {
+  test("owner can update; a blank optional field clears it; new image replaces old", async () => {
     const owner = await createUser("alice");
     const listing = await createListing(owner, {
-      category: "Cabins",
+      otherRules: "No shoes indoors",
       image: { url: "https://cdn.test/old.png", filename: "old-id" },
     });
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     const res = await submit(agent, "put", `/listings/${listing._id}`, {
-      "listing[title]": "Renamed",
-      "listing[category]": "",
+      "listing[title]": "Renamed lodge",
+      "listing[otherRules]": "",
     });
     expect(res.headers.location).toBe(`/listings/${listing._id}`);
     const updated = await Listing.findById(listing._id);
-    expect(updated.title).toBe("Renamed");
-    expect(updated.category).toBeUndefined();
+    expect(updated.title).toBe("Renamed lodge");
+    expect(updated.otherRules).toBeUndefined();
     expect(updated.image.filename).toBe("new-id");
     expect(cloudinary.uploader.destroy).toHaveBeenCalledWith("old-id");
   });
@@ -151,20 +155,20 @@ describe("listing CRUD", () => {
     const listing = await createListing(owner, {
       geometry: { type: "Point", coordinates: [10, 20] },
     });
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     geocode.mockResolvedValue([77.1, 28.6]);
     await submit(
       agent,
       "put",
       `/listings/${listing._id}`,
       {
-        "listing[location]": "Delhi",
+        "listing[city]": "Delhi",
         "listing[lat]": "20",
         "listing[lng]": "10",
       },
       false,
     );
-    expect(geocode).toHaveBeenCalledWith("Delhi, United States");
+    expect(geocode).toHaveBeenCalledWith("12 Birch Lane, Delhi, Colorado, United States");
     expect((await Listing.findById(listing._id)).geometry.coordinates).toEqual([
       77.1, 28.6,
     ]);
@@ -175,7 +179,7 @@ describe("listing CRUD", () => {
     const listing = await createListing(owner, {
       geometry: { type: "Point", coordinates: [10, 20] },
     });
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     geocode.mockRejectedValue(new Error("network"));
     jest.spyOn(console, "error").mockImplementation(() => {});
     await submit(
@@ -183,7 +187,7 @@ describe("listing CRUD", () => {
       "put",
       `/listings/${listing._id}`,
       {
-        "listing[location]": "Delhi",
+        "listing[city]": "Delhi",
         "listing[lat]": "20",
         "listing[lng]": "10",
       },
@@ -199,13 +203,12 @@ describe("listing CRUD", () => {
     const listing = await createListing(owner, {
       geometry: { type: "Point", coordinates: [10, 20] },
     });
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     await submit(
       agent,
       "put",
       `/listings/${listing._id}`,
       {
-        "listing[location]": "Aspen",
         "listing[lat]": "21",
         "listing[lng]": "11",
       },
@@ -234,7 +237,7 @@ describe("listing CRUD", () => {
     const owner = await createUser("alice");
     await createUser("mallory");
     const listing = await createListing(owner);
-    const agent = await login(app, "mallory");
+    const agent = await login(app, "mallory", "host");
 
     await submit(
       agent,
@@ -264,7 +267,7 @@ describe("listing CRUD", () => {
       { $push: { wishlist: listing._id } },
     );
 
-    const agent = await login(app, "alice");
+    const agent = await login(app, "alice", "host");
     await agent.delete(`/listings/${listing._id}`);
 
     expect(await Listing.countDocuments()).toBe(0);
@@ -287,7 +290,7 @@ describe("listing CRUD", () => {
         status,
       });
     await stay(5, 6);
-    const agent = await login(app, "alice");
+    const agent = await login(app, "alice", "host");
     const res = await agent.delete(`/listings/${listing._id}`);
     expect(res.headers.location).toBe(`/listings/${listing._id}`);
     expect(await Listing.countDocuments()).toBe(1);
@@ -306,13 +309,13 @@ describe("listing CRUD", () => {
     const listing = await createListing(owner, {
       image: { url: "https://cdn.test/old.png", filename: "old-id" },
     });
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     jest
       .spyOn(Listing.prototype, "save")
       .mockRejectedValueOnce(new Error("db down"));
     jest.spyOn(console, "error").mockImplementation(() => {});
     const res = await submit(agent, "put", `/listings/${listing._id}`, {
-      "listing[title]": "New",
+      "listing[title]": "New lodge name",
     });
     expect(res.status).toBe(500);
     expect(cloudinary.uploader.destroy).toHaveBeenCalledWith("new-id");
@@ -323,7 +326,7 @@ describe("listing CRUD", () => {
   test("an update that fails validation never uploads", async () => {
     const owner = await createUser("alice");
     const listing = await createListing(owner);
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     jest
       .spyOn(Listing.prototype, "validate")
       .mockRejectedValueOnce(new Error("invalid"));
@@ -334,7 +337,7 @@ describe("listing CRUD", () => {
 
   test("a failed create removes the uploaded image", async () => {
     await createUser("alice");
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     jest
       .spyOn(Listing.prototype, "save")
       .mockRejectedValueOnce(new Error("db down"));
@@ -345,7 +348,7 @@ describe("listing CRUD", () => {
 
   test("malformed and unknown ids give 404 instead of crashing", async () => {
     const owner = await createUser("alice");
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     expect((await agent.get("/listings/not-an-id")).status).toBe(404);
     expect((await agent.get("/listings/not-an-id/edit")).status).toBe(404);
     expect(
@@ -377,7 +380,7 @@ describe("uploads", () => {
   test("oversized images get a friendly 400", async () => {
     await createUser("alice");
     const res = await post(
-      await login(app),
+      await login(app, "alice", "host"),
       Buffer.alloc(5 * 1024 * 1024 + 1),
       "big.png",
     );
@@ -387,14 +390,14 @@ describe("uploads", () => {
 
   test("non-image uploads get a friendly 400", async () => {
     await createUser("alice");
-    const res = await post(await login(app), Buffer.from("hi"), "notes.txt");
+    const res = await post(await login(app, "alice", "host"), Buffer.from("hi"), "notes.txt");
     expect(res.status).toBe(400);
     expect(res.text).toContain(IMAGE_ERROR);
   });
 
   test("temp file is removed when validation fails", async () => {
     await createUser("alice");
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     const before = uploads();
     const res = await submit(agent, "post", "/listings", {
       "listing[price]": "0",
@@ -405,7 +408,7 @@ describe("uploads", () => {
 
   test("temp file is removed after a successful create too", async () => {
     await createUser("alice");
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     const before = uploads();
     await submit(agent, "post", "/listings");
     expect(uploads()).toBe(before);
@@ -415,7 +418,7 @@ describe("uploads", () => {
 describe("error handler", () => {
   test("a Mongoose ValidationError renders a 400", async () => {
     await createUser("alice");
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     jest
       .spyOn(Listing.prototype, "save")
       .mockRejectedValueOnce(new (require("mongoose").Error.ValidationError)());
@@ -431,7 +434,7 @@ describe("forms", () => {
       category: "Cabins",
       geometry: { type: "Point", coordinates: [12.5, 41.9] },
     });
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
 
     const form = await agent.get("/listings/new");
     expect(form.text).toContain('data-mode="picker"');
@@ -465,9 +468,14 @@ describe("map", () => {
       geometry: { type: "Point", coordinates: [12.5, 41.9] },
     });
     const plain = await createListing(owner);
+    // The brief changed this on purpose: the public sees a circle, and never the pin
     const withMap = await request(app).get(`/listings/${pinned._id}`);
-    expect(withMap.text).toContain('data-lng="12.5"');
-    expect(withMap.text).toContain('data-lat="41.9"');
+    expect(withMap.text).toContain('data-radius="500"');
+    expect(withMap.text).not.toContain('data-lng="12.5"');
+    expect(withMap.text).not.toContain('data-lat="41.9"');
+    const owns = await (await login(app, "alice", "host")).get(`/listings/${pinned._id}`);
+    expect(owns.text).toContain('data-lng="12.5"');
+    expect(owns.text).toContain('data-lat="41.9"');
     expect(
       (await request(app).get(`/listings/${plain._id}`)).text,
     ).not.toContain('data-mode="show"');
@@ -476,7 +484,7 @@ describe("map", () => {
   test("geocode endpoint needs login and proxies the lookup", async () => {
     await createUser("alice");
     expect((await request(app).get("/listings/geocode?q=x")).status).toBe(302);
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     const res = await agent.get("/listings/geocode?q=Aspen");
     expect(res.body).toEqual({ coordinates: [-106.82, 39.19] });
   });
@@ -488,18 +496,7 @@ describe("photos (4.3) and upload checks (3.10)", () => {
   const WEBP = Buffer.from("RIFF\0\0\0\0WEBPVP8 ");
   const form = (agent, method, url, fields = {}) => {
     let req = agent[method](url);
-    const base = {
-      "listing[title]": "Lodge",
-      "listing[description]": "Snowy",
-      "listing[location]": "Aspen",
-      "listing[country]": "United States",
-      "listing[price]": "2500",
-      "listing[maxGuests]": "4",
-      "listing[bedrooms]": "2",
-      "listing[beds]": "2",
-      "listing[bathrooms]": "1.5",
-      ...fields,
-    };
+    const base = { ...LISTING_FIELDS, ...fields };
     for (const [k, v] of Object.entries(base)) req = req.field(k, v);
     return req;
   };
@@ -522,7 +519,7 @@ describe("photos (4.3) and upload checks (3.10)", () => {
     ["a script declared as WebP", Buffer.from("<script>alert(1)</script>"), "a.webp", "image/webp"],
   ])("rejects %s and leaves no temp file", async (_name, bytes, filename, contentType) => {
     await createUser("alice");
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     const before = uploadsCount();
     const res = await form(agent, "post", "/listings").attach("listing[images]", bytes, { filename, contentType });
     expect(res.status).toBe(400);
@@ -533,7 +530,7 @@ describe("photos (4.3) and upload checks (3.10)", () => {
 
   test("accepts real JPEG, PNG and WebP; the first is the cover", async () => {
     await createUser("alice");
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     const before = uploadsCount();
     await form(agent, "post", "/listings", { "listing[amenities]": "wifi" })
       .attach("listing[images]", JPEG, { filename: "a.jpg", contentType: "image/jpeg" })
@@ -550,7 +547,7 @@ describe("photos (4.3) and upload checks (3.10)", () => {
 
   test("more than six photos is refused before anything uploads", async () => {
     await createUser("alice");
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     let req = form(agent, "post", "/listings");
     for (let i = 0; i < 7; i++) req = req.attach("listing[images]", PNG, `${i}.png`);
     const res = await req;
@@ -560,7 +557,7 @@ describe("photos (4.3) and upload checks (3.10)", () => {
 
   test("a failed save removes every uploaded photo", async () => {
     await createUser("alice");
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     jest.spyOn(Listing.prototype, "save").mockRejectedValueOnce(new Error("db down"));
     jest.spyOn(console, "error").mockImplementation(() => {});
     await form(agent, "post", "/listings")
@@ -575,7 +572,7 @@ describe("photos (4.3) and upload checks (3.10)", () => {
     const owner = await createUser("alice");
     const photo = (n) => ({ url: `https://cdn.test/old${n}.png`, filename: `old-${n}` });
     const listing = await createListing(owner, { images: [photo(1), photo(2), photo(3)] });
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     await form(agent, "put", `/listings/${listing._id}`, {
       removeImages: "old-1",
       coverImage: "old-3",
@@ -591,9 +588,10 @@ describe("photos (4.3) and upload checks (3.10)", () => {
     const owner = await createUser("alice");
     const photo = (n) => ({ url: `https://cdn.test/${n}.png`, filename: `old-${n}` });
     const listing = await createListing(owner, { images: [photo(1)] });
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     const res = await form(agent, "put", `/listings/${listing._id}`, { removeImages: "old-1" });
-    expect(res.headers.location).toBe(`/listings/${listing._id}/edit`);
+    expect(res.status).toBe(400);
+    expect(res.text).toContain("Add at least one photo.");
     expect((await Listing.findById(listing._id)).images).toHaveLength(1);
 
     await Listing.updateOne({ _id: listing._id }, { images: [1, 2, 3, 4, 5, 6].map(photo) });
@@ -604,14 +602,14 @@ describe("photos (4.3) and upload checks (3.10)", () => {
   test("a listing form clears the confirm-details flag", async () => {
     const owner = await createUser("alice");
     const listing = await createListing(owner, { capacityDefaulted: true });
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     await form(agent, "put", `/listings/${listing._id}`);
     expect((await Listing.findById(listing._id)).capacityDefaulted).toBeUndefined();
   });
 
   test("new listings are capped per day and in total", async () => {
     const owner = await createUser("alice");
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     await Listing.insertMany(
       Array.from({ length: 10 }, (_, i) => ({ title: `L${i}`, price: 1, location: "l", country: "c", owner: owner._id })),
     );

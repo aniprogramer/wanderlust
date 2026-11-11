@@ -12,7 +12,11 @@ const stubMapbox = async (page) => {
   await page.route("https://events.mapbox.com/**", (route) => route.fulfill({ status: 204 }));
 };
 
-const login = async (page, username) => {
+// Login starts in the account's starting mode (guest here); `mode` then switches in the header
+const hostPage = (path, name) =>
+  /^\/listings\/new|\/edit$|^\/bookings\/hosting|^\/listings\/mine/.test(path) || name === "booking-host";
+
+const login = async (page, username, mode = "guest") => {
   await page.goto("/login");
   await page.fill("#username", username);
   await page.fill("#password", PASSWORD);
@@ -20,6 +24,11 @@ const login = async (page, username) => {
     page.waitForURL(/\/listings/),
     page.click("form[action='/login'] button[type=submit]"),
   ]);
+  if (mode === "host") {
+    // The switch stays on the same page when that page exists in both modes
+    await page.evaluate(() => document.querySelector("form.wl-mode-switch").submit());
+    await page.waitForSelector('.wl-mode-switch[data-mode="host"]', { state: "attached" });
+  }
 };
 
 const SCREENS = [
@@ -32,8 +41,12 @@ const SCREENS = [
   ["booking", `/bookings/${ids.bookingPending}`, "alice"],
   ["hosting", "/bookings/hosting", "alice"],
   ["edit", `/listings/${ids.pinned}/edit`, "alice"],
+  ["new-listing", "/listings/new", "alice"],
   ["wishlist", "/wishlist", "bob"],
-  ["account", "/account", "bob"],
+  ["your-profile", "/users/bob", "bob"],
+  ["profile", "/users/alice", "bob"],
+  ["profile-visitor", "/users/bob", null],
+  ["your-listings", "/listings/mine", "alice"],
   ["contact", "/contact", null],
   ["help", "/help", null],
   ["privacy", "/privacy", null],
@@ -46,7 +59,7 @@ for (const [name, url, user] of SCREENS) {
   test(`axe: ${name}`, async ({ page }) => {
     test.setTimeout(90000);
     await stubMapbox(page);
-    if (user) await login(page, user);
+    if (user) await login(page, user, hostPage(url, name) ? "host" : "guest");
     for (const colorScheme of ["light", "dark"]) {
       await page.emulateMedia({ colorScheme, reducedMotion: "reduce" });
       await page.goto(url);

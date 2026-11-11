@@ -48,7 +48,7 @@ describe("currency (D6)", () => {
 
   test("forms offer a currency select", async () => {
     await createUser("alice");
-    const agent = await login(app);
+    const agent = await login(app, "alice", "host");
     expect((await agent.get("/listings/new")).text).toContain(
       'name="listing[currency]"',
     );

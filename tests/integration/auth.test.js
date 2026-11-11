@@ -22,6 +22,7 @@ describe("authentication", () => {
       email: "bob@example.com",
       password: "secret123",
       terms: "on",
+      startingMode: "guest",
     });
     expect(res.status).toBe(302);
     expect(res.headers.location).toBe("/listings");
@@ -41,6 +42,7 @@ describe("authentication", () => {
       email: "other@example.com",
       password: "secret123",
       terms: "on",
+      startingMode: "guest",
     });
     expect(res.headers.location).toBe("/signup");
     expect(await User.countDocuments()).toBe(1);
@@ -61,6 +63,7 @@ describe("authentication", () => {
         email: "BOB@Example.com",
         password: "secret123",
       terms: "on",
+      startingMode: "guest",
       });
       expect(text).toContain("That email is already registered.");
       expect(text).not.toContain("E11000");
@@ -75,6 +78,7 @@ describe("authentication", () => {
         email: "new@example.com",
         password: "secret123",
       terms: "on",
+      startingMode: "guest",
       });
       expect(text).toContain("That username is taken.");
     });
@@ -95,6 +99,7 @@ describe("authentication", () => {
         email: "  Bob@Example.COM ",
         password: "secret123",
       terms: "on",
+      startingMode: "guest",
       });
       expect((await User.findOne({ username: "bob" })).email).toBe(
         "bob@example.com",
