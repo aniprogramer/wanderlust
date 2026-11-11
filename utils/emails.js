@@ -7,7 +7,7 @@ const theme = require("./emailTheme");
 const { siteUrl } = require("./config");
 const { money } = require("./format");
 const { toDay } = require("./dates");
-const { TAX_NOTICE } = require("./constants");
+const { TAX_NOTICE, TOTAL_LABEL, CANCELLATION_POLICIES } = require("./constants");
 
 const read = (name) =>
   fs.readFileSync(path.join(__dirname, "../views/emails", name), "utf8");
@@ -19,7 +19,10 @@ const stayFacts = (booking, listing) => [
   ["Check-in", toDay(booking.checkIn)],
   ["Check-out", toDay(booking.checkOut)],
   ["Guests", booking.guests || 1],
-  ["Total", money(booking.totalPrice, booking.currency)],
+  [TOTAL_LABEL, money(booking.totalPrice, booking.currency)],
+  ...(CANCELLATION_POLICIES[booking.cancellationPolicy]
+    ? [["Cancellation", CANCELLATION_POLICIES[booking.cancellationPolicy].summary]]
+    : []),
   ["Reference", booking.reference],
 ];
 
@@ -125,6 +128,9 @@ const BUILDERS = {
     heading: forHost ? "A guest cancelled" : "Your stay was cancelled",
     lines: [
       `This booking was cancelled by the ${cancelledBy}. No payment was taken online, so there is nothing to refund through Wanderlust.`,
+      ...(booking.cancelledLate
+        ? ["This was after the free cancellation period, so it is recorded as a late cancellation."]
+        : []),
       ...(reason ? [`Reason: ${reason}`] : []),
     ],
     facts: stayFacts(booking, listing),

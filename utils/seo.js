@@ -1,6 +1,7 @@
 // Search and social metadata for one stay. Only facts the listing stores; the rating appears
 // only when real reviews exist.
 const { siteUrl } = require("./config");
+const { publicCoords } = require("./location");
 
 module.exports = (listing) => {
   const url = siteUrl(`/listings/${listing._id}`);
@@ -18,7 +19,7 @@ module.exports = (listing) => {
     },
     priceRange: `${listing.price} ${listing.currency} per night`,
   };
-  const [lng, lat] = listing.geometry?.coordinates || [];
+  const [lng, lat] = publicCoords(listing) || [];
   if (lat != null) {
     data.geo = { "@type": "GeoCoordinates", latitude: lat, longitude: lng };
   }
