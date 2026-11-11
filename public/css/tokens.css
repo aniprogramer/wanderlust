@@ -55,6 +55,7 @@
   --radius-md: 4px;
   --radius-lg: 8px;
   --radius-xl: 16px;
+  --radius-2xl: 24px;
   --radius-pill: 999px;
 
   /* Spacing half steps (docs/DESIGN.md 4.1) */
@@ -74,6 +75,9 @@
   --photo-scrim-opacity: 0;
 
   /* Elevation */
+  --z-toast: 2100;
+  --z-rail: 50;
+  --rail-gutter: 104px;
   --shadow-soft: 0 8px 30px rgba(17, 27, 26, 0.08);
   --shadow-raised: 0 16px 40px rgba(17, 27, 26, 0.12);
 
@@ -84,6 +88,21 @@
   --scrollbar-track: var(--bg);
   --scrollbar-thumb: var(--secondary);
   --scrollbar-thumb-hover: var(--primary);
+
+  /* Liquid Glass Tokens (Stone theme) */
+  --glass-bg: rgba(251, 250, 247, 0.75);
+  --glass-bg-subtle: rgba(241, 239, 233, 0.60);
+  --glass-bg-hover: rgba(255, 254, 251, 0.90);
+  --glass-bg-active: rgba(232, 229, 220, 0.90);
+  --glass-border: rgba(17, 27, 26, 0.10);
+  --glass-border-strong: rgba(17, 27, 26, 0.18);
+  --glass-highlight: rgba(255, 255, 255, 0.85);
+  --glass-shadow: 0 16px 40px rgba(17, 27, 26, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --glass-shadow-floating: 0 24px 60px rgba(17, 27, 26, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --glass-blur: blur(20px);
+  --glass-backdrop: blur(20px) saturate(180%);
+  --hero-fade-top: linear-gradient(180deg, rgba(241, 239, 233, 0.95) 0%, rgba(241, 239, 233, 0.3) 25%, transparent 45%);
+  --hero-fade-bottom: linear-gradient(0deg, #F1EFE9 0%, rgba(241, 239, 233, 0.9) 15%, transparent 45%);
 
   /* Legacy compatibility aliases mapped to new tokens */
   --wl-bg-canvas: var(--bg);
@@ -140,6 +159,21 @@
   --scrollbar-track: var(--bg);
   --scrollbar-thumb: var(--secondary);
   --scrollbar-thumb-hover: var(--secondary-hover);
+
+  /* Liquid Glass Tokens (Night theme) */
+  --glass-bg: rgba(16, 28, 27, 0.68);
+  --glass-bg-subtle: rgba(10, 19, 18, 0.55);
+  --glass-bg-hover: rgba(22, 38, 37, 0.80);
+  --glass-bg-active: rgba(14, 43, 41, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-border-strong: rgba(211, 168, 90, 0.30);
+  --glass-highlight: rgba(255, 255, 255, 0.16);
+  --glass-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  --glass-shadow-floating: 0 30px 70px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.18);
+  --glass-blur: blur(20px);
+  --glass-backdrop: blur(20px) saturate(160%);
+  --hero-fade-top: linear-gradient(180deg, rgba(10, 19, 18, 0.95) 0%, rgba(10, 19, 18, 0.3) 25%, transparent 45%);
+  --hero-fade-bottom: linear-gradient(0deg, #0A1312 0%, rgba(10, 19, 18, 0.9) 15%, transparent 45%);
 
   /* Legacy compatibility aliases mapped to new tokens */
   --wl-bg-canvas: var(--bg);
@@ -205,6 +239,21 @@
     --scrollbar-thumb: var(--secondary);
     --scrollbar-thumb-hover: var(--secondary-hover);
 
+    /* Liquid Glass Tokens (Night theme) */
+    --glass-bg: rgba(16, 28, 27, 0.68);
+    --glass-bg-subtle: rgba(10, 19, 18, 0.55);
+    --glass-bg-hover: rgba(22, 38, 37, 0.80);
+    --glass-bg-active: rgba(14, 43, 41, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.12);
+    --glass-border-strong: rgba(211, 168, 90, 0.30);
+    --glass-highlight: rgba(255, 255, 255, 0.16);
+    --glass-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+    --glass-shadow-floating: 0 30px 70px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.18);
+    --glass-blur: blur(20px);
+    --glass-backdrop: blur(20px) saturate(160%);
+    --hero-fade-top: linear-gradient(180deg, rgba(10, 19, 18, 0.95) 0%, rgba(10, 19, 18, 0.3) 25%, transparent 45%);
+    --hero-fade-bottom: linear-gradient(0deg, #0A1312 0%, rgba(10, 19, 18, 0.9) 15%, transparent 45%);
+
     /* Legacy compatibility aliases mapped to new tokens */
     --wl-bg-canvas: var(--bg);
     --wl-bg-sidebar: #060e0d;
@@ -232,4 +281,878 @@
 :focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
+}
+
+/* ==========================================================================
+   Wanderlust Liquid Glass Design System Primitives & Components
+   ========================================================================== */
+
+/* 1. Base Glass Primitives */
+.glass-surface {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-navigation {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-floating);
+}
+
+.glass-popover,
+.glass-dropdown {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-floating);
+}
+
+.glass-modal {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-floating);
+  border-radius: 20px;
+}
+
+.glass-input {
+  background: var(--glass-bg-subtle);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  color: var(--text);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.glass-input:focus,
+.glass-input:focus-within {
+  border-color: var(--focus-ring);
+  box-shadow: 0 0 0 2px var(--focus-ring);
+  background: var(--glass-bg-hover);
+}
+
+.glass-action {
+  background: var(--glass-bg-subtle);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  color: var(--text);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-action:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border-strong);
+  color: var(--text);
+}
+
+.glass-pill {
+  border-radius: var(--radius-pill) !important;
+}
+
+/* 2. Floating Vertical Navigation Rail (Left Dock) */
+.wl-sidebar {
+  width: 90px;
+  flex-shrink: 0;
+  background: transparent;
+  z-index: 100;
+}
+
+.wl-sidebar-inner {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 28px;
+  padding-bottom: 24px;
+}
+
+.wl-nav-rail {
+  width: 72px;
+  border-radius: 38px;
+  padding: 12px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  background-color: var(--band);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-raised);
+}
+
+.wl-rail-list {
+  width: 100%;
+  gap: 10px;
+}
+
+.wl-rail-item {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.wl-rail-link,
+.wl-rail-link.wl-nav-link {
+  width: 58px;
+  height: 58px;
+  border-radius: 29px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: var(--on-band) !important;
+  background-color: transparent !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  font-size: 0.68rem;
+  font-weight: 500;
+  gap: 2px;
+  padding: 4px;
+}
+
+.wl-rail-link:hover,
+.wl-rail-link.wl-nav-link:hover {
+  background: var(--glass-bg-hover) !important;
+  color: var(--text) !important;
+  transform: translateY(-1px);
+}
+
+.wl-rail-link.active,
+.wl-rail-link.wl-nav-link.active {
+  background: var(--accent-fill) !important;
+  color: #0A1312 !important;
+  box-shadow: 0 4px 14px rgba(211, 168, 90, 0.4);
+  font-weight: 600;
+}
+
+.wl-rail-link.active .wl-rail-icon-wrap,
+.wl-rail-link.active .wl-rail-label,
+.wl-rail-link.active i,
+.wl-rail-link.wl-nav-link.active .wl-rail-icon-wrap,
+.wl-rail-link.wl-nav-link.active .wl-rail-label,
+.wl-rail-link.wl-nav-link.active i {
+  color: #0A1312 !important;
+}
+
+.wl-rail-icon-wrap {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.wl-rail-label {
+  letter-spacing: 0.02em;
+}
+
+/* 3. Hero Section Photographic Background & Gradient Fades */
+.wl-hero-section {
+  position: relative;
+  background-color: var(--bg);
+  background-image: var(--hero-fade-top), var(--hero-fade-bottom), url("/images/santorini.jpg");
+  background-position: top center, bottom center, center center;
+  background-size: 100% 160px, 100% 220px, cover;
+  background-repeat: no-repeat;
+  min-height: 520px;
+  border-radius: 24px;
+  overflow: visible;
+  padding: 0 0 40px;
+  margin-bottom: 32px;
+}
+
+.wl-hero-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: 
+    linear-gradient(180deg, rgba(7, 18, 17, 0.85) 0%, rgba(7, 18, 17, 0.2) 30%, rgba(7, 18, 17, 0.35) 70%, var(--bg) 100%),
+    linear-gradient(90deg, rgba(7, 18, 17, 0.8) 0%, rgba(7, 18, 17, 0.35) 45%, transparent 100%);
+  border-radius: 0;
+  pointer-events: none;
+}
+
+.wl-hero-body {
+  padding: 40px 32px 64px;
+  max-width: 680px;
+}
+
+.wl-hero-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--secondary);
+  margin-bottom: 12px;
+}
+
+.wl-hero-headline {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.8rem, 5.2vw, 4.6rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.wl-hero-headline em {
+  font-style: italic;
+  color: var(--accent);
+}
+
+.wl-hero-subtitle {
+  font-size: clamp(1rem, 1.3vw, 1.2rem);
+  line-height: 1.55;
+  color: var(--text-secondary);
+  max-width: 32rem;
+  margin-bottom: 0;
+}
+
+/* 4. Floating Liquid Glass Search Bar */
+.wl-search-wrapper {
+  padding: 0 24px;
+  margin-top: -24px;
+  position: relative;
+  z-index: 20;
+}
+
+.wl-search-panel {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px 8px 24px;
+  gap: 16px;
+  min-height: 68px;
+}
+
+.wl-search-field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.wl-search-icon {
+  font-size: 1.15rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.wl-field-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.wl-field-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 2px;
+}
+
+.wl-field-input {
+  font-size: 0.92rem;
+  color: var(--text);
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0;
+  width: 100%;
+}
+
+.wl-field-divider {
+  width: 1px;
+  height: 36px;
+  background: var(--glass-border);
+  flex-shrink: 0;
+}
+
+.wl-search-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #0A1312;
+  border: none;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(211, 168, 90, 0.45);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.wl-search-btn:hover {
+  transform: scale(1.06);
+  background: var(--accent-hover);
+  color: #0A1312;
+}
+
+/* 5. Top Bar Search Capsule */
+.wl-topbar-search {
+  max-width: 380px;
+  width: 100%;
+  border-radius: var(--radius-pill);
+}
+
+.wl-topbar-search-input {
+  font-size: 0.88rem;
+  width: 100%;
+}
+
+.wl-brand-mark-gold {
+  filter: drop-shadow(0 2px 8px rgba(211, 168, 90, 0.35));
+}
+
+.wl-hero-avatar-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wl-avatar-circle {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: var(--glass-bg-subtle);
+  color: var(--text);
+}
+
+.wl-avatar-circle.user-logged-in {
+  background: var(--accent);
+  color: #0A1312;
+}
+
+/* 6. Destination Category Track */
+.wl-categories-section {
+  padding: 0 8px;
+  margin-bottom: 32px;
+}
+
+.wl-categories-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.wl-categories-track {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  padding: 8px 4px;
+}
+
+.wl-categories-track::-webkit-scrollbar {
+  display: none;
+}
+
+.wl-category-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+
+.wl-category-item:hover {
+  color: var(--text);
+  transform: translateY(-2px);
+}
+
+.wl-cat-thumb-wrapper {
+  width: 76px;
+  height: 52px;
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+}
+
+.wl-cat-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.wl-category-item.selected .wl-cat-thumb-wrapper {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(211, 168, 90, 0.35);
+}
+
+.wl-category-item.selected .wl-cat-label {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.wl-cat-label {
+  font-size: 0.78rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.wl-cat-nav-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  border: 1px solid var(--glass-border);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--glass-shadow);
+  transition: all 0.2s ease;
+  margin-left: 12px;
+  flex-shrink: 0;
+}
+
+.wl-cat-nav-btn:hover {
+  background: var(--glass-bg-hover);
+  color: var(--text);
+  transform: scale(1.08);
+}
+
+/* 7. Property Card System */
+.wl-listing-card {
+  border-radius: var(--radius-xl);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+  background: var(--glass-bg-subtle);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.wl-listing-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--glass-border-strong);
+}
+
+.wl-card-media-wrapper {
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  aspect-ratio: 16 / 10;
+  margin-bottom: 12px;
+  background: var(--surface-sunken);
+}
+
+.wl-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.wl-listing-card:hover .wl-card-img {
+  transform: scale(1.04);
+}
+
+.wl-card-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-pill);
+  padding: 4px 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.wl-wish-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.wl-wish-btn:hover {
+  transform: scale(1.1);
+  background: var(--glass-bg-hover);
+}
+
+.wl-wish-btn.saved {
+  color: var(--error);
+}
+
+.wl-card-title {
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.35;
+}
+
+.wl-card-rating {
+  font-size: 0.85rem;
+}
+
+.wl-star-amber {
+  color: var(--accent);
+}
+
+.wl-rating-num {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.wl-reviews-count {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.wl-card-location {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+  margin-bottom: 6px;
+}
+
+.wl-amenity-chip {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.wl-card-footer {
+  margin-top: 10px;
+  padding-top: 8px;
+}
+
+.wl-price-amount {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.wl-price-period {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.wl-card-action-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--glass-bg-subtle);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.wl-card-action-btn:hover {
+  background: var(--accent);
+  color: #0A1312;
+  border-color: var(--accent);
+  transform: translateX(2px);
+}
+
+/* 8. Floating Centered Pagination */
+.wl-pagination {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius-pill);
+  padding: 6px 10px;
+  gap: 4px;
+}
+
+.wl-pagination .page-item .page-link {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  border-radius: var(--radius-pill);
+  padding: 6px 14px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.wl-pagination .page-item .page-link:hover {
+  background: var(--glass-bg-hover);
+  color: var(--text);
+}
+
+.wl-pagination .page-item.active .page-link {
+  background: var(--accent) !important;
+  color: #0A1312 !important;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(211, 168, 90, 0.4);
+}
+
+.wl-pagination .page-item.disabled .page-link {
+  color: var(--text-disabled);
+  opacity: 0.5;
+}
+
+/* 9. Promotional Glass Panels */
+.wl-editorial-card {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+}
+
+.wl-editorial-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.wl-editorial-card:hover .wl-editorial-bg {
+  transform: scale(1.03);
+}
+
+.wl-editorial-overlay {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 32px;
+  background: linear-gradient(90deg, rgba(10, 19, 18, 0.85) 0%, rgba(10, 19, 18, 0.5) 60%, rgba(10, 19, 18, 0.2) 100%);
+}
+
+.wl-editorial-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.wl-editorial-title {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 400;
+  color: var(--text);
+  margin: 0;
+  line-height: 1.15;
+}
+
+.wl-editorial-arrow-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #0A1312;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-size: 1.1rem;
+  box-shadow: 0 4px 14px rgba(211, 168, 90, 0.45);
+  transition: transform 0.2s ease;
+}
+
+.wl-editorial-arrow-btn:hover {
+  transform: scale(1.08);
+  color: #0A1312;
+}
+
+/* 10. Authentication Layout & Liquid Glass Card */
+.wl-auth-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--hero-fade-top), var(--hero-fade-bottom);
+  background-size: 100% 200px, 100% 240px;
+  background-position: top center, bottom center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.wl-auth-card {
+  width: 100%;
+  max-width: 460px;
+  padding: clamp(24px, 4vw, 40px);
+}
+
+.wl-auth-card__title {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  font-weight: 400;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.wl-auth-card__sub {
+  font-size: 0.92rem;
+}
+
+/* 11. Currency Selector Dropdown */
+.glass-currency-btn,
+.wl-currency-btn {
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.glass-currency-globe,
+.wl-currency-globe {
+  font-size: 0.95rem;
+  color: var(--secondary);
+}
+
+.glass-currency-menu,
+.wl-currency-menu {
+  min-width: 240px;
+  border-radius: 16px;
+}
+
+.glass-currency-menu .dropdown-item,
+.wl-currency-menu .dropdown-item {
+  color: var(--text);
+  font-size: 0.88rem;
+  transition: background 0.15s ease;
+}
+
+.glass-currency-menu .dropdown-item:hover,
+.wl-currency-menu .dropdown-item:hover {
+  background: var(--state-hover);
+  color: var(--text);
+}
+
+.glass-currency-menu .dropdown-item.active,
+.wl-currency-menu .dropdown-item.active {
+  background: var(--secondary-subtle);
+  color: var(--text);
+}
+
+/* Responsive adjustments */
+@media (max-width: 991px) {
+  .wl-sidebar {
+    display: none;
+  }
+
+  .wl-search-panel {
+    flex-direction: column;
+    align-items: stretch;
+    border-radius: 20px !important;
+    padding: 16px;
+  }
+
+  .wl-field-divider {
+    display: none;
+  }
+
+  .wl-search-btn {
+    width: 100%;
+    border-radius: var(--radius-pill);
+    height: 46px;
+  }
+}
+
+
+/* Currency trigger: the selected flag always shows beside the code */
+.glass-currency-flag--trigger {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+/* Hero photograph blends into the page ground: a soft fade at the top and bottom edges only */
+.wl-hero-fade {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(to bottom, var(--bg) 0%, transparent 12%, transparent 72%, var(--bg) 100%);
+}
+
+/* Liquid glass for every menu and popover, so none can fall back to an opaque fill:
+   Bootstrap dropdowns, the guest selector and the date picker share one surface. */
+.dropdown-menu,
+.wl-guests-popover,
+.wl-calendar-popover {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-floating);
+}
+
+/* Pagination: one glass pill, matching the search bar and the rail */
+.wl-pagination {
+  background: var(--glass-bg-subtle);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* The date picker and guest selector hold dense content over busy pages, so they use the denser glass tone */
+.wl-guests-popover,
+.wl-calendar-popover {
+  background: var(--glass-bg-hover);
 }

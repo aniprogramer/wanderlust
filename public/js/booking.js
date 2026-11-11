@@ -6,6 +6,7 @@
   const price = Number(form.dataset.price);
   const cleaningFee = Number(form.dataset.cleaningFee) || 0;
   const minNights = Number(form.dataset.minNights) || 1;
+  const maxNights = Number(form.dataset.maxNights) || 30;
   const money = new Intl.NumberFormat(
     form.dataset.currency === "INR" ? "en-IN" : "en-US",
     {
@@ -58,7 +59,7 @@
     addLine(`${money.format(price)} × ${nights} ${word}`, money.format(subtotal));
     if (cleaningFee) addLine("Cleaning fee", money.format(cleaningFee));
     addLine(
-      "Total, paid at the property",
+      form.dataset.totalLabel,
       money.format(total),
       "wl-breakdown__total",
     );
@@ -94,6 +95,10 @@
       if (nights < minNights) {
         picker.clear();
         return reset(`This stay has a minimum of ${minNights} nights.`);
+      }
+      if (nights > maxNights) {
+        picker.clear();
+        return reset(`This stay has a maximum of ${maxNights} nights.`);
       }
       checkIn.value = fmt(from);
       checkOut.value = fmt(to);

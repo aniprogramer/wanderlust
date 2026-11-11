@@ -81,6 +81,7 @@
       updateGuests();
 
       const openGuests = () => {
+        document.dispatchEvent(new CustomEvent("wl:popover-open", { detail: { source: "guests" } }));
         guestsPopover.hidden = false;
         guestsPopover.classList.add("show");
         guestsTrigger.setAttribute("aria-expanded", "true");
@@ -91,6 +92,11 @@
         guestsPopover.classList.remove("show");
         guestsTrigger.setAttribute("aria-expanded", "false");
       };
+
+      // Only one menu is open at a time: opening another one closes this
+      document.addEventListener("wl:popover-open", (e) => {
+        if (e.detail.source !== "guests" && !guestsPopover.hidden) closeGuests();
+      });
 
       guestsTrigger.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -210,3 +216,15 @@
     });
   });
 })();
+
+// One menu at a time across the search bar and the header: Bootstrap menus announce themselves
+// like the guest and date popovers do, and an open menu is hidden when another popover opens.
+document.addEventListener("show.bs.dropdown", () => {
+  document.dispatchEvent(new CustomEvent("wl:popover-open", { detail: { source: "dropdown" } }));
+});
+document.addEventListener("wl:popover-open", (e) => {
+  if (e.detail.source === "dropdown" || !window.bootstrap) return;
+  document.querySelectorAll('[data-bs-toggle="dropdown"][aria-expanded="true"]').forEach((toggle) => {
+    window.bootstrap.Dropdown.getInstance(toggle)?.hide();
+  });
+});

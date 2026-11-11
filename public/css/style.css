@@ -735,17 +735,16 @@ body.wl-home-body {
 }
 
 /* --------------------------------------------------------------------------
-   App Shell Layout: Left Sidebar + Main Ivory Canvas
+   App Shell Layout: Left Floating Rail + Main Canvas
    -------------------------------------------------------------------------- */
 .wl-app-shell {
-  display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
+  /* The rail floats over the page, so the shell reserves no column for it */
+  display: block;
   width: 100%;
   max-width: 100%;
   min-height: 100vh;
   background-color: var(--bg);
   position: relative;
-  /* clip, not hidden: hidden makes this a scroll container and breaks the sticky sidebar */
   overflow-x: clip;
 }
 
@@ -758,57 +757,25 @@ body.wl-home-body {
   overflow-x: clip;
 }
 
-.wl-flash-container {
-  max-width: 100%;
-  padding: 16px clamp(20px, 3.5vw, 48px) 0;
-  margin: 0;
-}
-
-.wl-flash-container:empty,
-.wl-flash-container:not(:has(.wl-auth-alert)) {
-  display: none;
-}
-
 /* --------------------------------------------------------------------------
-   Left Navigation Sidebar (Deep Lagoon Green)
+   Left Floating Navigation Rail (Liquid Glass Dock)
+   Fixed over the page: content runs the full viewport width underneath it.
    -------------------------------------------------------------------------- */
 .wl-sidebar {
-  width: 240px;
-  background-color: var(--wl-bg-sidebar);
-  align-self: stretch;
-  z-index: 100;
-  border-right: 1px solid var(--wl-color-border-dark);
+  position: fixed;
+  top: 88px;
+  left: 16px;
+  z-index: var(--z-rail);
+  background-color: transparent;
+  max-height: calc(100vh - 104px);
 }
 
 .wl-sidebar-inner {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--on-band) 25%, transparent) transparent;
-  padding: 28px 20px 24px 20px;
-  box-sizing: border-box;
-}
-
-.wl-sidebar-inner::-webkit-scrollbar {
-  width: 6px;
-}
-
-.wl-sidebar-inner::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.wl-sidebar-inner::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--on-band) 25%, transparent);
-  border-radius: var(--radius-pill);
-}
-
-.wl-sidebar-inner::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--on-band) 45%, transparent);
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0;
 }
 
 .wl-sidebar-brand {
@@ -838,47 +805,92 @@ body.wl-home-body {
   margin-bottom: auto;
 }
 
+/* Liquid Glass Floating Navigation Rail Dock */
+.wl-nav-rail {
+  border: 1px solid var(--glass-border);
+  border-radius: 40px;
+  padding: 10px 6px;
+  box-shadow: var(--shadow-raised);
+  width: 68px;
+}
+
+.wl-rail-list,
 .wl-nav-list {
   list-style: none;
   padding: 0;
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 8px;
 }
 
-.wl-nav-link {
+.wl-rail-item,
+.wl-nav-item {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.wl-rail-link,
+.wl-sidebar .wl-nav-link {
+  width: 54px;
+  height: 54px;
+  border-radius: 27px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  text-decoration: none;
+  color: var(--on-band) !important;
+  transition: background-color 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  background-color: transparent;
+}
+
+.wl-rail-link:hover,
+.wl-sidebar .wl-nav-link:hover {
+  color: var(--on-band) !important;
+  background-color: var(--glass-bg-hover);
+  transform: scale(1.05);
+}
+
+.wl-rail-link.active,
+.wl-sidebar .wl-nav-link.active {
+  background-color: var(--accent-fill) !important;
+  color: var(--on-primary) !important;
+  box-shadow: var(--shadow-raised);
+  font-weight: 700;
+}
+
+.wl-rail-link.active .wl-rail-icon-wrap i,
+.wl-rail-link.active .wl-rail-label,
+.wl-sidebar .wl-nav-link.active .wl-nav-icon,
+.wl-sidebar .wl-nav-link.active i,
+.wl-sidebar .wl-nav-link.active span {
+  color: var(--on-primary) !important;
+}
+
+.wl-rail-icon-wrap,
+.wl-sidebar .wl-nav-icon {
+  font-size: 1.15rem;
+  width: auto;
+  text-align: center;
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 10px 16px;
-  border-radius: var(--radius-pill);
-  color: color-mix(in srgb, var(--on-band) 72%, transparent);
-  text-decoration: none;
-  font-size: 0.92rem;
-  font-weight: 500;
-  transition: all 0.15s ease;
+  justify-content: center;
+  color: var(--on-band) !important;
 }
 
-.wl-nav-link:hover {
-  color: var(--on-band);
-  background-color: color-mix(in srgb, var(--on-band) 8%, transparent);
-}
-
-.wl-nav-link.active {
-  color: var(--on-band);
-  background-color: color-mix(in srgb, var(--on-band) 12%, var(--band));
+.wl-rail-label {
+  font-size: 0.64rem;
   font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--on-band) !important;
 }
 
-.wl-nav-icon {
-  font-size: 1rem;
-  width: 20px;
-  text-align: center;
-  color: color-mix(in srgb, var(--on-band) 65%, transparent);
-}
-
-.wl-nav-link.active .wl-nav-icon,
 .wl-icon-amber {
   color: var(--accent-fill) !important;
 }
@@ -982,10 +994,11 @@ body.wl-home-body {
    -------------------------------------------------------------------------- */
 .wl-hero-section {
   border-radius: 0;
-  min-height: 500px;
-  padding: 32px clamp(24px, 4vw, 56px) 72px clamp(24px, 4vw, 56px);
+  min-height: 520px;
+  padding: 28px clamp(24px, 4vw, 56px) 76px clamp(24px, 4vw, 56px);
+  padding-inline-start: max(clamp(24px, 4vw, 56px), var(--rail-gutter));
   background-color: var(--band);
-  background-image: url("https://images.unsplash.com/photo-1782053492003-5977f1337b05?auto=format&fit=crop&w=2400&q=85");
+  background-image: url("https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=2400&q=85");
   background-size: cover;
   background-position: center right;
   position: relative;
@@ -996,35 +1009,87 @@ body.wl-home-body {
   box-shadow: none;
 }
 
-.wl-hero-section::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-color: var(--scrim);
-  border-radius: 0;
-  pointer-events: none;
-}
 
 .wl-hero-header {
   position: relative;
-  z-index: 10;
+  z-index: 20;
+}
+
+.wl-top-brand-area {
+  flex-shrink: 0;
+}
+
+.wl-brand-mark-gold {
+  color: var(--accent-fill);
+}
+
+.wl-top-nav-links {
+  gap: 12px;
+}
+
+.wl-nav-link-top {
+  color: color-mix(in srgb, var(--on-band) 75%, transparent);
+  font-size: 0.95rem;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  transition: all 0.2s ease;
+}
+
+.wl-nav-link-top:hover {
+  color: var(--on-band);
+  background: var(--glass-bg-subtle);
+}
+
+.wl-nav-link-top.active {
+  color: var(--on-band);
+  font-weight: 600;
+}
+
+.wl-topbar-search-form {
+  max-width: 460px;
+}
+
+.wl-topbar-search {
+  width: 100%;
+  max-width: 440px;
+  height: 40px;
+  background-color: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-pill);
+}
+
+.wl-topbar-search-icon {
+  color: color-mix(in srgb, var(--on-band) 60%, transparent);
+  font-size: 0.9rem;
+}
+
+.wl-topbar-search-input {
+  width: 100%;
+  color: var(--on-band);
+  font-size: 0.86rem;
+}
+
+.wl-topbar-search-input::placeholder {
+  color: color-mix(in srgb, var(--on-band) 55%, transparent);
 }
 
 .wl-hero-pill-btn {
-  background-color: color-mix(in srgb, var(--band) 45%, transparent);
-  border: 1px solid color-mix(in srgb, var(--on-band) 25%, transparent);
+  background-color: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border);
   color: var(--on-band);
   border-radius: var(--radius-pill);
   padding: 6px 14px;
   font-size: 0.84rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  transition: all 0.2s ease;
 }
 
 .wl-hero-pill-btn:hover {
-  background-color: color-mix(in srgb, var(--band) 70%, transparent);
+  background-color: var(--glass-bg-hover);
   color: var(--on-band);
+  transform: translateY(-1px);
 }
 
 .wl-hero-avatar-btn {
@@ -1038,19 +1103,26 @@ body.wl-home-body {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background-color: color-mix(in srgb, var(--band) 55%, transparent);
-  border: 1px solid color-mix(in srgb, var(--on-band) 22%, transparent);
+  background-color: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border);
   color: var(--on-band);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.88rem;
   font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.wl-avatar-circle:hover {
+  background-color: var(--glass-bg-hover);
+  transform: scale(1.05);
 }
 
 .wl-avatar-circle.user-logged-in {
   background-color: var(--accent-fill);
   color: var(--band);
+  border-color: var(--accent-fill);
 }
 
 .wl-hero-body {
@@ -1113,18 +1185,13 @@ body.wl-home-body {
 
 .wl-search-panel {
   pointer-events: auto;
-  background-color: var(--surface);
-  border: 1px solid var(--border);
   border-radius: var(--radius-pill);
   padding: 8px 10px 8px 24px;
   display: flex;
   align-items: center;
   gap: 16px;
   width: 100%;
-  max-width: 860px;
-  box-shadow: var(--shadow-raised);
-}
-  box-shadow: var(--shadow-raised);
+  max-width: 880px;
 }
 
 .wl-search-field {
@@ -1207,11 +1274,8 @@ body.wl-home-body {
   position: absolute;
   top: calc(100% + 12px);
   right: 0;
-  background-color: var(--surface-raised);
-  border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   padding: 20px 22px;
-  box-shadow: var(--shadow-raised);
   z-index: 1060;
   min-width: 320px;
 }
@@ -1302,11 +1366,8 @@ body.wl-home-body {
   top: calc(100% + 14px);
   left: 50%;
   transform: translateX(-50%);
-  background-color: var(--surface-raised);
-  border: 1px solid var(--border);
   border-radius: var(--radius-2xl);
   padding: 24px 28px;
-  box-shadow: var(--shadow-raised);
   z-index: 1060;
   max-width: 95vw;
 }
@@ -1464,22 +1525,25 @@ body.wl-home-body {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background-color: var(--primary);
+  background-color: var(--accent-fill);
   border: none;
   color: var(--on-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.05rem;
+  font-weight: 700;
   flex-shrink: 0;
-  transition: transform 0.15s ease, background-color 0.15s ease;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
   cursor: pointer;
   margin-left: auto;
+  box-shadow: var(--shadow-raised);
 }
 
 .wl-search-btn:hover {
-  background-color: var(--primary-hover);
-  transform: scale(1.04);
+  background-color: var(--accent-fill-hover);
+  transform: scale(1.06);
+  box-shadow: var(--shadow-raised);
 }
 
 /* --------------------------------------------------------------------------
@@ -1489,6 +1553,7 @@ body.wl-home-body {
   margin-top: 56px;
   margin-bottom: 40px;
   padding: 0 clamp(20px, 3.5vw, 48px);
+  padding-inline-start: max(clamp(20px, 3.5vw, 48px), var(--rail-gutter));
 }
 
 .wl-categories-container {
@@ -1614,8 +1679,17 @@ body.wl-home-body {
 /* --------------------------------------------------------------------------
    Curated Stays Section & Discovery Controls
    -------------------------------------------------------------------------- */
-.wl-featured-section {
+.wl-featured-section,
+.wl-editorial-panels-section {
   padding: 0 clamp(20px, 3.5vw, 48px);
+  padding-inline-start: max(clamp(20px, 3.5vw, 48px), var(--rail-gutter));
+}
+
+@media (max-width: 992px) {
+  .wl-featured-section,
+  .wl-editorial-panels-section {
+    padding-inline-start: clamp(20px, 3.5vw, 48px);
+  }
 }
 
 .wl-featured-eyebrow {
@@ -1703,16 +1777,14 @@ body.wl-home-body {
    Bespoke Property Card (4 Columns on Desktop)
    -------------------------------------------------------------------------- */
 .wl-listing-card {
-  background: transparent;
-  border: none;
-  transition: transform 0.2s ease;
+  padding: 8px;
 }
 
 .wl-card-media-wrapper {
   position: relative;
   border-radius: 12px;
   overflow: hidden;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 16 / 10;
   width: 100%;
   margin-bottom: 12px;
   background-color: var(--surface-sunken);
@@ -1723,62 +1795,63 @@ body.wl-home-body {
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 0.35s ease;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .wl-listing-card:hover .wl-card-img {
-  transform: scale(1.03);
+  transform: scale(1.04);
 }
 
 .wl-card-badge {
   position: absolute;
-  top: 10px;
-  left: 10px;
-  background-color: color-mix(in srgb, var(--band) 72%, transparent);
+  top: 12px;
+  left: 12px;
+  background-color: var(--glass-bg);
+  border: 1px solid var(--glass-border);
   color: var(--on-band);
   font-size: 0.72rem;
   font-weight: 600;
   padding: 4px 10px;
   border-radius: var(--radius-pill);
-  border: 1px solid color-mix(in srgb, var(--on-band) 15%, transparent);
   box-shadow: var(--shadow-soft);
   z-index: 5;
 }
 
 .wl-wish-wrapper {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 12px;
+  right: 12px;
   z-index: 5;
 }
 
 .wl-wish-btn {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background-color: color-mix(in srgb, var(--band) 45%, transparent);
-  border: none;
+  background-color: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border);
   color: var(--on-band);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.85rem;
-  transition: transform 0.15s ease, background-color 0.15s ease;
+  font-size: 0.9rem;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease;
   cursor: pointer;
 }
 
 .wl-wish-btn:hover {
-  transform: scale(1.08);
-  background-color: color-mix(in srgb, var(--band) 65%, transparent);
+  transform: scale(1.1);
+  background-color: var(--glass-bg-hover);
+  color: var(--on-band);
 }
 
 .wl-wish-btn.saved {
   color: var(--error);
-  background-color: var(--surface);
+  background-color: var(--surface-raised);
 }
 
 .wl-card-body {
-  padding: 0;
+  padding: 0 4px 4px;
 }
 
 .wl-card-title {
@@ -1791,6 +1864,11 @@ body.wl-home-body {
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  transition: color 0.15s ease;
+}
+
+.wl-title-link:hover .wl-card-title {
+  color: var(--accent-fill);
 }
 
 .wl-star-amber {
@@ -1843,22 +1921,23 @@ body.wl-home-body {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  border: none;
-  background-color: var(--accent-fill);
-  color: var(--band);
+  border: 1px solid var(--glass-border);
+  background-color: var(--glass-bg-subtle);
+  color: var(--on-band);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.8rem;
   text-decoration: none;
-  transition: transform 0.15s ease, background-color 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   flex-shrink: 0;
 }
 
 .wl-card-action-btn:hover {
-  background-color: var(--accent);
-  color: var(--band);
-  transform: translateX(2px);
+  background-color: var(--accent-fill);
+  border-color: var(--accent-fill);
+  color: var(--on-primary);
+  transform: scale(1.08);
 }
 
 /* --------------------------------------------------------------------------
@@ -1867,7 +1946,6 @@ body.wl-home-body {
 .wl-editorial-panels-section {
   margin-top: 24px;
   margin-bottom: 56px;
-  padding: 0 clamp(20px, 3.5vw, 48px);
 }
 
 .wl-editorial-card {
@@ -1939,28 +2017,18 @@ body.wl-home-body {
 
 .wl-card-destinations .wl-editorial-arrow-btn {
   background-color: var(--accent-fill);
-  color: var(--band);
+  color: var(--on-primary);
 }
 
 .wl-card-experiences .wl-editorial-arrow-btn {
-  background-color: color-mix(in srgb, var(--band) 75%, transparent);
-  border: 1px solid color-mix(in srgb, var(--on-band) 35%, transparent);
-  color: var(--on-band);
+  background-color: var(--on-band);
+  color: var(--band);
 }
 
 /* --------------------------------------------------------------------------
    Responsive Breakpoints
    -------------------------------------------------------------------------- */
 @media (max-width: 1200px) {
-  .wl-app-shell {
-    grid-template-columns: 220px minmax(0, 1fr);
-  }
-  .wl-sidebar {
-    width: 220px;
-  }
-  .wl-sidebar-inner {
-    padding: 24px 14px 20px 14px;
-  }
   .wl-main-canvas {
     padding: 0 0 40px 0;
   }
@@ -1979,11 +2047,15 @@ body.wl-home-body {
 }
 
 @media (max-width: 992px) {
-  .wl-app-shell {
-    display: block;
-  }
+  /* Without room for a floating rail it is hidden; the account menu carries the links */
   .wl-sidebar {
-    display: none; /* Collapses to navbar/mobile pattern */
+    display: none;
+  }
+  .wl-hero-section {
+    padding-inline-start: 20px;
+  }
+  .wl-categories-section {
+    padding-inline-start: clamp(20px, 3.5vw, 48px);
   }
   .wl-main-canvas {
     padding: 0 0 36px 0;
@@ -2360,6 +2432,129 @@ body.wl-home-body {
   color: var(--error);
 }
 
+/* Sign-up: choose the starting mode. Native radios, so keyboard and screen readers just work. */
+.wl-segmented {
+  border: 0;
+  margin: 22px 0 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.wl-segmented__legend {
+  float: none;
+  width: auto;
+  margin: 0 0 8px;
+  padding: 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.wl-segmented__options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.wl-segmented__option {
+  position: relative;
+  display: block;
+  margin: 0;
+}
+
+.wl-segmented__option input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.wl-segmented__label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 50px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  color: var(--text);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.wl-segmented__option:hover .wl-segmented__label {
+  background: var(--state-hover);
+}
+
+/* Selected is more than colour: heavier text, a thicker edge and a check */
+.wl-segmented__option input:checked + .wl-segmented__label {
+  background: var(--secondary-subtle);
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+  font-weight: 600;
+}
+
+.wl-segmented__check {
+  display: none;
+  font-size: 0.8rem;
+}
+
+.wl-segmented__option input:checked + .wl-segmented__label .wl-segmented__check {
+  display: inline;
+}
+
+.wl-segmented__option input:focus-visible + .wl-segmented__label {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.wl-segmented--stacked .wl-segmented__label {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  height: 100%;
+  gap: var(--space-half);
+  padding: var(--space-1-5);
+  text-align: left;
+}
+
+.wl-segmented__title {
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.wl-segmented__hint {
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
+
+.wl-segmented__note {
+  margin: var(--space-1) 0 0;
+}
+
+@media (max-width: 420px) {
+  .wl-segmented--stacked .wl-segmented__options {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Header mode switch: one labelled button */
+.wl-mode-switch .wl-auth-btn,
+.wl-mode-switch .wl-hero-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  white-space: nowrap;
+}
+
 .wl-auth-forgot {
   align-self: flex-end;
   margin: 12px 0 28px;
@@ -2572,13 +2767,10 @@ body.wl-home-body {
    ========================================================================== */
 .dropdown-menu,
 .wl-dropdown-menu {
-  background-color: var(--surface-raised);
   color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 8px 0;
+  border-radius: var(--radius-xl);
+  padding: 8px;
   margin-top: 6px;
-  box-shadow: var(--shadow-soft);
   min-width: 200px;
   z-index: 1050;
   font-family: var(--font-sans);
@@ -2723,12 +2915,9 @@ body.wl-home-body {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background-color: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-pill);
   padding: 4px;
   list-style: none;
-  box-shadow: var(--shadow-soft);
 }
 
 .pagination .page-item,
@@ -2750,7 +2939,7 @@ body.wl-home-body {
   color: var(--text);
   background-color: transparent;
   border: 1px solid transparent;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-pill);
   text-decoration: none;
   cursor: pointer;
   transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
@@ -2867,7 +3056,7 @@ body.wl-home-body {
   --bs-list-group-bg: transparent;
   --bs-list-group-color: var(--text);
   --bs-list-group-border-color: var(--border);
-  --bs-dropdown-bg: var(--surface-raised);
+  --bs-dropdown-bg: transparent;
   --bs-dropdown-color: var(--text);
   --bs-dropdown-link-color: var(--text);
   --bs-dropdown-header-color: var(--text-muted);
@@ -3039,30 +3228,55 @@ body.wl-home-body {
   font-size: 1.375rem;
 }
 
-/* Flash messages: built on the auth alert, plus a close button */
-.wl-flash-stack {
-  max-width: 720px;
-  margin: var(--space-2) auto 0;
-  padding: 0 var(--space-2);
+/* Pop-up notifications: floating glass at the top centre, narrow enough to leave the controls beside it free */
+.wl-toasts {
+  position: fixed;
+  top: var(--space-2);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: min(480px, calc(100% - var(--space-4)));
+  pointer-events: none;
 }
 
-.wl-flash-stack:empty {
+.wl-toasts:not(:has([data-toast])) {
   display: none;
 }
 
-.wl-flash {
+.wl-toast {
   align-items: center;
   margin-top: 0;
-  margin-bottom: var(--space-1);
   padding: var(--space-half) var(--space-half) var(--space-half) var(--space-2);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-raised);
+  font-size: 1rem;
+  pointer-events: auto;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .wl-toast {
+    animation: wl-toast-in 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+@keyframes wl-toast-in {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.wl-flash__text {
+.wl-toast[hidden] {
+  display: none;
+}
+
+.wl-toast__text {
   flex: 1;
   padding: var(--space-1) 0;
+  overflow-wrap: anywhere;
 }
 
-.wl-flash__close {
+.wl-toast__close {
   flex-shrink: 0;
   width: 44px;
   height: 44px;
@@ -3073,9 +3287,10 @@ body.wl-home-body {
   cursor: pointer;
 }
 
-.wl-flash__close:hover {
+.wl-toast__close:hover {
   background: var(--state-hover);
 }
+
 
 .wl-auth-alert--warning {
   background: var(--warning-subtle);
@@ -3994,9 +4209,121 @@ body.wl-home-body {
   gap: 0 var(--space-2);
 }
 
+.wl-check-grid--compact {
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+}
+
 .wl-check-grid .wl-check {
   align-items: center;
   margin: 0;
+}
+
+/* Avatar: a photo, or initials on a tile (DESIGN: public profile) */
+.wl-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: var(--radius-pill);
+  object-fit: cover;
+  background: var(--secondary-subtle);
+  color: var(--text);
+  border: 1px solid var(--border);
+  font-weight: 600;
+}
+
+.wl-avatar--lg {
+  width: 96px;
+  height: 96px;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 400;
+}
+
+/* Public profile */
+.wl-profile {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.wl-profile__main {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.wl-profile__name {
+  margin-bottom: 0;
+}
+
+.wl-profile__handle {
+  margin: 0 0 var(--space-2);
+  color: var(--text-muted);
+}
+
+.wl-profile__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2-5);
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  list-style: none;
+  color: var(--text-secondary);
+}
+
+.wl-profile__bio {
+  max-width: 62ch;
+  margin: 0 0 var(--space-2);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.wl-user-link {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.wl-user-link:hover {
+  color: var(--link-hover);
+}
+
+.wl-account-photo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.wl-account-photo__controls {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.wl-fieldset {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+}
+
+.wl-fieldset legend {
+  float: none;
+  width: auto;
+  padding: 0;
+  margin-bottom: var(--space-1);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.wl-subsection-title {
+  margin: var(--space-2) 0 0;
+  font-size: 1.05rem;
+  font-weight: 600;
 }
 
 .wl-account-section {
@@ -4063,4 +4390,114 @@ body.wl-home-body {
 
 .wl-stay__main > section {
   margin-top: var(--space-3);
+}
+
+/* Listing form: one long page of sections */
+.wl-form-section {
+  min-width: 0;
+  margin: 0 0 var(--space-2-5);
+  padding: var(--space-2-5);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.wl-form-section__intro {
+  margin: 0 0 var(--space-2);
+}
+
+.wl-form-group {
+  min-width: 0;
+  margin: var(--space-2-5) 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.wl-form-group > legend {
+  float: none;
+  width: auto;
+  margin-bottom: var(--space-1);
+}
+
+.wl-form-group .wl-check {
+  margin-top: var(--space-1);
+}
+
+.wl-field.wl-field--form {
+  margin-top: var(--space-2);
+}
+
+/* Fields in a row line up on their inputs, whatever the length of the label or hint above */
+.wl-form-section .row {
+  align-items: flex-end;
+}
+
+.wl-required {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
+
+.wl-input--plain input {
+  padding-left: var(--space-2);
+}
+
+.wl-input--plain input[type="number"] {
+  padding-right: var(--space-half);
+}
+
+.wl-check-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0 var(--space-2);
+}
+
+.wl-check-cols .wl-check {
+  align-items: center;
+  margin: 0;
+}
+
+@media (min-width: 768px) {
+  .wl-check-cols {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.wl-photos--form {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.wl-photo__alt {
+  margin-top: var(--space-1);
+}
+
+.wl-photo__alt > label {
+  margin-bottom: var(--space-half);
+  font-size: 0.875rem;
+}
+
+.wl-form-actions {
+  align-items: center;
+  margin-top: var(--space-2);
+}
+
+/* Stay page: the terms read before the booking panel */
+.wl-stay-rules {
+  margin-top: var(--space-3);
+  margin-bottom: 0;
+}
+
+.wl-stay-rules__other {
+  margin: var(--space-2) 0 0;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.wl-amenities .fa-xmark {
+  color: var(--text-muted);
+}
+
+.wl-price-fee {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
 }

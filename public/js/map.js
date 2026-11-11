@@ -17,7 +17,40 @@
   map.addControl(new mapboxgl.NavigationControl(), "top-right");
 
   // ---- Listing page: single marker ----
-  if (mode === "show") {
+  if (mode === "show" && el.dataset.radius) {
+    // The public view: a circle around a nearby point, never the pin itself
+    const center = [Number(el.dataset.centerLng), Number(el.dataset.centerLat)];
+    const radius = Number(el.dataset.radius);
+    map.setCenter(center).setZoom(13.5);
+    const metresPerDegree = 111320;
+    const ring = Array.from({ length: 65 }, (_, i) => {
+      const angle = (i / 64) * 2 * Math.PI;
+      return [
+        center[0] +
+          (radius * Math.cos(angle)) /
+            (metresPerDegree * Math.cos((center[1] * Math.PI) / 180)),
+        center[1] + (radius * Math.sin(angle)) / metresPerDegree,
+      ];
+    });
+    map.on("load", () => {
+      map.addSource("area", {
+        type: "geojson",
+        data: { type: "Polygon", coordinates: [ring] },
+      });
+      map.addLayer({
+        id: "area-fill",
+        type: "fill",
+        source: "area",
+        paint: { "fill-color": brand, "fill-opacity": 0.15 },
+      });
+      map.addLayer({
+        id: "area-edge",
+        type: "line",
+        source: "area",
+        paint: { "line-color": brand, "line-width": 2 },
+      });
+    });
+  } else if (mode === "show") {
     const center = [Number(el.dataset.lng), Number(el.dataset.lat)];
     map.setCenter(center).setZoom(11);
     new mapboxgl.Marker({ color: brand })
@@ -38,7 +71,7 @@
       lng.value = lngLat.lng ?? lngLat[0];
       lat.value = lngLat.lat ?? lngLat[1];
       if (fly) map.flyTo({ center: lngLat, zoom: 10 });
-      status.textContent = "Location set. Drag the pin to fine-tune.";
+      status.textContent = "Pin set. Drag it to fine-tune.";
     };
 
     if (lat.value && lng.value) {
@@ -48,30 +81,35 @@
     marker.on("dragend", () => place(marker.getLngLat()));
 
     const search = async () => {
-      const q = [locationInput.value, countryInput.value]
-        .filter(Boolean)
-        .join(", ");
-      if (!locationInput.value || !countryInput.value) return;
+      const q = addressInputs.map((input) => input.value).filter(Boolean).join(", ");
+      if (!cityInput.value || !countryInput.value) return;
       try {
         const res = await fetch(`/listings/geocode?q=${encodeURIComponent(q)}`);
         const { coordinates } = await res.json();
         if (coordinates) place(coordinates, true);
         else
           status.textContent =
-            "Couldn't find that place. Click the map to set it manually.";
+            "No pin yet. We could not find that place, so click the map to set it.";
       } catch {
         status.textContent =
-          "Search unavailable. Click the map to set the location.";
+          "No pin yet. Search is unavailable, so click the map to set it.";
       }
     };
-    const locationInput = document.getElementById("location");
+    const cityInput = document.getElementById("city");
     const countryInput = document.getElementById("country");
+    const addressInputs = [
+      document.getElementById("addressLine"),
+      cityInput,
+      document.getElementById("region"),
+      countryInput,
+    ];
     // Typing invalidates the old pin so a stale point is never submitted with a new address.
     const clearPin = () => {
       lat.value = lng.value = "";
       marker.remove();
+      status.textContent = "No pin yet";
     };
-    for (const input of [locationInput, countryInput]) {
+    for (const input of addressInputs) {
       input.addEventListener("input", clearPin);
       input.addEventListener("change", search);
     }

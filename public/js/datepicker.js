@@ -134,6 +134,11 @@
         this.close();
       });
 
+      // Only one menu is open at a time
+      document.addEventListener("wl:popover-open", (e) => {
+        if (e.detail.source !== "calendar" && this.isOpen) this.close();
+      });
+
       // Close on Escape
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && this.isOpen) {
@@ -153,6 +158,7 @@
     }
 
     open() {
+      document.dispatchEvent(new CustomEvent("wl:popover-open", { detail: { source: "calendar" } }));
       this.isOpen = true;
       this.popover.hidden = false;
       this.popover.classList.add("show");

@@ -48,6 +48,17 @@
       });
     });
 
+  // A required radio group: no option is chosen for you, so it is checked on submit
+  const radioGroup = (group) => {
+    const chosen = group.querySelector("input[type=radio]:checked");
+    const note = document.getElementById(`${group.id}-error`);
+    note.textContent = chosen ? "" : group.dataset.requiredRadio;
+    note.hidden = Boolean(chosen);
+    if (chosen) group.removeAttribute("aria-describedby");
+    else group.setAttribute("aria-describedby", note.id);
+    return chosen;
+  };
+
   const check = (form, input) => {
     let text = message(input);
     const matchName = form.dataset.match;
@@ -66,6 +77,10 @@
       ),
     ];
     checkBoxes(form);
+    const radioGroups = [...form.querySelectorAll("[data-required-radio]")];
+    radioGroups.forEach((group) =>
+      group.addEventListener("change", () => radioGroup(group)),
+    );
     const button = form.querySelector("button[type=submit]");
     const label = button.querySelector("[data-btn-label]");
     const idle = label.textContent;
@@ -100,6 +115,9 @@
         else box.setAttribute("aria-describedby", note.id);
         if (!box.checked) bad.push(box);
       });
+      radioGroups.forEach((group) => {
+        if (!radioGroup(group)) bad.push(group.querySelector("input[type=radio]"));
+      });
       if (bad.length) {
         event.preventDefault();
         bad[0].focus();
@@ -119,7 +137,7 @@
     if (button) event.preventDefault();
   });
 
-  document.querySelectorAll("[data-toggle-password]").forEach((toggle) => {
+  document.querySelectorAll("[data-toggle-password], [data-toggle-confirm-password]").forEach((toggle) => {
     const input = document.getElementById(toggle.getAttribute("aria-controls"));
     const icon = toggle.querySelector("i");
     toggle.addEventListener("click", () => {
