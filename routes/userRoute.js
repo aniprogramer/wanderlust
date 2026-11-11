@@ -4,6 +4,7 @@ const wrapAsync = require("../utils/wrapAsync");
 const passport = require("passport");
 const {
   saveRedirectUrl,
+  keepSwitchedMode,
   validateSignup,
   validateLogin,
   validateForgot,
@@ -14,6 +15,7 @@ const {
   forgotLimiter,
   resetLimiter,
   isLoggedIn,
+  validateMode,
   verifyResendLimiter,
 } = require("../middleware");
 const userController = require("../controllers/userController");
@@ -33,6 +35,7 @@ router
     validateLogin,
     resolveLoginIdentifier,
     saveRedirectUrl,
+    keepSwitchedMode,
     passport.authenticate("local", {
       failureRedirect: "/login",
       // One message for unknown user and wrong password alike
@@ -40,6 +43,9 @@ router
     }),
     userController.login,
   );
+
+// Switch between guest and host mode (the mode lives in the session)
+router.post("/mode", isLoggedIn, validateMode, userController.switchMode);
 
 // Password recovery
 router

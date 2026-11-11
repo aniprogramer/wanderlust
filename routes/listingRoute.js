@@ -4,6 +4,7 @@ const wrapAsync = require("../utils/wrapAsync");
 const {
   isLoggedIn,
   isOwner,
+  requireMode,
   validateListing,
   validateSearch,
   validateBooking,
@@ -58,6 +59,7 @@ listingRoute
   .get(validateSearch, wrapAsync(listingController.index))
   .post(
     isLoggedIn,
+    requireMode("host"),
     requireVerifiedEmail,
     listingLimiter,
     photoUpload,
@@ -68,9 +70,21 @@ listingRoute
   );
 
 // New Route
-listingRoute.get("/new", isLoggedIn, requireVerifiedEmail, (req, res) => {
-  res.render("./listings/new.ejs", { pageTitle: "List your stay", noindex: true });
-});
+listingRoute.get(
+  "/new",
+  isLoggedIn,
+  requireMode("host"),
+  requireVerifiedEmail,
+  listingController.renderNewForm,
+);
+
+// The host's own listings (host mode)
+listingRoute.get(
+  "/mine",
+  isLoggedIn,
+  requireMode("host"),
+  wrapAsync(listingController.mine),
+);
 
 // Map of all (filtered) listings, clustered
 listingRoute.get("/map", validateSearch, wrapAsync(listingController.mapView));
@@ -92,6 +106,7 @@ listingRoute
   .get(wrapAsync(listingController.showListings))
   .put(
     isLoggedIn,
+    requireMode("host"),
     isOwner,
     photoUpload,
     csrfAfterUpload,
@@ -99,12 +114,18 @@ listingRoute
     validateListing,
     wrapAsync(listingController.updateListing),
   )
-  .delete(isLoggedIn, isOwner, wrapAsync(listingController.destroyListing));
+  .delete(
+    isLoggedIn,
+    requireMode("host"),
+    isOwner,
+    wrapAsync(listingController.destroyListing),
+  );
 
 // Booking
 listingRoute.post(
   "/:id/bookings",
   isLoggedIn,
+  requireMode("guest"),
   requireVerifiedEmail,
   bookingLimiter,
   validateBooking,
@@ -118,6 +139,7 @@ listingRoute.post(
 listingRoute.get(
   "/:id/edit",
   isLoggedIn,
+  requireMode("host"),
   isOwner,
   wrapAsync(listingController.renderEditForm),
 );
@@ -137,6 +159,7 @@ listingRoute
 listingRoute.post(
   "/:id/blocks",
   isLoggedIn,
+  requireMode("host"),
   isOwner,
   validateBlock,
   wrapAsync(listingController.addBlock),
@@ -144,6 +167,7 @@ listingRoute.post(
 listingRoute.delete(
   "/:id/blocks/:blockId",
   isLoggedIn,
+  requireMode("host"),
   isOwner,
   wrapAsync(listingController.removeBlock),
 );

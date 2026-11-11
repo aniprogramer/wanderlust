@@ -5,12 +5,14 @@ const {
   validateReview,
   isLoggedIn,
   isReviewAuthor,
+  requireMode,
 } = require("../middleware.js");
 const reviewController = require("../controllers/reviewController.js");
 
 listingRoute.post(
   "/",
   isLoggedIn,
+  requireMode("guest"),
   validateReview,
   wrapAsync(reviewController.createReview),
 );
