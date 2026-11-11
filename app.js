@@ -197,6 +197,7 @@ app.use((req, res, next) => {
   res.locals.currentCurrency = activeCurrency || "INR";
   res.locals.displayCurrency = activeCurrency;
   res.locals.currencyInfo = CURRENCY_INFO;
+  res.locals.passwordRules = require("./utils/passwordRules").RULES;
   // Pages that show listing cards fill this in (see savedIdsFor in the controllers)
   res.locals.navLinks = navFor(req.user, res.locals.mode);
   res.locals.savedIds = new Set();

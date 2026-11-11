@@ -324,6 +324,7 @@ module.exports.loginLimiter = [
   }),
 ];
 module.exports.signupLimiter = limiter(10, HOUR);
+module.exports.usernameLimiter = limiter(60, 10 * MINUTE);
 module.exports.forgotLimiter = [
   limiter(5, HOUR),
   limiter(5, HOUR, {

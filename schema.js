@@ -44,18 +44,19 @@ const { normalizeCategory } = require("./utils/categories");
 // Multipart forms send "" for untouched inputs; treat those as absent.
 const optionalNumber = (min, max) => Joi.number().min(min).max(max).empty("");
 
-// A1: one rule for signup, reset and change-password.
-const PASSWORD_HINT = "Use 8 to 128 characters with at least one letter and one digit.";
+// A1: one rule for signup, reset and change-password (see utils/passwordRules.js).
+const passwordRules = require("./utils/passwordRules");
+const PASSWORD_HINT =
+  "Use 8 to 128 characters with an uppercase letter, a lowercase letter, a number and a special character.";
 const newPassword = Joi.string()
-  .min(8)
-  .max(128)
-  .pattern(/[A-Za-z]/)
-  .pattern(/\d/)
   .required()
+  .custom((value, helpers) => {
+    const missing = passwordRules.failing(value);
+    return missing.length ? helpers.message(passwordRules.message(missing)) : value;
+  })
   .messages({
-    "string.min": PASSWORD_HINT,
-    "string.max": PASSWORD_HINT,
-    "string.pattern.base": PASSWORD_HINT,
+    "string.empty": PASSWORD_HINT,
+    "any.required": PASSWORD_HINT,
   });
 module.exports.PASSWORD_HINT = PASSWORD_HINT;
 module.exports.newPassword = newPassword;
@@ -267,7 +268,10 @@ module.exports.signupSchema = Joi.object({
   }),
   email: Joi.string().trim().email().required(),
   password: newPassword,
-  confirmPassword: Joi.string().allow("").optional(),
+  confirmPassword: Joi.valid(Joi.ref("password")).required().messages({
+    "any.only": "Passwords do not match.",
+    "any.required": "Confirm your password.",
+  }),
   startingMode: Joi.string().valid("guest", "host").required().messages({
     "any.required": STARTING_MODE_HINT,
     "any.only": STARTING_MODE_HINT,
