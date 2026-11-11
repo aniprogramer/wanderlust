@@ -35,6 +35,11 @@ const initDB = async () => {
       ? await geocode(`${obj.location}, ${obj.country}`).catch(() => null)
       : null;
     data.push({
+      // Seed stays are demo content, so they start with the same terms a new host is offered
+      cancellationPolicy: "flexible",
+      checkInFrom: "15:00",
+      checkInUntil: "20:00",
+      checkOutBy: "11:00",
       ...obj,
       owner: owner._id,
       ...(coordinates && { geometry: { type: "Point", coordinates } }),

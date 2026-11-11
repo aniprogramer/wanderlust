@@ -15,6 +15,28 @@ const {
   SORT_KEYS,
   AMENITY_KEYS,
   REPORT_REASONS,
+  LANGUAGES,
+  DISPLAY_NAME_MIN,
+  DISPLAY_NAME_MAX,
+  BIO_MAX,
+  PLACE_MAX,
+  COUNTRIES,
+  CANCELLATION_POLICY_KEYS,
+  HOUSE_RULE_KEYS,
+  ACCESSIBILITY_KEYS,
+  SAFETY_KEYS,
+  GUEST_NEED_KEYS,
+  TITLE_MIN,
+  TITLE_MAX,
+  DESCRIPTION_MIN,
+  DESCRIPTION_MAX,
+  ADDRESS_MAX,
+  OTHER_RULES_MAX,
+  PHOTO_ALT_MAX,
+  SIZE_MIN,
+  SIZE_MAX,
+  WIFI_MAX,
+  MAX_PRICE,
 } = require("./utils/constants");
 const { parseDay, today, nightsBetween } = require("./utils/dates");
 const { normalizeCategory } = require("./utils/categories");
@@ -38,45 +60,195 @@ const newPassword = Joi.string()
 module.exports.PASSWORD_HINT = PASSWORD_HINT;
 module.exports.newPassword = newPassword;
 
-module.exports.listingSchema = Joi.object({
-  listing: Joi.object({
-    title: Joi.string().required(),
-    description: Joi.string().required().max(2000),
-    location: Joi.string().required(),
-    country: Joi.string().required(),
-    price: Joi.number().required().min(1),
-    category: Joi.string()
-      .valid(...CATEGORY_NAMES)
-      .empty(""),
-    propertyType: Joi.string()
-      .valid(...PROPERTY_TYPES)
-      .empty(""),
-    currency: Joi.string()
-      .valid(...CURRENCIES)
-      .empty(""),
-    lat: optionalNumber(-90, 90),
-    lng: optionalNumber(-180, 180),
-    maxGuests: Joi.number().integer().min(1).max(MAX_GUESTS).required().messages({
-      "any.required": "Enter how many guests can stay.",
-      "number.base": "Enter how many guests can stay.",
-      "number.min": `Guests must be between 1 and ${MAX_GUESTS}.`,
-      "number.max": `Guests must be between 1 and ${MAX_GUESTS}.`,
+// A ticked box posts "on" and an unticked one posts nothing, so absent means no.
+// The same times as TIME_OPTIONS. A pattern, because valid() skips any custom rule after a match.
+const HALF_HOUR = /^([01]\d|2[0-3]):(00|30)$/;
+
+const tickBox = () => Joi.boolean().truthy("on", "1").falsy("", "0").default(false);
+
+// A named error code, because a catch-all message would replace helpers.message()
+const notBefore = (other) => (value, helpers) => {
+  const start = helpers.state.ancestors[0][other];
+  return start && value < start ? helpers.error("time.order") : value;
+};
+
+// One rule set for both buttons. A draft may leave anything out and may be short of a minimum
+// length, but what it does contain must still be valid.
+const listingBody = (draft) => {
+  const need = (rule, message) =>
+    (draft ? rule : rule.required()).messages({ "*": message });
+  const atLeast = (rule, min) => (draft ? rule : rule.min(min));
+  const time = (message) =>
+    Joi.string()
+      .pattern(HALF_HOUR)
+      .empty("")
+      .messages({ "*": message });
+
+  return Joi.object({
+    // Basics
+    title: need(
+      atLeast(Joi.string().trim().max(TITLE_MAX).empty(""), TITLE_MIN),
+      `Enter a title of ${TITLE_MIN} to ${TITLE_MAX} characters.`,
+    ),
+    description: need(
+      atLeast(Joi.string().trim().max(DESCRIPTION_MAX).empty(""), DESCRIPTION_MIN),
+      `Enter a description of ${DESCRIPTION_MIN} to ${DESCRIPTION_MAX} characters.`,
+    ),
+    propertyType: need(
+      Joi.string()
+        .valid(...PROPERTY_TYPES)
+        .empty(""),
+      "Choose a property type.",
+    ),
+    category: need(
+      Joi.string()
+        .valid(...CATEGORY_NAMES)
+        .empty(""),
+      "Choose a category.",
+    ),
+
+    // Location
+    addressLine: need(
+      Joi.string().trim().max(ADDRESS_MAX).empty(""),
+      `Enter the address, up to ${ADDRESS_MAX} characters.`,
+    ),
+    city: need(
+      Joi.string().trim().max(PLACE_MAX).empty(""),
+      `Enter the city, up to ${PLACE_MAX} characters.`,
+    ),
+    region: need(
+      Joi.string().trim().max(PLACE_MAX).empty(""),
+      `Enter the region or state, up to ${PLACE_MAX} characters.`,
+    ),
+    country: need(
+      Joi.string()
+        .valid(...COUNTRIES)
+        .empty(""),
+      "Choose a country.",
+    ),
+    lat: optionalNumber(-90, 90).messages({ "*": "That map pin is not valid. Place it again." }),
+    lng: optionalNumber(-180, 180).messages({ "*": "That map pin is not valid. Place it again." }),
+    noPinAck: tickBox(),
+
+    // Space
+    maxGuests: need(
+      Joi.number().integer().min(1).max(MAX_GUESTS).empty(""),
+      `Enter how many guests can stay, from 1 to ${MAX_GUESTS}.`,
+    ),
+    bedrooms: need(
+      Joi.number().integer().min(0).max(MAX_BEDROOMS).empty(""),
+      `Enter the bedrooms, from 0 to ${MAX_BEDROOMS}.`,
+    ),
+    beds: need(
+      Joi.number().integer().min(1).max(MAX_BEDS).empty(""),
+      `Enter the beds, from 1 to ${MAX_BEDS}.`,
+    ),
+    bathrooms: need(
+      Joi.number().min(0).max(MAX_BATHROOMS).multiple(0.5).empty(""),
+      `Enter the bathrooms, from 0 to ${MAX_BATHROOMS} in steps of 0.5.`,
+    ),
+    sizeSqm: Joi.number()
+      .min(SIZE_MIN)
+      .max(SIZE_MAX)
+      .empty("")
+      .messages({ "*": `Enter the size from ${SIZE_MIN} to ${SIZE_MAX} square metres, or leave it blank.` }),
+
+    // Pricing
+    currency: need(
+      Joi.string()
+        .valid(...CURRENCIES)
+        .empty(""),
+      "Choose a currency.",
+    ),
+    price: need(
+      Joi.number().min(1).max(MAX_PRICE).empty(""),
+      "Enter a nightly price of at least 1.",
+    ),
+    cleaningFee: Joi.number()
+      .min(0)
+      .max(MAX_PRICE)
+      .empty("")
+      .default(0)
+      .messages({ "*": "Enter a cleaning fee of 0 or more, or leave it blank." }),
+    minNights: Joi.number()
+      .integer()
+      .min(1)
+      .max(MAX_STAY_NIGHTS)
+      .empty("")
+      .default(1)
+      .messages({ "*": `Enter minimum nights from 1 to ${MAX_STAY_NIGHTS}.` }),
+    maxNights: Joi.number()
+      .integer()
+      .min(Joi.ref("minNights"))
+      .max(MAX_STAY_NIGHTS)
+      .empty("")
+      .default(MAX_STAY_NIGHTS)
+      .messages({
+        "*": `Enter maximum nights up to ${MAX_STAY_NIGHTS}, and not less than the minimum.`,
+      }),
+
+    // Stay rules
+    checkInFrom: need(time(""), "Choose the earliest check-in time."),
+    checkInUntil: need(
+      time("").custom(notBefore("checkInFrom")),
+      "Choose the latest check-in time.",
+    ).messages({ "time.order": "The latest check-in cannot be before the earliest." }),
+    checkOutBy: need(time(""), "Choose the check-out time."),
+    quietHoursStart: time("Choose a time from the list."),
+    quietHoursEnd: time("Choose a time from the list.").when("quietHoursStart", {
+      is: Joi.exist(),
+      then: Joi.required().messages({ "any.required": "Choose when quiet hours end." }),
     }),
-    bedrooms: Joi.number().integer().min(0).max(MAX_BEDROOMS).required(),
-    beds: Joi.number().integer().min(1).max(MAX_BEDS).required(),
-    bathrooms: Joi.number().min(0).max(MAX_BATHROOMS).multiple(0.5).required(),
-    cleaningFee: Joi.number().min(0).max(1000000).empty("").default(0),
-    minNights: Joi.number().integer().min(1).max(MAX_STAY_NIGHTS).empty("").default(1),
+    cancellationPolicy: need(
+      Joi.string()
+        .valid(...CANCELLATION_POLICY_KEYS)
+        .empty(""),
+      "Choose a cancellation policy.",
+    ),
+    otherRules: Joi.string()
+      .trim()
+      .max(OTHER_RULES_MAX)
+      .empty("")
+      .messages({ "*": `Keep other rules to ${OTHER_RULES_MAX} characters.` }),
+    ...Object.fromEntries(
+      [...HOUSE_RULE_KEYS, ...ACCESSIBILITY_KEYS, ...SAFETY_KEYS].map((key) => [key, tickBox()]),
+    ),
+
+    // Amenities
     amenities: Joi.array()
       .items(Joi.string().valid(...AMENITY_KEYS))
       .single()
       .max(AMENITY_KEYS.length)
-      .default([]),
-  }).required(),
-  // Edit form: stored filenames of the photos to drop, and of the one to make the cover
-  removeImages: Joi.array().items(Joi.string().max(300)).single().max(MAX_IMAGES),
-  coverImage: Joi.string().max(300).allow(""),
-});
+      .default([])
+      .messages({ "*": "Choose amenities from the list." }),
+    wifiMbps: Joi.number()
+      .min(1)
+      .max(WIFI_MAX)
+      .empty("")
+      .messages({ "*": `Enter the Wi-Fi speed from 1 to ${WIFI_MAX} Mbps, or leave it blank.` }),
+  }).required();
+};
+
+const listingForm = (draft) =>
+  Joi.object({
+    listing: listingBody(draft),
+    intent: Joi.string().valid("draft", "publish").empty("").default("publish"),
+    // Edit form: stored filenames of the photos to drop, and of the one to make the cover
+    removeImages: Joi.array().items(Joi.string().max(300)).single().max(MAX_IMAGES),
+    // A stored filename, or "new:<index>" for a photo in this upload
+    coverImage: Joi.string().max(300).allow(""),
+    // Alt text, by position: the stored photos named in existingAltFile, then this upload
+    existingAlt: Joi.array().items(Joi.string().trim().max(PHOTO_ALT_MAX).allow("")).single().max(MAX_IMAGES).messages({
+      "string.max": `Keep alt text to ${PHOTO_ALT_MAX} characters.`,
+    }),
+    existingAltFile: Joi.array().items(Joi.string().max(300)).single().max(MAX_IMAGES),
+    newAlt: Joi.array().items(Joi.string().trim().max(PHOTO_ALT_MAX).allow("")).single().max(MAX_IMAGES).messages({
+      "string.max": `Keep alt text to ${PHOTO_ALT_MAX} characters.`,
+    }),
+  });
+
+module.exports.listingSchema = listingForm(false);
+module.exports.listingDraftSchema = listingForm(true);
 
 module.exports.reviewSchema = Joi.object({
   review: Joi.object({
@@ -85,13 +257,23 @@ module.exports.reviewSchema = Joi.object({
   }).required(),
 });
 
+const STARTING_MODE_HINT = "Choose whether you want to find stays or list your home.";
 module.exports.signupSchema = Joi.object({
+  firstName: Joi.string().trim().max(50).allow("").optional(),
+  lastName: Joi.string().trim().max(50).allow("").optional(),
   username: Joi.string().pattern(/^\w+$/).min(3).max(30).required().messages({
     "string.pattern.base":
       "Username may only contain letters, numbers and underscores.",
   }),
   email: Joi.string().trim().email().required(),
   password: newPassword,
+  confirmPassword: Joi.string().allow("").optional(),
+  startingMode: Joi.string().valid("guest", "host").required().messages({
+    "any.required": STARTING_MODE_HINT,
+    "any.only": STARTING_MODE_HINT,
+    "string.base": STARTING_MODE_HINT,
+    "string.empty": STARTING_MODE_HINT,
+  }),
   terms: Joi.valid("on").required().messages({
     "any.required": "Accept the Terms and Privacy Policy to create an account.",
     "any.only": "Accept the Terms and Privacy Policy to create an account.",
@@ -128,6 +310,23 @@ module.exports.contactSchema = Joi.object({
 module.exports.loginSchema = Joi.object({
   username: Joi.string().trim().max(254).required(),
   password: Joi.string().max(128).required(),
+  // The starting mode comes from the account. A page opened before the login control was removed
+  // may still post this, and it must not fail the sign-in or have any effect.
+  mode: Joi.any().strip(),
+  rememberMe: Joi.string().valid("on", "true", "1").allow("").optional(),
+});
+
+module.exports.modeSchema = Joi.object({
+  mode: Joi.string().valid("guest", "host").required(),
+  returnTo: Joi.string().max(500).allow("").optional(),
+});
+
+module.exports.startingModeSchema = Joi.object({
+  startingMode: Joi.string().valid("guest", "host").required().messages({
+    "any.required": "Choose guest or host.",
+    "any.only": "Choose guest or host.",
+    "string.empty": "Choose guest or host.",
+  }),
 });
 
 module.exports.forgotSchema = Joi.object({
@@ -211,6 +410,10 @@ module.exports.searchSchema = Joi.object({
     .items(Joi.string().valid(...AMENITY_KEYS))
     .single()
     .empty(""),
+  needs: Joi.array()
+    .items(Joi.string().valid(...GUEST_NEED_KEYS))
+    .single()
+    .empty(""),
   page: Joi.number().integer().min(1).empty("").default(1),
 })
   .and("checkIn", "checkOut")
@@ -246,12 +449,40 @@ module.exports.blockSchema = Joi.object({
   return value;
 });
 
+const EMPTY = ["", null];
 module.exports.profileSchema = Joi.object({
+  displayName: Joi.string().trim().min(DISPLAY_NAME_MIN).max(DISPLAY_NAME_MAX).allow(...EMPTY).messages({
+    "string.min": `Display names are ${DISPLAY_NAME_MIN} to ${DISPLAY_NAME_MAX} characters.`,
+    "string.max": `Display names are ${DISPLAY_NAME_MIN} to ${DISPLAY_NAME_MAX} characters.`,
+  }),
+  bio: Joi.string().trim().max(BIO_MAX).allow(...EMPTY).messages({
+    "string.max": `Keep your bio to ${BIO_MAX} characters.`,
+  }),
+  city: Joi.string().trim().max(PLACE_MAX).allow(...EMPTY).messages({
+    "string.max": `City is up to ${PLACE_MAX} characters.`,
+  }),
+  country: Joi.string().trim().max(PLACE_MAX).allow(...EMPTY).messages({
+    "string.max": `Country is up to ${PLACE_MAX} characters.`,
+  }),
+  languages: Joi.array()
+    .items(Joi.string().valid(...LANGUAGES))
+    .single()
+    .max(LANGUAGES.length)
+    .default([])
+    .messages({ "any.only": "Choose languages from the list." }),
+  removeAvatar: Joi.valid("on", "true", "1", "").optional(),
   username: Joi.string().pattern(/^\w+$/).min(3).max(30).required().messages({
     "string.pattern.base": "Usernames can use letters, numbers and underscores.",
     "string.min": "Usernames are 3 to 30 characters.",
     "string.max": "Usernames are 3 to 30 characters.",
     "string.empty": "Enter a username.",
+  }),
+});
+
+module.exports.emailChangeSchema = Joi.object({
+  currentPassword: Joi.string().max(128).required().messages({
+    "string.empty": "Enter your current password.",
+    "any.required": "Enter your current password.",
   }),
   email: Joi.string().trim().email().max(254).required().messages({
     "string.email": "Enter a valid email address.",

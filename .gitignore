@@ -17,6 +17,7 @@ uploads/
 npm-debug.log*
 
 # Editor & OS files
+.gravitas
 .vscode/
 .idea/
 .prettierrc

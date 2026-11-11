@@ -8,16 +8,20 @@ const ExpressError = require("./utils/ExpressError.js");
 const wrapAsync = require("./utils/wrapAsync");
 const {
   listingSchema,
+  listingDraftSchema,
   reviewSchema,
   bookingSchema,
   searchSchema,
   signupSchema,
   loginSchema,
+  modeSchema,
+  startingModeSchema,
   forgotSchema,
   resetSchema,
   reasonSchema,
   blockSchema,
   profileSchema,
+  emailChangeSchema,
   changePasswordSchema,
   deleteAccountSchema,
   reportSchema,
@@ -25,6 +29,8 @@ const {
 const User = require("./models/user");
 const { sniffImageType } = require("./utils/imageType");
 const { IMAGE_ERROR } = require("./utils/constants");
+const { profilePath } = require("./utils/profile");
+const { HOMES, normalizeMode, onlyIn, isSafePath } = require("./utils/mode");
 
 module.exports.isLoggedIn = (req, res, next) => {
   if (!req.isAuthenticated()) {
@@ -51,6 +57,39 @@ module.exports.sessionFreshness = (req, res, next) => {
   const changed = req.user?.passwordChangedAt;
   if (!changed || req.session.authAt >= changed.getTime()) return next();
   req.logOut((err) => next(err));
+};
+
+// Mode guards. Ownership checks (isOwner, isBookingParty) still run whatever the mode;
+// these only decide which side of the account the action belongs to.
+const MODE_MESSAGES = {
+  host: "That is a host action. Switch to host mode to continue.",
+  guest: "That is a guest action. Switch to guest mode to continue.",
+};
+const sendBack = (req, res, mode) => {
+  req.flash("warning", MODE_MESSAGES[mode]);
+  const here = req.method === "GET" ? null : req.get("Referer");
+  let back = null;
+  try {
+    if (here) back = new URL(here).pathname;
+  } catch {}
+  const other = mode === "host" ? "guest" : "host";
+  res.redirect(back && isSafePath(back) && onlyIn(back) !== mode ? back : HOMES[other]);
+};
+module.exports.requireMode = (mode) => (req, res, next) =>
+  normalizeMode(req.session?.mode) === mode ? next() : sendBack(req, res, mode);
+// For routes both parties use: the mode must match the role isBookingParty found
+module.exports.requireModeForRole = (req, res, next) =>
+  normalizeMode(req.session?.mode) === req.bookingRole
+    ? next()
+    : sendBack(req, res, req.bookingRole);
+
+// Passport starts a new session at login, so a mode this person chose by hand in this session is
+// noted first. It only carries over to the same account (see userController.login).
+module.exports.keepSwitchedMode = (req, res, next) => {
+  if (req.user && req.session?.modeSwitched) {
+    res.locals.switchedMode = { userId: String(req.user._id), mode: req.session.mode };
+  }
+  next();
 };
 
 module.exports.saveRedirectUrl = (req, res, next) => {
@@ -91,7 +130,7 @@ module.exports.isReviewAuthor = wrapAsync(async (req, res, next) => {
 module.exports.isBookingParty = wrapAsync(async (req, res, next) => {
   const booking = await Booking.findById(req.params.bookingId).populate(
     "listing",
-    "owner title location country image images currency",
+    "owner title location country image images currency addressLine city region geometry",
   );
   if (!booking) throw new ExpressError(404, "Booking not found");
   const userId = res.locals.currUser._id;
@@ -165,7 +204,27 @@ const validate =
     next();
   };
 
-module.exports.validateListing = validate(listingSchema);
+// The listing form shows every problem beside its field, so nothing is thrown here: the controller
+// sees req.listingForm and renders the form again with what was typed.
+const fieldErrors = (error) => {
+  const errors = {};
+  for (const { path, message } of error.details) {
+    const key = path[0] === "listing" && path.length > 1 ? path[1] : path[0];
+    errors[key] = errors[key] || message;
+  }
+  return errors;
+};
+module.exports.validateListing = (req, res, next) => {
+  const schema = req.body?.intent === "draft" ? listingDraftSchema : listingSchema;
+  const { error, value } = schema.validate(req.body, { abortEarly: false });
+  if (error) {
+    removeUploads(req);
+    req.listingForm = { errors: fieldErrors(error), values: req.body?.listing || {} };
+  } else {
+    req.body = value;
+  }
+  next();
+};
 module.exports.validateReview = validate(reviewSchema);
 module.exports.validateBooking = validate(bookingSchema);
 module.exports.validateSignup = validate(signupSchema, "body", {
@@ -183,21 +242,23 @@ module.exports.validateReset = (req, res, next) =>
   validate(resetSchema, "body", {
     redirectTo: `/reset-password/${encodeURIComponent(req.params.token)}`,
   })(req, res, next);
+module.exports.validateMode = validate(modeSchema, "body", { message: "Choose guest or host." });
 module.exports.validateSearch = validate(searchSchema, "query");
 module.exports.validateReason = validate(reasonSchema);
 module.exports.validateReport = (req, res, next) =>
   validate(reportSchema, "body", {
     redirectTo: `/listings/${req.params.id}/report`,
   })(req, res, next);
-module.exports.validateProfile = validate(profileSchema, "body", {
-  redirectTo: "/account",
-});
-module.exports.validateChangePassword = validate(changePasswordSchema, "body", {
-  redirectTo: "/account",
-});
-module.exports.validateDeleteAccount = validate(deleteAccountSchema, "body", {
-  redirectTo: "/account",
-});
+module.exports.validateStartingMode = (req, res, next) =>
+  validate(startingModeSchema, "body", { redirectTo: profilePath(req.user) })(req, res, next);
+module.exports.validateProfile = (req, res, next) =>
+  validate(profileSchema, "body", { redirectTo: profilePath(req.user) })(req, res, next);
+module.exports.validateEmailChange = (req, res, next) =>
+  validate(emailChangeSchema, "body", { redirectTo: profilePath(req.user) })(req, res, next);
+module.exports.validateChangePassword = (req, res, next) =>
+  validate(changePasswordSchema, "body", { redirectTo: profilePath(req.user) })(req, res, next);
+module.exports.validateDeleteAccount = (req, res, next) =>
+  validate(deleteAccountSchema, "body", { redirectTo: profilePath(req.user) })(req, res, next);
 module.exports.validateBlock = (req, res, next) =>
   validate(blockSchema, "body", {
     redirectTo: `/listings/${req.params.id}/edit#availability`,
@@ -218,7 +279,7 @@ const checkCsrf = (req, res, next) =>
 
 // Multipart bodies are only parsed by multer inside the listing routes, so for those two
 // routes the check runs there (csrfAfterUpload). Any other multipart write is refused outright.
-const UPLOAD_ROUTE = /^\/listings(\/[^/]+)?$/;
+const UPLOAD_ROUTE = /^\/(listings(\/[^/]+)?|account\/profile)$/;
 const SAFE_METHODS = ["GET", "HEAD", "OPTIONS"];
 
 module.exports.csrfGuard = (req, res, next) => {

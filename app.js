@@ -17,7 +17,7 @@ const LocalStrategy = require("passport-local");
 const User = require("./models/user.js");
 const multer = require("multer");
 const { money } = require("./utils/format.js");
-const { cardBadge, isRecentlyListed } = require("./utils/listingBadge.js");
+const { cardBadge } = require("./utils/listingBadge.js");
 const siteInfo = require("./utils/siteInfo.js");
 const { primary: themeColor } = require("./utils/emailTheme.js");
 const helmet = require("helmet");
@@ -36,7 +36,10 @@ const {
   CATEGORIES,
   PROPERTY_TYPES,
   CURRENCIES,
+  CURRENCY_INFO,
   IMAGE_ERROR,
+  TAX_NOTICE,
+  TOTAL_LABEL,
 } = require("./utils/constants.js");
 
 const listingRoutes = require("./routes/listingRoute.js");
@@ -44,6 +47,8 @@ const reviewRoutes = require("./routes/reviewRoute.js");
 const bookingRoutes = require("./routes/bookingRoute.js");
 const wishlistRoutes = require("./routes/wishlistRoute.js");
 const userRoutes = require("./routes/userRoute.js");
+const profileRoutes = require("./routes/profileRoute.js");
+const { normalizeMode, navFor } = require("./utils/mode");
 const pageRoutes = require("./routes/pageRoute.js");
 const accountRoutes = require("./routes/accountRoute.js");
 const adminRoutes = require("./routes/adminRoute.js");
@@ -180,11 +185,23 @@ app.use((req, res, next) => {
   res.locals.warningMsg = flashed ? req.flash("warning") : [];
   res.locals.csrfToken = csrfTokenFor(req);
   res.locals.currUser = req.user;
+  // Guest unless a signed-in user has chosen host; anything else in the session counts as guest
+  res.locals.currentPath = req.originalUrl;
+  res.locals.mode = req.user ? normalizeMode(req.session?.mode) : "guest";
+  if (req.query.currency && CURRENCIES.includes(req.query.currency)) {
+    if (req.session) req.session.preferredCurrency = req.query.currency;
+  }
+  const queried = CURRENCIES.includes(req.query.currency) ? req.query.currency : null;
+  const stored = CURRENCIES.includes(req.session?.preferredCurrency) ? req.session.preferredCurrency : null;
+  const activeCurrency = queried || stored || null;
+  res.locals.currentCurrency = activeCurrency || "INR";
+  res.locals.displayCurrency = activeCurrency;
+  res.locals.currencyInfo = CURRENCY_INFO;
   // Pages that show listing cards fill this in (see savedIdsFor in the controllers)
+  res.locals.navLinks = navFor(req.user, res.locals.mode);
   res.locals.savedIds = new Set();
   res.locals.money = money;
   res.locals.cardBadge = cardBadge;
-  res.locals.isRecentlyListed = isRecentlyListed;
   res.locals.site = siteInfo;
   res.locals.themeColor = themeColor;
   res.locals.mapboxToken = process.env.MAPBOX_TOKEN;
@@ -192,6 +209,8 @@ app.use((req, res, next) => {
   res.locals.propertyTypes = PROPERTY_TYPES;
   res.locals.currencies = CURRENCIES;
   res.locals.amenities = AMENITIES;
+  res.locals.taxNotice = TAX_NOTICE;
+  res.locals.totalLabel = TOTAL_LABEL;
   res.locals.canonicalUrl = siteUrl(req.path);
   res.locals.siteUrl = siteUrl;
   res.locals.photoUrl = photoUrl;
@@ -210,6 +229,7 @@ app.use("/listings/:id/reviews", reviewRoutes);
 app.use("/bookings", bookingRoutes);
 app.use("/wishlist", wishlistRoutes);
 app.use("/account", accountRoutes);
+app.use("/users", profileRoutes);
 app.use("/admin", adminRoutes);
 app.use("/", pageRoutes);
 app.use("/", userRoutes);
