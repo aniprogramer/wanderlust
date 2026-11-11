@@ -32,6 +32,19 @@ module.exports.renderSignupForm = (req, res) => {
 };
 
 /**
+ * GET /signup/username-available?username=
+ * Lets the form say whether a username is free while the person types. Answers only for
+ * well-formed names, and the same message signup would give is the only thing it reveals.
+ */
+module.exports.usernameAvailable = async (req, res) => {
+  const username = String(req.query.username ?? "").trim();
+  if (!/^\w{3,30}$/.test(username)) return res.json({ valid: false, available: false });
+  const taken = await User.exists({ username });
+  res.set("Cache-Control", "no-store");
+  res.json({ valid: true, available: !taken });
+};
+
+/**
  * POST /signup
  * Handles user registration, passport integration, and automatic login
  */
@@ -96,6 +109,8 @@ module.exports.renderLoginForm = (req, res) => {
  */
 module.exports.login = async (req, res) => {
   req.session.authAt = Date.now();
+  // Remember me keeps the sign-in for the session lifetime; without it the cookie ends with the browser
+  if (!req.body.rememberMe) req.session.cookie.expires = false;
   // Passport starts a fresh session at login, so the mode is set here: the account's starting
   // mode, unless this person already switched by hand in the session they just came from.
   const kept = res.locals.switchedMode;

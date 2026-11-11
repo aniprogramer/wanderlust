@@ -12,6 +12,7 @@ const {
   resolveLoginIdentifier,
   loginLimiter,
   signupLimiter,
+  usernameLimiter,
   forgotLimiter,
   resetLimiter,
   isLoggedIn,
@@ -25,6 +26,9 @@ router
   .route("/signup")
   .get(userController.renderSignupForm)
   .post(signupLimiter, validateSignup, wrapAsync(userController.signup));
+
+// Live username check for the signup form
+router.get("/signup/username-available", usernameLimiter, wrapAsync(userController.usernameAvailable));
 
 // Login
 router
