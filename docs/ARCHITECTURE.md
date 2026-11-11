@@ -378,6 +378,7 @@ The application is a set of server-rendered routes that return HTML and redirect
 | DELETE | `/wishlist/:id` | Login, guest mode | Unsave |
 | POST | `/mode` | Login | Switch between guest and host mode (`mode`, optional `returnTo`) |
 | GET, POST | `/signup` | Public | Create account |
+| GET | `/signup/username-available` | Public (rate limited) | JSON `{ valid, available }` for the signup form's live username check |
 | GET, POST | `/login` | Public | Log in |
 | POST | `/logout` | Login | Log out |
 | GET, POST | `/forgot-password`, `/reset-password/:token` | Public | Password reset |

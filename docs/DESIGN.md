@@ -204,9 +204,10 @@ These match the existing Bootstrap breakpoints so the app keeps working with the
 | Right side | Logged out: Log in as an outlined pill. Logged in: the **mode switch** (one labelled button), then the account menu showing the user's initial. There is no "host a stay" link anywhere: switching modes replaces it. |
 | Links by mode | Guest mode: Explore, Map, Saved, Trips. Host mode: Your listings, Create listing, Reservations. Home shows them in the sidebar; below the large breakpoint they sit in the account menu. |
 | Height and spacing | Content row of at least 44px high targets, 28px above, 56px below on the home page. |
-| Behaviour | Static (not sticky) on desktop. Not decorative: no blur, no shadow. |
+| Behaviour | On home the header sits inside the hero. On every other page (outside sign-in and sign-up) it is a sticky glass bar (`.wl-navbar`: `--glass-bg` with the blur from `tokens.css`, a `--glass-border` hairline underneath). |
+| Rail | The floating glass rail (`includes/sidebar.ejs`) shows on every page outside auth from 993px up. Page content is centred between two rail gutters (`--rail-gutter`). From 1200px the header hides its page links because the rail carries them; between 993 and 1199px they sit in the header's collapsed menu. |
 
-The old dark sidebar is retired (PRD FR-16).
+The old dark sidebar is retired (PRD FR-16); the floating rail replaced it.
 
 ### 6.2 Account menu
 
@@ -325,6 +326,16 @@ A `surface` card with hairline. Order: price line, date range (the calendar), ni
 
 - Item: author name (Body Strong), date (Small `text-muted`), rating, comment (Body). Delete is a ghost button shown only to the author, with confirmation.
 - Form: five-star radio group, comment textarea (optional, 1000 characters), primary "Post review". Hidden for the owner, with a short explanation instead.
+
+### 7.11a Shared surfaces (every page outside home and auth)
+
+- **Cards and panels** (`.wl-panel`, `.wl-empty`, `.wl-stat`, `.wl-toc`, booking rows, admin tables): `--glass-bg-subtle` fill, a 1px `--glass-border`, `--radius-xl` (empty states `--radius-2xl`). The border goes to `--glass-border-strong` on hover. No blur on these; blur is for floating surfaces only.
+- **Buttons** (`.wl-auth-btn`, `.btn`) are pills. Outline buttons sit on `--glass-bg-subtle` with a `--glass-border-strong` edge.
+- **Fields** (`.wl-input`, `.form-control`, `.form-select`) are `--radius-xl` on `--glass-bg-subtle`, keep the `border-strong` edge and the focus ring. Text areas use `--radius-lg`.
+- **Page header** (`.wl-page-head`): title and one line of context on the left, the page's one action on the right.
+- **States** (`.wl-state__icon`, `.wl-state__label`, `.wl-state__actions`): error, empty and done screens show a decorative icon in a glass ring, a mono label where useful ("Error 404"), a title, one sentence and the next step. One primary action at most.
+- **Map fallback**: if Mapbox cannot load, `.wl-map__fallback` says so in the map's place.
+- **Motion**: page content fades up 8px once (`wlPageIn`, `backwards` fill so no transform is left on the page), only under `prefers-reduced-motion: no-preference`.
 
 ### 7.12 Tag and status pill
 
