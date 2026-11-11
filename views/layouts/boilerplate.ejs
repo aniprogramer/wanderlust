@@ -29,7 +29,7 @@
     <%- block("vendorCss").toString() %>
     <link rel="stylesheet" href="<%= asset('/css/style.css') %>" />
   </head>
-  <body class="<%= typeof isAuthPage !== 'undefined' && isAuthPage ? 'wl-auth-body' : (typeof isHomePage !== 'undefined' && isHomePage ? 'wl-home-body' : '') %>">
+  <body class="<%= typeof isAuthPage !== 'undefined' && isAuthPage ? 'wl-auth-body' : (typeof isHomePage !== 'undefined' && isHomePage ? 'wl-home-body' : 'wl-rail-body') %>">
     <a class="wl-skip-link" href="#main-content">Skip to content</a>
     <%- include("../includes/flash.ejs") %>
     <% if (typeof isAuthPage !== 'undefined' && isAuthPage) { %>
@@ -45,9 +45,11 @@
     <% } else { %>
       <!-- Site navigation: included EJS partial -->
       <%- include("../includes/navbar.ejs") %>
+      <!-- The same floating rail as home, from 993px up -->
+      <%- include("../includes/sidebar.ejs") %>
 
       <!-- Page container: shows flash messages and the page-specific body -->
-      <main class="container" id="main-content">
+      <main class="container wl-shell-main" id="main-content">
         <%- body %>
       </main>
 

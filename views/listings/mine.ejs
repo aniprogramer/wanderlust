@@ -1,7 +1,16 @@
 <% layout("/layouts/boilerplate") %>
-<h1 class="wl-page-title">Your listings</h1>
+<header class="wl-page-head">
+  <div>
+    <h1 class="wl-page-title">Your listings</h1>
+    <p class="wl-page-lede">Published stays and drafts. Requests for them arrive under Reservations.</p>
+  </div>
+  <% if (allListings.length || drafts.length) { %>
+  <a href="/listings/new" class="wl-auth-btn wl-auth-btn--outline"><i class="fa-solid fa-plus" aria-hidden="true"></i> Create listing</a>
+  <% } %>
+</header>
 <% if (!allListings.length && !drafts.length) { %>
 <div class="wl-empty">
+  <span class="wl-state__icon" aria-hidden="true"><i class="fa-solid fa-house-chimney"></i></span>
   <h2 class="wl-empty__title">You have no listings yet</h2>
   <p class="wl-empty__text">Add photos, a price and the dates you are away. Requests arrive under Reservations.</p>
   <a href="/listings/new" class="wl-auth-btn wl-auth-btn--primary">Create listing</a>

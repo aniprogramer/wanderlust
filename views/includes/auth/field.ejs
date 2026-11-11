@@ -1,7 +1,8 @@
 <% const kind = typeof type === "undefined" ? "text" : type; %>
 <% const hasHint = typeof hint !== "undefined" && hint; %>
+<% const hintId = hasHint ? `${id}-hint` : (typeof describedBy !== "undefined" ? describedBy : ""); %>
 <div class="wl-field">
-  <label for="<%= id %>"><%= label %></label>
+  <label for="<%= id %>" <%- typeof labelHidden !== "undefined" && labelHidden ? 'class="visually-hidden"' : "" %>><%= label %></label>
   <% if (hasHint) { %><p class="wl-field__hint" id="<%= id %>-hint"><%= hint %></p><% } %>
   <div class="wl-input <%= typeof fieldError !== "undefined" && fieldError ? "is-invalid" : "" %>">
     <i class="<%= icon %> wl-input__icon" aria-hidden="true"></i>
@@ -15,7 +16,8 @@
       maxlength="<%= typeof maxlength === "undefined" ? 254 : maxlength %>"
       <% if (typeof minlength !== "undefined") { %>minlength="<%= minlength %>"<% } %>
       <% if (typeof value !== "undefined" && value) { %>value="<%= value %>"<% } %>
-      <% if (hasHint) { %>aria-describedby="<%= id %>-hint" data-hint-id="<%= id %>-hint"<% } %>
+      <% if (typeof checkUsername !== "undefined" && checkUsername) { %>data-check-username<% } %>
+      <% if (hintId) { %>aria-describedby="<%= hintId %>" data-hint-id="<%= hintId %>"<% } %>
       <% if (typeof newPassword !== "undefined" && newPassword) { %>data-new-password<% } %>
       data-label="<%= typeof noun === "undefined" ? label.toLowerCase() : noun %>"
       <% if (typeof fieldError !== "undefined" && fieldError) { %>aria-invalid="true"<% } %>
@@ -23,5 +25,5 @@
     />
     <% if (kind === 'password') { %><%- include("./passwordToggle", { target: id, confirm: id.toLowerCase().includes("confirm") }) %><% } %>
   </div>
-  <p class="wl-field__error" id="<%= id %>-error" <%= typeof fieldError !== "undefined" && fieldError ? "" : "hidden" %>><%= typeof fieldError !== "undefined" ? fieldError : "" %></p>
+  <p class="wl-field__error" id="<%= id %>-error" aria-live="polite" <%= typeof fieldError !== "undefined" && fieldError ? "" : "hidden" %>><%= typeof fieldError !== "undefined" ? fieldError : "" %></p>
 </div>

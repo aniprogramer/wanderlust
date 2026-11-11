@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand-xl bg-body border-bottom sticky-top py-2 px-3 mb-4">
+<nav class="navbar navbar-expand-xl wl-navbar sticky-top py-2 px-3 mb-4" aria-label="Site">
   <div class="container-fluid">
     <a class="navbar-brand d-flex align-items-center gap-2 text-decoration-none" href="/listings" aria-label="Wanderlust Home">
       <%- include("./auth/mark", { size: 30, cls: "wl-brand-mark-gold" }) %>
@@ -16,36 +16,33 @@
       aria-expanded="false"
       aria-label="Menu"
     >
-      <span class="navbar-toggler-icon"></span>
+      <i class="fa-solid fa-bars" aria-hidden="true"></i>
     </button>
 
     <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
       <!-- Primary nav links -->
-      <div class="navbar-nav me-auto align-items-lg-center">
+      <div class="navbar-nav wl-nav-primary me-auto align-items-lg-center">
         <% (currUser ? navLinks : navLinks.slice(0, 2)).forEach((link) => { %>
-        <a class="nav-link px-3" href="<%= link.href %>"><%= link.label %></a>
+        <% const here = currentPath === link.href; %>
+        <a class="nav-link px-3<%= here ? ' active' : '' %>" href="<%= link.href %>"<%- here ? ' aria-current="page"' : '' %>><%= link.label %></a>
         <% }) %>
       </div>
 
       <!-- Center Capsule Search -->
       <div class="navbar-nav mx-auto my-2 my-xl-0">
-        <form class="d-flex align-items-center" role="search" action="/listings" method="GET">
-          <div class="wl-topbar-search glass-input glass-pill d-flex align-items-center px-3 py-1">
-            <i class="fa-solid fa-magnifying-glass me-2 text-muted" aria-hidden="true"></i>
-            <input
-              class="form-control border-0 bg-transparent shadow-none"
-              type="search"
-              name="q"
-              maxlength="100"
-              placeholder="Search destinations"
-              aria-label="Search"
-              id="search-box"
-              autocomplete="off"
-            />
-            <button class="btn btn-search btn-sm rounded-pill px-3 py-1 ms-1" type="submit">
-              Search
-            </button>
-          </div>
+        <form class="wl-navsearch" role="search" action="/listings" method="GET">
+          <i class="fa-solid fa-magnifying-glass wl-navsearch__icon" aria-hidden="true"></i>
+          <input
+            class="wl-navsearch__input"
+            type="search"
+            name="q"
+            maxlength="100"
+            placeholder="Search destinations"
+            aria-label="Search destinations"
+            id="nav-search"
+            autocomplete="off"
+          />
+          <button class="wl-navsearch__btn" type="submit">Search</button>
         </form>
       </div>
 
@@ -59,7 +56,7 @@
         <% } %>
 
         <% if (currUser) { %>
-          <%- include("./modeSwitch", { cls: "d-none d-md-inline-flex" }) %>
+          <%- include("./modeSwitch", { cls: "wl-auth-btn wl-auth-btn--outline wl-mode-btn" }) %>
 
           <!-- User dropdown menu -->
           <div class="dropdown ms-lg-2">

@@ -1,8 +1,20 @@
 <% layout("/layouts/boilerplate") %>
+<% const code = err.statusCode || 500;
+   const notFound = code === 404;
+   const serverSide = code >= 500; %>
 <div class="wl-page wl-page--read">
-  <div class="wl-empty">
-    <h1 class="wl-empty__title"><%= err.statusCode === 404 ? "We couldn't find that page" : (err.statusCode >= 500 || !err.statusCode ? "Something went wrong on our side" : "That didn't work") %></h1>
-    <p class="wl-empty__text"><%= err.message %></p>
-    <a class="wl-auth-btn wl-auth-btn--outline" href="/listings">Back to stays</a>
-  </div>
+  <section class="wl-empty wl-state" aria-labelledby="error-title">
+    <span class="wl-state__icon" aria-hidden="true">
+      <i class="fa-solid <%= notFound ? 'fa-compass' : (serverSide ? 'fa-triangle-exclamation' : 'fa-circle-exclamation') %>"></i>
+    </span>
+    <p class="wl-state__label">Error <%= code %></p>
+    <h1 class="wl-empty__title" id="error-title"><%= notFound ? "We couldn't find that page" : (serverSide ? "Something went wrong on our side" : "That didn't work") %></h1>
+    <p class="wl-empty__text">
+      <% if (notFound) { %>The link may be old, or the page has moved. Try the stays, or search for a place.<% } else if (serverSide) { %>It is not something you did. Try again in a moment.<% } else { %><%= err.message %><% } %>
+    </p>
+    <div class="wl-state__actions">
+      <a class="wl-auth-btn wl-auth-btn--primary" href="/listings">Back to stays</a>
+      <a class="wl-auth-btn wl-auth-btn--outline" href="/help">Get help</a>
+    </div>
+  </section>
 </div>

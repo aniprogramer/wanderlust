@@ -1,6 +1,7 @@
 <% layout("/layouts/boilerplate") %>
 <div class="wl-page wl-page--read">
   <div class="wl-empty">
+    <span class="wl-state__icon" aria-hidden="true"><i class="fa-regular fa-envelope"></i></span>
     <h1 class="wl-empty__title">Confirm your email</h1>
     <p class="wl-empty__text">You need a confirmed address to send a booking request or list a stay, so we can tell you what happens next. We sent a link to <strong><%= currUser.email %></strong>. You can still browse and save stays.</p>
     <form action="/verify-email/resend" method="POST">

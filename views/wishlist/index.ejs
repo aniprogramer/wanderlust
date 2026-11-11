@@ -1,7 +1,13 @@
 <% layout("/layouts/boilerplate") %>
-<h1 class="wl-page-title">Saved</h1>
+<header class="wl-page-head">
+  <div>
+    <h1 class="wl-page-title">Saved</h1>
+    <p class="wl-page-lede"><%= allListings.length ? `${allListings.length} ${allListings.length === 1 ? "stay" : "stays"} kept for later.` : "Stays you keep for later." %></p>
+  </div>
+</header>
 <% if (!allListings.length) { %>
 <div class="wl-empty">
+  <span class="wl-state__icon" aria-hidden="true"><i class="fa-regular fa-heart"></i></span>
   <h2 class="wl-empty__title">Nothing saved yet</h2>
   <p class="wl-empty__text">Tap the heart on any stay to keep it here.</p>
   <a href="/listings" class="wl-auth-btn wl-auth-btn--primary">Explore stays</a>

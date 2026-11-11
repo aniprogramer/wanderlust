@@ -1,40 +1,35 @@
 <% layout("/layouts/boilerplate") %>
 <main class="wl-auth" id="main-content">
-  <%- include("../includes/auth/hero", { authType: "login" }) %>
+  <%- include("../includes/auth/hero") %>
 
   <div class="wl-auth-panel">
-    <%- include("../includes/auth/topbar", { prompt: "New here?", href: "/signup", label: "Create an account" }) %>
-
-    <div class="wl-auth-card glass-modal shadow-lg">
-      <div class="text-center mb-3">
-        <%- include("../includes/auth/mark", { size: 48, cls: "wl-auth-card__mark" }) %>
-        <h1 class="wl-auth-card__title mt-2">Welcome back</h1>
-        <p class="wl-auth-card__sub text-muted">Sign in to continue your journey.</p>
-      </div>
+    <div class="wl-auth-card">
+      <%- include("../includes/auth/mark", { size: 44, cls: "wl-auth-card__mark" }) %>
+      <h1 class="wl-auth-card__title">Welcome back</h1>
+      <p class="wl-auth-card__sub">Sign in to continue your journey.</p>
 
       <form action="/login" method="POST" class="wl-auth-form" data-auth-form data-busy-label="Signing in…" novalidate>
         <%- include("../includes/csrf.ejs") %>
-        <%- include("../includes/auth/field", { id: "username", name: "username", label: "Email or username", noun: "email or username", icon: "fa-regular fa-envelope", placeholder: "Email or username", autocomplete: "username" }) %>
-        <%- include("../includes/auth/field", { id: "password", name: "password", label: "Password", type: "password", icon: "fa-solid fa-lock", placeholder: "Password", autocomplete: "current-password", maxlength: 128 }) %>
+        <%- include("../includes/auth/field", { id: "username", name: "username", label: "Email or username", noun: "email or username", icon: "fa-regular fa-envelope", placeholder: "Enter your email or username", autocomplete: "username" }) %>
+        <%- include("../includes/auth/field", { id: "password", name: "password", label: "Password", type: "password", icon: "fa-solid fa-lock", placeholder: "Enter your password", autocomplete: "current-password", maxlength: 128 }) %>
 
-        <!-- Helper Row: Remember me + Forgot password -->
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="wl-auth-helpers">
           <div class="wl-check m-0">
             <input type="checkbox" id="rememberMe" name="rememberMe" value="on" checked />
-            <label for="rememberMe" class="small">Remember me</label>
+            <label for="rememberMe">Remember me</label>
           </div>
-          <a class="wl-auth-link wl-auth-forgot small" href="/forgot-password">Forgot password?</a>
+          <a class="wl-auth-link wl-auth-forgot" href="/forgot-password">Forgot password?</a>
         </div>
 
         <button type="submit" class="wl-auth-btn wl-auth-btn--primary wl-auth-btn--block">
           <span data-btn-label>Sign in</span>
-          <i class="fa-solid fa-arrow-right ms-2" aria-hidden="true"></i>
+          <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
         </button>
       </form>
 
-      <hr class="wl-auth-rule my-4" />
+      <hr class="wl-auth-rule" />
 
-      <p class="wl-auth-switch text-center mb-0">
+      <p class="wl-auth-switch">
         New to Wanderlust?
         <a class="wl-auth-link" href="/signup">Create an account <i class="fa-solid fa-arrow-right small" aria-hidden="true"></i></a>
       </p>

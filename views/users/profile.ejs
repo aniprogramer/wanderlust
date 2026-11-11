@@ -59,6 +59,7 @@
 
   <% if (!listings.length && !reviews.length) { %>
   <div class="wl-empty">
+    <span class="wl-state__icon" aria-hidden="true"><i class="fa-regular fa-compass"></i></span>
     <h2 class="wl-empty__title">Nothing to show yet</h2>
     <p class="wl-empty__text"><%= profile.displayName %> has not hosted a stay or written a review.</p>
   </div>
