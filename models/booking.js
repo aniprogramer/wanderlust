@@ -4,6 +4,7 @@ const {
   BOOKING_STATUSES,
   REASON_MAX,
   GUEST_MESSAGE_MAX,
+  CANCELLATION_POLICY_KEYS,
 } = require("../utils/constants");
 
 const bookingSchema = new Schema(
@@ -37,6 +38,11 @@ const bookingSchema = new Schema(
     expiresAt: Date,
     cancelledBy: { type: String, enum: ["guest", "host"] },
     cancelReason: { type: String, maxlength: REASON_MAX },
+    // The listing's terms when this was requested. Later listing edits never change them.
+    cancellationPolicy: { type: String, enum: CANCELLATION_POLICY_KEYS },
+    freeCancelUntil: Date,
+    // A confirmed booking cancelled after freeCancelUntil. Both parties see it. No money moves.
+    cancelledLate: Boolean,
     declineReason: { type: String, maxlength: REASON_MAX },
     guestMessage: { type: String, maxlength: GUEST_MESSAGE_MAX },
   },

@@ -15,15 +15,39 @@ const {
   MAX_IMAGES,
   MAX_STAY_NIGHTS,
   AMENITY_KEYS,
+  ADDRESS_MAX,
+  PLACE_MAX,
+  OTHER_RULES_MAX,
+  PHOTO_ALT_MAX,
+  SIZE_MIN,
+  SIZE_MAX,
+  WIFI_MAX,
+  TIME_OPTIONS,
+  CANCELLATION_POLICY_KEYS,
+  DEFAULT_CANCELLATION_POLICY,
+  HOUSE_RULE_KEYS,
+  ACCESSIBILITY_KEYS,
+  SAFETY_KEYS,
+  GUEST_NEED_KEYS,
+  APPROX_MAX_OFFSET_M,
 } = require("../utils/constants");
 const { parseDay } = require("../utils/dates");
+const { approxPoint, distanceM } = require("../utils/location");
 
 const EARTH_RADIUS_KM = 6378.1;
+
+// A draft may be missing anything; these are enforced from the moment it is published.
+const unlessDraft = function () {
+  return this.status !== "draft";
+};
+const time = { type: String, enum: TIME_OPTIONS };
+// Unset means the host has not said; false means they said no.
+const flags = (keys) => Object.fromEntries(keys.map((key) => [key, Boolean]));
 
 const listingSchema = new Schema({
   title: {
     type: String,
-    required: true,
+    required: unlessDraft,
   },
   description: { type: String, default: "" },
   image: {
@@ -41,14 +65,26 @@ const listingSchema = new Schema({
           : v,
     },
   },
-  price: { type: Number, required: true, min: 1 },
-  location: { type: String, required: true },
-  country: { type: String, required: true },
-  // GeoJSON Point, coordinates are [longitude, latitude]
+  price: { type: Number, required: unlessDraft, min: 1 },
+  // The public place name, shown everywhere and searched. Always a copy of city (see below).
+  location: { type: String, required: unlessDraft },
+  // Private: shown only to the host and to a guest with a confirmed stay
+  addressLine: { type: String, trim: true, maxlength: ADDRESS_MAX },
+  city: { type: String, trim: true, maxlength: PLACE_MAX },
+  region: { type: String, trim: true, maxlength: PLACE_MAX },
+  country: { type: String, required: unlessDraft },
+  // GeoJSON Point, coordinates are [longitude, latitude]. The exact pin: private, like addressLine.
   geometry: {
     type: { type: String, enum: ["Point"] },
     coordinates: { type: [Number], default: undefined },
   },
+  // A random point near the pin, the centre of the circle everyone else sees (utils/location.js)
+  approxGeometry: {
+    type: { type: String, enum: ["Point"] },
+    coordinates: { type: [Number], default: undefined },
+  },
+  // The host chose to publish without a map pin
+  noPinAck: Boolean,
   currency: { type: String, enum: CURRENCIES, default: "INR" },
   maxGuests: { type: Number, min: 1, max: MAX_GUESTS, default: 4 },
   bedrooms: { type: Number, min: 0, max: MAX_BEDROOMS, default: 1 },
@@ -58,6 +94,32 @@ const listingSchema = new Schema({
   capacityDefaulted: Boolean,
   cleaningFee: { type: Number, min: 0, default: 0 },
   minNights: { type: Number, min: 1, max: MAX_STAY_NIGHTS, default: 1 },
+  maxNights: { type: Number, min: 1, max: MAX_STAY_NIGHTS, default: MAX_STAY_NIGHTS },
+  sizeSqm: { type: Number, min: SIZE_MIN, max: SIZE_MAX },
+  // Reported by the host and never measured; labelled "Host-reported" wherever it shows
+  wifiMbps: { type: Number, min: 1, max: WIFI_MAX },
+  checkInFrom: time,
+  checkInUntil: time,
+  checkOutBy: time,
+  quietHoursStart: time,
+  quietHoursEnd: time,
+  cancellationPolicy: {
+    type: String,
+    enum: CANCELLATION_POLICY_KEYS,
+    required: unlessDraft,
+    // Runs after the other values are set, so a draft stays without one until the host picks
+    default() {
+      return this.status === "draft" ? undefined : DEFAULT_CANCELLATION_POLICY;
+    },
+  },
+  otherRules: { type: String, trim: true, maxlength: OTHER_RULES_MAX },
+  ...flags(HOUSE_RULE_KEYS),
+  ...flags(ACCESSIBILITY_KEYS),
+  ...flags(SAFETY_KEYS),
+  // Search filter, kept in step with the amenities below
+  hasWorkspace: Boolean,
+  // Set by migration 008 until the host saves the full form
+  detailsIncomplete: Boolean,
   // Nights the host is away. Both ends are nights and both are included.
   blockedRanges: {
     type: [
@@ -75,7 +137,8 @@ const listingSchema = new Schema({
       {
         url: { type: String, required: true },
         filename: { type: String, required: true },
-        caption: { type: String, maxlength: 140 },
+        // Alt text
+        caption: { type: String, maxlength: PHOTO_ALT_MAX },
       },
     ],
     default: [],
@@ -85,10 +148,11 @@ const listingSchema = new Schema({
     },
   },
   amenities: { type: [{ type: String, enum: AMENITY_KEYS }], default: [] },
-  // Hidden listings are out of search and the sitemap, and only their owner and admins can open them
+  // Hidden listings are out of search and the sitemap, and only their owner and admins can open
+  // them. A draft is the same, except that only its owner can open it.
   status: {
     type: String,
-    enum: ["published", "hidden"],
+    enum: ["published", "hidden", "draft"],
     default: "published",
   },
   category: { type: String, enum: CATEGORY_NAMES },
@@ -115,6 +179,7 @@ listingSchema.index({ category: 1, price: 1 });
 listingSchema.index({ country: 1, price: 1 });
 listingSchema.index({ avgRating: -1 });
 listingSchema.index({ geometry: "2dsphere" });
+listingSchema.index({ approxGeometry: "2dsphere" });
 listingSchema.index({ maxGuests: 1 });
 listingSchema.index({ currency: 1, price: 1 });
 listingSchema.index({ price: 1 });
@@ -131,7 +196,38 @@ listingSchema.pre("validate", function () {
     const [cover] = this.images;
     this.image = { url: cover.url, filename: cover.filename };
   }
+
+  // One place name: the form sets city, and rows written without one are named after location
+  if (this.city) this.location = this.city;
+  else if (this.location) this.city = this.location;
+
+  // One fact, one answer: the house rule and the amenity always agree
+  const pets = this.amenities.includes("pets_allowed");
+  if (this.petsAllowed === undefined && pets) this.petsAllowed = true;
+  if (this.petsAllowed && !pets) this.amenities.push("pets_allowed");
+  if (this.petsAllowed === false && pets) this.amenities.pull("pets_allowed");
+  this.hasWorkspace = this.amenities.some((key) =>
+    ["workspace", "dedicated_desk"].includes(key),
+  );
+
+  // Kept while it still fits, so that saving again does not reveal a new sample of the pin
+  const pin = this.geometry?.coordinates;
+  if (pin?.length === 2) {
+    const area = this.approxGeometry?.coordinates;
+    if (area?.length !== 2 || distanceM(area, pin) > APPROX_MAX_OFFSET_M + 1) {
+      this.approxGeometry = { type: "Point", coordinates: approxPoint(pin) };
+    }
+  } else {
+    this.approxGeometry = undefined;
+  }
+
+  if (this.minNights && this.maxNights && this.maxNights < this.minNights) {
+    this.invalidate("maxNights", "Maximum nights cannot be less than minimum nights");
+  }
 });
+
+// Everything that may appear to the public, as a query fragment. Absent counts as published.
+listingSchema.statics.publicStatus = () => ({ $nin: ["hidden", "draft"] });
 
 listingSchema.post("findOneAndDelete", async (listing) => {
   if (listing) await removeDependents([listing]);
@@ -153,7 +249,7 @@ listingSchema.statics.countries = async function () {
   if (!countriesCache || Date.now() - countriesCache.at > COUNTRIES_TTL_MS) {
     countriesCache = {
       at: Date.now(),
-      list: (await this.distinct("country")).sort(),
+      list: (await this.distinct("country", { status: { $ne: "draft" } })).sort(),
     };
   }
   return countriesCache.list;
@@ -205,12 +301,15 @@ listingSchema.statics.search = async function (
     currency,
     sort,
     amenities,
+    needs,
   } = filters;
   const query = geoOnly ? { "geometry.coordinates.0": { $exists: true } } : {};
-  // Absent status means an older row, which counts as published
-  query.status = { $ne: "hidden" };
+  query.status = this.publicStatus();
   if (guests) query.maxGuests = { $gte: guests };
   if (amenities?.length) query.amenities = { $all: amenities };
+  for (const need of needs || []) {
+    if (GUEST_NEED_KEYS.includes(need)) query[need] = true;
+  }
   if (q) query.$text = { $search: q };
   if (category) query.category = category;
   if (propertyType) query.propertyType = propertyType;
@@ -223,9 +322,10 @@ listingSchema.statics.search = async function (
     if (maxPrice != null) query.price.$lte = maxPrice;
   }
   if (near) {
-    // $geoWithin (not $nearSphere) because countDocuments and $text cannot take $nearSphere
+    // $geoWithin (not $nearSphere) because countDocuments and $text cannot take $nearSphere.
+    // The public point, so that narrowing the radius cannot find the exact pin.
     const [lat, lng] = near.split(",").map(Number);
-    query.geometry = {
+    query.approxGeometry = {
       $geoWithin: { $centerSphere: [[lng, lat], radiusKm / EARTH_RADIUS_KM] },
     };
   }
@@ -243,7 +343,9 @@ listingSchema.statics.search = async function (
       $not: { $elemMatch: { from: { $lt: to }, to: { $gte: from } } },
     };
     // $not rather than $lte: rows that predate the field have no minimum
-    query.minNights = { $not: { $gt: Math.round((to - from) / 864e5) } };
+    const stay = Math.round((to - from) / 864e5);
+    query.minNights = { $not: { $gt: stay } };
+    query.maxNights = { $not: { $lt: stay } };
   }
 
   const find = this.find(query);
