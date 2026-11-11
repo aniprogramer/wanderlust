@@ -7,7 +7,8 @@ const RECENT = 50;
 
 module.exports.dashboard = async (req, res) => {
   const [listings, reports, messages] = await Promise.all([
-    Listing.find()
+    // Drafts belong to their host alone
+    Listing.find({ status: { $ne: "draft" } })
       .select("title location status owner")
       .sort({ _id: -1 })
       .limit(RECENT)
@@ -30,7 +31,10 @@ module.exports.dashboard = async (req, res) => {
 };
 
 const setStatus = (status, message) => async (req, res) => {
-  const updated = await Listing.findByIdAndUpdate(req.params.id, { status });
+  const updated = await Listing.findOneAndUpdate(
+    { _id: req.params.id, status: { $ne: "draft" } },
+    { status },
+  );
   if (!updated) throw new ExpressError(404, "Listing not found");
   req.flash("success", message);
   res.redirect("/admin");

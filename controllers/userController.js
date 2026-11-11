@@ -6,6 +6,8 @@ const logger = require("../utils/logger");
 const reportError = require("../utils/reportError");
 const { siteUrl } = require("../utils/config");
 const { TERMS_VERSION } = require("../utils/siteInfo");
+const { profilePath } = require("../utils/profile");
+const { normalizeMode, landingFor, onlyIn, HOMES } = require("../utils/mode");
 
 const RESET_TTL_MS = 60 * 60 * 1000;
 const { hashToken, newVerifyToken } = require("../utils/tokens");
@@ -35,13 +37,16 @@ module.exports.renderSignupForm = (req, res) => {
  */
 module.exports.signup = async (req, res, next) => {
   try {
-    let { username, email, password } = req.body;
+    let { username, email, password, firstName, lastName, startingMode } = req.body;
     const { token, fields } = newVerifyToken();
+    const displayName = [firstName, lastName].filter(Boolean).join(" ").trim() || undefined;
     const newUser = new User({
       email,
       username,
+      displayName,
       termsAcceptedAt: new Date(),
       termsVersion: TERMS_VERSION,
+      startingMode,
       ...fields,
     });
     const registeredUser = await User.register(newUser, password);
@@ -56,11 +61,13 @@ module.exports.signup = async (req, res, next) => {
         return next(err);
       }
       req.session.authAt = Date.now();
+      const mode = normalizeMode(startingMode);
+      req.session.mode = mode;
       req.flash(
         "success",
         "Welcome to Wanderlust. Check your email to confirm your address.",
       );
-      res.redirect("/listings");
+      res.redirect(HOMES[mode]);
     });
   } catch (err) {
     if (err.name !== "UserExistsError" && err.code !== 11000) {
@@ -89,9 +96,44 @@ module.exports.renderLoginForm = (req, res) => {
  */
 module.exports.login = async (req, res) => {
   req.session.authAt = Date.now();
+  // Passport starts a fresh session at login, so the mode is set here: the account's starting
+  // mode, unless this person already switched by hand in the session they just came from.
+  const kept = res.locals.switchedMode;
+  const stayed = kept?.userId === String(req.user._id);
+  const mode = normalizeMode(stayed ? kept.mode : req.user.startingMode);
+  req.session.mode = mode;
+  if (stayed) req.session.modeSwitched = true;
+  const wanted = res.locals.redirectUrl;
+  const needs = wanted && onlyIn(wanted);
+  if (needs && needs !== mode) {
+    // They asked for a page from the other mode: land on this mode's home and say why
+    req.flash("success", "Logged in Successfully!");
+    req.flash(
+      "info",
+      needs === "host"
+        ? "That page is for hosts. You are in guest mode. Use Switch to host in the header to open it."
+        : "That page is for guests. You are in host mode. Use Switch to guest in the header to open it.",
+    );
+    return res.redirect(HOMES[mode]);
+  }
   req.flash("success", "Logged in Successfully!");
-  let redirectUrl = res.locals.redirectUrl || "/listings";
-  res.redirect(redirectUrl);
+  res.redirect(landingFor(wanted, mode));
+};
+
+/**
+ * POST /mode
+ * Switches the signed-in user between guest and host. Stays on the same page when that
+ * page exists in the new mode, otherwise lands on the new mode's home.
+ */
+module.exports.switchMode = (req, res) => {
+  const mode = normalizeMode(req.body.mode);
+  req.session.mode = mode;
+  req.session.modeSwitched = true;
+  req.flash(
+    "success",
+    mode === "host" ? "You are now in host mode." : "You are now in guest mode.",
+  );
+  res.redirect(landingFor(req.body.returnTo, mode));
 };
 
 module.exports.renderForgotForm = (req, res) => {
@@ -174,6 +216,9 @@ module.exports.resetPassword = async (req, res) => {
   user.resetTokenExpires = undefined;
   user.passwordChangedAt = new Date();
   await user.save();
+  // Whoever resets starts over from their starting mode on their next sign-in
+  delete req.session.mode;
+  delete req.session.modeSwitched;
   await notify(
     "passwordChanged",
     user.email,
@@ -205,15 +250,25 @@ module.exports.verifyEmail = async (req, res) => {
     );
     return res.redirect(req.user ? "/verify-email" : "/login");
   }
-  await User.updateOne(
-    { _id: user._id },
-    {
-      $set: { emailVerifiedAt: new Date() },
-      $unset: { verifyTokenHash: 1, verifyTokenExpires: 1 },
-    },
+  // A pending address replaces the current one only now that its link has been used
+  const set = { emailVerifiedAt: new Date() };
+  const unset = { verifyTokenHash: 1, verifyTokenExpires: 1 };
+  if (user.pendingEmail) {
+    set.email = user.pendingEmail;
+    unset.pendingEmail = 1;
+  }
+  try {
+    await User.updateOne({ _id: user._id }, { $set: set, $unset: unset });
+  } catch (err) {
+    if (err.code !== 11000) throw err;
+    req.flash("error", "That email is already registered.");
+    return res.redirect(req.user ? profilePath(req.user) : "/login");
+  }
+  req.flash(
+    "success",
+    user.pendingEmail ? "Your new email address is confirmed." : "Your email is confirmed. Thank you.",
   );
-  req.flash("success", "Your email is confirmed. Thank you.");
-  res.redirect("/listings");
+  res.redirect(user.pendingEmail ? (req.user ? profilePath(req.user) : "/login") : "/listings");
 };
 
 module.exports.resendVerification = async (req, res) => {

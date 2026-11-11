@@ -8,7 +8,7 @@ const { REPORT_REASONS } = require("../utils/constants");
 
 const findListing = async (id) => {
   const listing = await Listing.findById(id).select("title status");
-  if (!listing || listing.status === "hidden") {
+  if (!listing || ["hidden", "draft"].includes(listing.status)) {
     throw new ExpressError(404, "Listing not found");
   }
   return listing;

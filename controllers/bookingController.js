@@ -4,14 +4,19 @@ const User = require("../models/user");
 const ExpressError = require("../utils/ExpressError");
 const notify = require("../utils/notify");
 const expireRequests = require("../utils/expireRequests");
-const { overlapsBlocked, quote } = require("../utils/availability");
+const {
+  overlapsBlocked,
+  quote,
+  cancellationTerms,
+  isLateCancellation,
+} = require("../utils/availability");
 const {
   PAGE_SIZE,
   REQUEST_TTL_HOURS,
   MAX_ACTIVE_PENDING_PER_GUEST,
   MAX_REQUESTS_PER_GUEST_24H,
   DATES_TAKEN_REASON,
-  TAX_NOTICE,
+  CANCELLATION_POLICIES,
 } = require("../utils/constants");
 const { parseDay, today, nightsBetween } = require("../utils/dates");
 
@@ -49,6 +54,7 @@ module.exports.createBooking = async (req, res) => {
   const { id } = req.params;
   const listing = await Listing.findById(id);
   if (!listing) throw new ExpressError(404, "Listing not found");
+  if (listing.status === "draft") throw new ExpressError(404, "Listing not found");
   if (listing.status === "hidden" && !listing.owner?.equals(req.user._id)) {
     throw new ExpressError(404, "Listing not found");
   }
@@ -76,6 +82,14 @@ module.exports.createBooking = async (req, res) => {
       res,
       id,
       `This stay has a minimum of ${listing.minNights} nights.`,
+    );
+  }
+  if (listing.maxNights && nights.length > listing.maxNights) {
+    return refuse(
+      req,
+      res,
+      id,
+      `This stay has a maximum of ${listing.maxNights} night${listing.maxNights === 1 ? "" : "s"}.`,
     );
   }
   const taken = await Booking.exists({
@@ -151,6 +165,7 @@ module.exports.createBooking = async (req, res) => {
     nights,
     guests,
     ...quote(listing, nights.length),
+    ...cancellationTerms(listing, checkIn),
     status: "pending",
     requestedAt: now,
     expiresAt,
@@ -191,18 +206,21 @@ module.exports.createBooking = async (req, res) => {
  */
 module.exports.showBooking = async (req, res) => {
   const { booking, bookingRole } = req;
-  await booking.populate("guest", "username email");
+  await booking.populate("guest", "username displayName email");
   const confirmed = booking.effectiveStatus === "confirmed";
   const host =
     confirmed && booking.listing?.owner
-      ? await User.findById(booking.listing.owner).select("username email")
+      ? await User.findById(booking.listing.owner).select("username displayName email")
       : null;
   res.render("bookings/show.ejs", {
     booking,
     role: bookingRole,
     host,
     today: today(),
-    taxNotice: TAX_NOTICE,
+    now: new Date(),
+    policy: CANCELLATION_POLICIES[booking.cancellationPolicy] || null,
+    // The address and the exact pin: the host always, the guest once the stay is confirmed
+    showAddress: bookingRole === "host" || confirmed,
     pageTitle: `Booking ${booking.reference}`,
     noindex: true,
   });
@@ -264,7 +282,7 @@ const hostSummary = async (listingIds, now) => {
  */
 module.exports.hostBookings = async (req, res) => {
   const listings = await Listing.find({ owner: req.user._id }).select(
-    "_id title capacityDefaulted",
+    "_id title capacityDefaulted detailsIncomplete",
   );
   const ids = listings.map((l) => l._id);
   const now = new Date();
@@ -277,13 +295,13 @@ module.exports.hostBookings = async (req, res) => {
       (q) =>
         q
           .populate("listing", LISTING_FIELDS)
-          .populate("guest", "username email"),
+          .populate("guest", "username displayName"),
     ),
     Booking.find({ listing: { $in: ids }, ...Booking.activePending(now) })
       .sort({ expiresAt: 1 })
       .limit(50)
       .populate("listing", LISTING_FIELDS)
-      .populate("guest", "username"),
+      .populate("guest", "username displayName"),
     hostSummary(ids, now),
   ]);
   res.render("bookings/hosting.ejs", {
@@ -291,6 +309,7 @@ module.exports.hostBookings = async (req, res) => {
     requests,
     summary,
     toConfirm: listings.filter((l) => l.capacityDefaulted),
+    toComplete: listings.filter((l) => l.detailsIncomplete),
     page,
     pages,
     base: "/bookings/hosting",
@@ -418,13 +437,16 @@ module.exports.cancelBooking = async (req, res) => {
   }
 
   const reason = req.body?.reason || undefined;
+  const now = new Date();
+  const late = isLateCancellation(booking, now);
   const updated = await Booking.findOneAndUpdate(
     { _id: booking._id, status: { $in: ["pending", "confirmed"] } },
     {
       status: "cancelled",
       cancelledBy: bookingRole,
       cancelReason: reason,
-      respondedAt: new Date(),
+      respondedAt: now,
+      ...(late && { cancelledLate: true }),
     },
     { new: true },
   );
@@ -449,9 +471,10 @@ module.exports.cancelBooking = async (req, res) => {
     });
   }
 
+  const done = bookingRole === "guest" ? "Booking cancelled." : "Reservation cancelled.";
   req.flash(
     "success",
-    bookingRole === "guest" ? "Booking cancelled." : "Reservation cancelled.",
+    late ? `${done} It was after the free cancellation period, so it is marked as late.` : done,
   );
   res.redirect(backTo(req));
 };

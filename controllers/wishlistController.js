@@ -23,8 +23,8 @@ module.exports.index = async (req, res) => {
   res.render("wishlist/index.ejs", {
     pageTitle: "Saved",
     noindex: true,
-    // A listing hidden by the team stays saved, but is not shown until it is back
-    allListings: wishlist.filter((listing) => listing.status !== "hidden"),
+    // A listing hidden by the team or returned to draft stays saved, but is not shown until it is back
+    allListings: wishlist.filter((listing) => !["hidden", "draft"].includes(listing.status)),
   });
 };
 
@@ -33,7 +33,7 @@ module.exports.index = async (req, res) => {
  */
 module.exports.add = async (req, res) => {
   const { id } = req.params;
-  if (!(await Listing.exists({ _id: id }))) {
+  if (!(await Listing.exists({ _id: id, status: { $ne: "draft" } }))) {
     throw new ExpressError(404, "Listing not found");
   }
   await User.updateOne({ _id: req.user._id }, { $addToSet: { wishlist: id } });

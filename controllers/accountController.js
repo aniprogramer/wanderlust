@@ -7,17 +7,15 @@ const cloudinary = require("../cloudConfig");
 const notify = require("../utils/notify");
 const { newVerifyToken } = require("../utils/tokens");
 const { today } = require("../utils/dates");
-const { PASSWORD_HINT } = require("../schema");
+const { profilePath } = require("../utils/profile");
+const { uploadsOf } = require("../middleware");
+const fs = require("fs");
 
 const context = (user) => ({ userId: String(user._id) });
 const withSecrets = (id) => User.findById(id).select("+hash +salt");
 
-module.exports.show = (req, res) =>
-  res.render("account/index.ejs", {
-    pageTitle: "Account",
-    noindex: true,
-    passwordHint: PASSWORD_HINT,
-  });
+// There is one page per person. /account is kept so old links and emails still land on it.
+module.exports.show = (req, res) => res.redirect(profilePath(req.user));
 
 module.exports.deleted = (req, res) =>
   res.render("account/deleted.ejs", {
@@ -25,54 +23,116 @@ module.exports.deleted = (req, res) =>
     noindex: true,
   });
 
+const AVATAR_OPTIONS = {
+  transformation: [{ width: 512, height: 512, crop: "fill", gravity: "auto" }],
+};
+const dropTemp = (files) =>
+  Promise.all(files.map((file) => fs.promises.unlink(file.path).catch(() => {})));
+const dropPhoto = (filename) =>
+  filename ? cloudinary.uploader.destroy(filename).catch(() => {}) : null;
+const clean = (value) => (value === "" || value == null ? undefined : value);
+
 /**
- * POST /account/profile - a new email address must be confirmed again
+ * POST /account/profile (multipart) - public profile details and the photo.
+ * The email is not here: a new address goes through POST /account/email.
  */
 module.exports.updateProfile = async (req, res, next) => {
-  const { username, email } = req.body;
+  const files = uploadsOf(req);
+  const { username, displayName, bio, city, country, languages, removeAvatar } = req.body;
   const user = await User.findById(req.user._id);
-  const emailChanged = email.toLowerCase() !== user.email;
-  user.username = username;
-  user.email = email;
-  let token;
-  if (emailChanged) {
-    const issued = newVerifyToken();
-    token = issued.token;
-    user.set(issued.fields);
-    user.emailVerifiedAt = undefined;
+  const renamed = username !== user.username;
+  const oldPhoto = user.avatar?.filename;
+  let uploaded;
+  try {
+    if (files.length) {
+      const result = await cloudinary.uploader.upload(files[0].path, AVATAR_OPTIONS);
+      uploaded = { url: result.secure_url, filename: result.public_id };
+    }
+  } finally {
+    await dropTemp(files);
   }
+  user.username = username;
+  user.displayName = clean(displayName);
+  user.bio = clean(bio);
+  user.city = clean(city);
+  user.country = clean(country);
+  user.languages = languages || [];
+  if (uploaded) user.avatar = uploaded;
+  else if (removeAvatar === "on" || removeAvatar === "true" || removeAvatar === "1")
+    user.avatar = undefined;
   try {
     await user.save();
   } catch (err) {
+    await dropPhoto(uploaded?.filename);
     if (err.code !== 11000) throw err;
-    req.flash(
-      "error",
-      err.keyPattern?.email
-        ? "That email is already registered."
-        : "That username is taken.",
-    );
-    return res.redirect("/account");
+    req.flash("error", "That username is taken.");
+    return res.redirect(profilePath(req.user));
   }
-  if (token) {
-    await notify(
-      "verifyEmail",
-      user.email,
-      { username: user.username, token },
-      context(user),
-    );
+  if (oldPhoto && oldPhoto !== uploaded?.filename && (uploaded || !user.avatar?.url)) {
+    await dropPhoto(oldPhoto);
   }
-  // Sessions are stored by username, so this one has to be renewed after a rename
+
+  const done = () => {
+    req.flash("success", "Your profile has been saved.");
+    res.redirect(profilePath(user));
+  };
+  if (!renamed) return done();
+  // Sessions are stored by username, so this one has to be renewed after a rename.
+  // Logging in again starts a fresh session, so the chosen mode is carried across.
+  const { mode, modeSwitched } = req.session;
   req.login(user, (err) => {
     if (err) return next(err);
     req.session.authAt = Date.now();
-    req.flash(
-      "success",
-      token
-        ? "Saved. Check your new email address for a link to confirm it."
-        : "Your profile has been saved.",
-    );
-    res.redirect("/account");
+    if (mode) req.session.mode = mode;
+    if (modeSwitched) req.session.modeSwitched = true;
+    done();
   });
+};
+
+/**
+ * POST /account/starting-mode - the mode the next login starts in. The current session keeps the
+ * mode it is in; the header switch is what changes that.
+ */
+module.exports.setStartingMode = async (req, res) => {
+  const { startingMode } = req.body;
+  await User.updateOne({ _id: req.user._id }, { $set: { startingMode } });
+  req.flash(
+    "success",
+    `You will start in ${startingMode} mode the next time you log in.`,
+  );
+  res.redirect(profilePath(req.user));
+};
+
+/**
+ * POST /account/email - the new address waits until its link is used, and the old one stays
+ * active until then.
+ */
+module.exports.changeEmail = async (req, res) => {
+  const user = await withSecrets(req.user._id);
+  const { error } = await user.authenticate(req.body.currentPassword);
+  if (error) {
+    req.flash("error", "Your current password is not right.");
+    return res.redirect(profilePath(req.user));
+  }
+  const email = req.body.email.toLowerCase();
+  if (email === user.email) {
+    req.flash("info", "That is already your email address.");
+    return res.redirect(profilePath(req.user));
+  }
+  if (await User.exists({ $or: [{ email }, { pendingEmail: email }], _id: { $ne: user._id } })) {
+    req.flash("error", "That email is already registered.");
+    return res.redirect(profilePath(req.user));
+  }
+  const { token, fields } = newVerifyToken();
+  user.set(fields);
+  user.pendingEmail = email;
+  await user.save();
+  await notify("verifyEmail", email, { username: user.username, token }, context(user));
+  req.flash(
+    "success",
+    `We sent a link to ${email}. Your current address stays active until you confirm the new one.`,
+  );
+  res.redirect(profilePath(req.user));
 };
 
 /**
@@ -83,7 +143,7 @@ module.exports.changePassword = async (req, res) => {
   const { error } = await user.authenticate(req.body.currentPassword);
   if (error) {
     req.flash("error", "Your current password is not right.");
-    return res.redirect("/account");
+    return res.redirect(profilePath(req.user));
   }
   await user.setPassword(req.body.password);
   user.passwordChangedAt = new Date();
@@ -96,7 +156,7 @@ module.exports.changePassword = async (req, res) => {
     context(user),
   );
   req.flash("success", "Password changed. Other devices have been signed out.");
-  res.redirect("/account");
+  res.redirect(profilePath(req.user));
 };
 
 /**
@@ -118,6 +178,14 @@ module.exports.exportData = async (req, res) => {
     emailVerifiedAt,
     termsAcceptedAt,
     termsVersion,
+    displayName,
+    bio,
+    city,
+    country,
+    languages,
+    avatar,
+    pendingEmail,
+    startingMode,
   } = user;
   res.attachment("wanderlust-data.json");
   res.type("application/json");
@@ -132,6 +200,14 @@ module.exports.exportData = async (req, res) => {
           emailVerifiedAt,
           termsAcceptedAt,
           termsVersion,
+          displayName,
+          bio,
+          city,
+          country,
+          languages,
+          avatar: avatar?.url,
+          pendingEmail,
+          startingMode,
         },
         bookings,
         reviews,
@@ -152,7 +228,7 @@ module.exports.deleteAccount = async (req, res) => {
   const { error } = await user.authenticate(req.body.currentPassword);
   if (error) {
     req.flash("error", "Your current password is not right.");
-    return res.redirect("/account");
+    return res.redirect(profilePath(req.user));
   }
 
   const owned = await Listing.find({ owner: user._id });
@@ -167,7 +243,7 @@ module.exports.deleteAccount = async (req, res) => {
       "error",
       "You have upcoming confirmed stays as a guest or a host. Cancel them first, then delete your account.",
     );
-    return res.redirect("/account");
+    return res.redirect(profilePath(req.user));
   }
 
   // Guests with a request waiting on these listings are told before the listing goes
@@ -223,7 +299,9 @@ module.exports.deleteAccount = async (req, res) => {
   );
 
   const { email, username } = user;
+  const avatarName = user.avatar?.filename;
   await User.deleteOne({ _id: user._id });
+  await dropPhoto(avatarName);
   await notify("accountDeleted", email, { username }, context(user));
 
   req.logout(() => {

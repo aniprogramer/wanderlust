@@ -4,7 +4,7 @@ const Listing = require("../models/listing");
 const { siteUrl } = require("../utils/config");
 const notify = require("../utils/notify");
 const { contactSchema } = require("../schema");
-const { SUPPORT_TOPICS } = require("../utils/constants");
+const { SUPPORT_TOPICS, CANCELLATION_POLICIES } = require("../utils/constants");
 
 // Rendered with the same file name as the route
 const LEGAL = {
@@ -19,9 +19,10 @@ const LEGAL = {
       "The rules for using Wanderlust, a platform that connects guests and hosts.",
   },
   "cancellation-policy": {
+    policies: CANCELLATION_POLICIES,
     pageTitle: "Cancellation Policy",
     pageDescription:
-      "How guests and hosts cancel on Wanderlust, and why there is nothing to refund online.",
+      "The Flexible, Moderate and Strict cancellation policies, how late cancellations are recorded, and why there is nothing to refund online.",
   },
   "house-rules": {
     pageTitle: "House Rules",
@@ -122,7 +123,7 @@ module.exports.clearSitemapCache = () => {
 
 module.exports.sitemap = async (req, res) => {
   if (!sitemapCache || Date.now() - sitemapCache.at > SITEMAP_TTL_MS) {
-    const listings = await Listing.find({ status: { $ne: "hidden" } })
+    const listings = await Listing.find({ status: Listing.publicStatus() })
       .select("_id")
       .sort({ _id: -1 })
       .limit(SITEMAP_MAX)
