@@ -31,15 +31,13 @@
   </head>
   <body class="<%= typeof isAuthPage !== 'undefined' && isAuthPage ? 'wl-auth-body' : (typeof isHomePage !== 'undefined' && isHomePage ? 'wl-home-body' : '') %>">
     <a class="wl-skip-link" href="#main-content">Skip to content</a>
+    <%- include("../includes/flash.ejs") %>
     <% if (typeof isAuthPage !== 'undefined' && isAuthPage) { %>
       <%- body %>
     <% } else if (typeof isHomePage !== 'undefined' && isHomePage) { %>
       <div class="wl-app-shell">
         <%- include("../includes/sidebar.ejs") %>
         <main class="wl-main-canvas" id="main-content">
-          <div class="wl-flash-container">
-            <%- include("../includes/flash.ejs") %>
-          </div>
           <%- body %>
           <%- include("../includes/footer.ejs") %>
         </main>
@@ -50,7 +48,7 @@
 
       <!-- Page container: shows flash messages and the page-specific body -->
       <main class="container" id="main-content">
-        <%- include("../includes/flash.ejs") %> <%- body %>
+        <%- body %>
       </main>
 
       <!-- Site footer: included EJS partial -->

@@ -3,6 +3,10 @@
    const canCancel = ["pending", "confirmed"].includes(state) && booking.checkIn > today;
    const isHost = role === "host";
    const listing = booking.listing;
+   const freeDate = booking.freeCancelUntil && booking.freeCancelUntil.toISOString().slice(0, 16).replace("T", " ");
+   const pastFree = booking.freeCancelUntil && booking.freeCancelUntil < now;
+   const lateNotice = state === "confirmed" && pastFree;
+   const pin = showAddress && listing && listing.geometry && listing.geometry.coordinates;
    const nextSteps = {
      pending: isHost
        ? "Accept or decline this request on your Hosting page before it expires."
@@ -17,27 +21,51 @@
 <div class="wl-page wl-page--read">
   <a class="wl-back-link" href="<%= isHost ? "/bookings/hosting" : "/bookings" %>">← Back to <%= isHost ? "Hosting" : "Trips" %></a>
   <h1 class="wl-page-title"><%= listing ? listing.title : "Listing no longer available" %></h1>
-  <p class="wl-page-lede">Reference <strong class="wl-reference"><%= booking.reference %></strong> <%- include("../includes/bookingStatus.ejs", { booking, today }) %></p>
+  <p class="wl-page-lede">Reference <strong class="wl-reference"><%= booking.reference %></strong> <%- include("../includes/bookingStatus.ejs", { booking, today }) %><% if (booking.cancelledLate) { %> <span class="wl-badge wl-badge--warning" data-late-cancel>Late cancellation</span><% } %></p>
 
   <div class="wl-panel">
     <dl class="wl-facts">
       <div><dt>Check-in</dt><dd><%= booking.checkIn.toISOString().slice(0, 10) %></dd></div>
       <div><dt>Check-out</dt><dd><%= booking.checkOut.toISOString().slice(0, 10) %></dd></div>
       <div><dt>Guests</dt><dd><%= booking.guests || 1 %></dd></div>
-      <% if (isHost) { %><div><dt>Guest</dt><dd>@<%= booking.guest ? booking.guest.username : "Deleted user" %></dd></div><% } %>
+      <% if (isHost) { %><div><dt>Guest</dt><dd><%- include("../includes/userLink.ejs", { user: booking.guest }) %></dd></div><% } %>
       <% if (isHost && booking.guest && state === "confirmed") { %><div><dt>Guest email</dt><dd><a href="mailto:<%= booking.guest.email %>"><%= booking.guest.email %></a></dd></div><% } %>
-      <% if (!isHost && host) { %><div><dt>Host</dt><dd>@<%= host.username %></dd></div><div><dt>Host email</dt><dd><a href="mailto:<%= host.email %>"><%= host.email %></a></dd></div><% } %>
+      <% if (!isHost && host) { %><div><dt>Host</dt><dd><%- include("../includes/userLink.ejs", { user: host }) %></dd></div><div><dt>Host email</dt><dd><a href="mailto:<%= host.email %>"><%= host.email %></a></dd></div><% } %>
     </dl>
     <%- include("../includes/priceBreakdown.ejs", { booking }) %>
-    <p class="wl-note"><%= taxNotice %></p>
   </div>
+
+  <div class="wl-panel" id="booking-terms">
+    <h2 class="wl-section-title">Cancellation terms</h2>
+    <% if (policy) { %>
+    <p><strong><%= policy.label %>.</strong> <%= policy.summary %></p>
+    <% if (freeDate) { %><p class="wl-note"><%= pastFree ? `The free period for this stay ended on ${freeDate} UTC.` : `For this stay, the free period ends on ${freeDate} UTC.` %></p><% } %>
+    <% } else { %>
+    <p>This booking was made before listings had their own cancellation terms.</p>
+    <% } %>
+    <% if (booking.cancelledLate) { %><p>This booking was cancelled by the <%= booking.cancelledBy %> after the free period, so it is recorded as a late cancellation.</p><% } %>
+    <p class="wl-note">No payment is taken here, so there is nothing to refund through Wanderlust. <a href="/cancellation-policy">Read the full policy</a></p>
+  </div>
+
+  <% if (showAddress && listing && listing.addressLine) { %>
+  <div class="wl-panel" id="booking-address">
+    <h2 class="wl-section-title">Where you'll be</h2>
+    <dl class="wl-facts">
+      <div><dt>Address</dt><dd><%= [listing.addressLine, listing.city, listing.region, listing.country].filter(Boolean).join(", ") %></dd></div>
+    </dl>
+    <% if (mapboxToken && pin) { %>
+    <%- include("../includes/mapbox.ejs") %>
+    <div id="map" class="wl-map" data-mode="show" data-token="<%= mapboxToken %>" data-lng="<%= pin[0] %>" data-lat="<%= pin[1] %>" data-title="<%= listing.title %>"></div>
+    <% } %>
+  </div>
+  <% } %>
 
   <h2 class="wl-section-title">What happens next</h2>
   <p><%= nextSteps[state] %></p>
   <% if (booking.declineReason) { %><p>Reason given: <%= booking.declineReason %></p><% } %>
   <% if (booking.cancelReason) { %><p>Reason given: <%= booking.cancelReason %></p><% } %>
   <% if (isHost && booking.guestMessage) { %><p>The guest wrote: <%= booking.guestMessage %></p><% } %>
-  <p class="wl-page-lede"><a href="/cancellation-policy">Cancellation policy</a> · <a href="/contact?booking=<%= booking.reference %>">Need help?</a></p>
+  <p class="wl-page-lede"><a href="/contact?booking=<%= booking.reference %>">Need help?</a></p>
 
   <% if (isHost && state === "pending") { %>
   <div class="wl-actions">
@@ -53,7 +81,7 @@
     </form>
   </div>
   <% } else if (canCancel) { %>
-  <form action="/bookings/<%= booking._id %>?_method=DELETE" method="POST" class="wl-inline-form" data-confirm="<%= state === "pending" ? "Withdraw this request?" : "Cancel this booking?" %>">
+  <form action="/bookings/<%= booking._id %>?_method=DELETE" method="POST" class="wl-inline-form" data-confirm="<%= state === "pending" ? "Withdraw this request?" : lateNotice ? "The free cancellation period has ended, so this will be recorded as a late cancellation. Cancel this booking?" : "Cancel this booking?" %>">
     <%- include("../includes/csrf.ejs") %>
     <label for="cancel-reason">Reason (optional, shared with the other party)</label>
     <div class="wl-input wl-input--textarea"><textarea id="cancel-reason" name="reason" rows="2" maxlength="300"></textarea></div>

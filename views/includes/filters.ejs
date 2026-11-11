@@ -107,6 +107,7 @@
         <input class="form-control" type="date" id="f-out" name="checkOut" value="<%= filters.checkOut || '' %>" />
       </div>
     </div>
+    <%- include("./guestNeedsFilter.ejs", { filters, guestNeeds }) %>
     <div class="d-flex gap-2 mt-3">
       <button class="btn btn-dark wanderlust-btn m-0" type="submit">Apply</button>
       <a class="btn btn-outline-secondary" href="<%= action %>">Clear all</a>

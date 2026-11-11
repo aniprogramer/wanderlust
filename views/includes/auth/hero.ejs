@@ -1,4 +1,5 @@
-<section class="wl-auth-hero" aria-labelledby="auth-hero-title">
+<% const type = typeof authType !== "undefined" ? authType : "login"; %>
+<section class="wl-auth-hero position-relative d-flex flex-column justify-content-between" aria-labelledby="auth-hero-title">
   <img
     class="wl-auth-hero__photo"
     src="/images/santorini.jpg"
@@ -7,25 +8,60 @@
     alt="Whitewashed hillside village of Oia, Santorini, glowing at sunset above the Aegean"
     fetchpriority="high"
   />
-  <div class="wl-auth-hero__top">
-    <a class="wl-auth-brand" href="/listings" aria-label="Wanderlust home">
-      <%- include("./mark", { size: 36, cls: "wl-mark--band" }) %>
-      <span class="wl-auth-brand__word">Wanderlust</span>
-    </a>
-    <p class="wl-auth-eyebrow">
-      <span>Homes</span><span aria-hidden="true">·</span><span>Cabins</span><span aria-hidden="true">·</span><span>Villas</span>
+
+  <!-- Top Hero Header (Brand + Navigation Links) -->
+  <div class="wl-auth-hero__top position-relative z-2 d-flex flex-wrap align-items-center justify-content-between gap-3">
+    <div class="d-flex align-items-center gap-4">
+      <a class="wl-auth-brand" href="/listings" aria-label="Wanderlust home">
+        <%- include("./mark", { size: 36, cls: "wl-mark--band" }) %>
+        <span class="wl-auth-brand__word">Wanderlust</span>
+      </a>
+
+      <!-- Desktop editorial navigation links -->
+      <nav class="wl-auth-nav d-none d-xl-flex align-items-center gap-3 ms-2" aria-label="Auth header navigation">
+        <a class="wl-nav-link text-decoration-none" href="/listings">Explore</a>
+        <a class="wl-nav-link text-decoration-none" href="/listings">Stays</a>
+        <a class="wl-nav-link text-decoration-none" href="/listings?category=Unique%20Stays">Experiences</a>
+        <a class="wl-nav-link text-decoration-none" href="/listings/map">Destinations</a>
+      </nav>
+    </div>
+
+    <p class="wl-auth-eyebrow mb-0">
+      <span>STAYS</span><span aria-hidden="true">&nbsp;&middot;&nbsp;</span><span>CABINS</span><span aria-hidden="true">&nbsp;&middot;&nbsp;</span><span>VILLAS</span>
     </p>
   </div>
-  <div class="wl-auth-hero__copy">
-    <h2 class="wl-auth-headline" id="auth-hero-title">
-      More than a stay.<br />A more meaningful<br />way to <em>explore.</em>
-    </h2>
-    <p class="wl-auth-lede">
-      Homes, cabins and villas around the world. Send a request and the host confirms your stay.
-    </p>
+
+  <!-- Editorial Headline & Copy -->
+  <div class="wl-auth-hero__copy position-relative z-2">
+    <% if (type === "signup") { %>
+      <h2 class="wl-auth-headline" id="auth-hero-title">
+        Join the<br />Wanderlust<br /><em>community.</em>
+      </h2>
+      <p class="wl-auth-lede mt-3">
+        Create an account to discover unique stays, book unforgettable trips and connect with an inspiring community of travellers.
+      </p>
+    <% } else { %>
+      <h2 class="wl-auth-headline" id="auth-hero-title">
+        More than a stay.<br />A more meaningful<br />way to <em>explore.</em>
+      </h2>
+      <p class="wl-auth-lede mt-3">
+        Curated homes, local experiences and unforgettable destinations around the world.
+      </p>
+    <% } %>
   </div>
-  <figure class="wl-auth-caption">
-    <span class="wl-auth-caption__rule" aria-hidden="true"></span>
-    <p class="wl-auth-caption__place">Santorini, Greece</p>
+
+  <!-- Bottom Location Quote -->
+  <figure class="wl-auth-caption position-relative z-2 mb-0">
+    <span class="wl-auth-caption__rule mb-2" aria-hidden="true"></span>
+    <p class="wl-auth-caption__place text-uppercase fw-bold mb-1">Santorini, Greece</p>
+    <% if (type === "signup") { %>
+      <blockquote class="wl-auth-quote fst-italic mb-0">
+        &ldquo;Travel deeper. Stay differently. Belong everywhere.&rdquo;
+      </blockquote>
+    <% } else { %>
+      <blockquote class="wl-auth-quote fst-italic mb-0">
+        &ldquo;Not just places to stay, but stories to be part of.&rdquo;
+      </blockquote>
+    <% } %>
   </figure>
 </section>

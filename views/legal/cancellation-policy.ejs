@@ -1,5 +1,7 @@
 <% layout("/layouts/boilerplate") %>
 <% const sections = [
+  ["policies", "The three policies"],
+  ["late", "Late cancellations"],
   ["before", "Before check-in"],
   ["requests", "Requests that have not been confirmed"],
   ["hosts", "When hosts may cancel"],
@@ -7,10 +9,21 @@
   ["notices", "Notices"],
 ]; %>
 <article class="wl-page wl-page--read wl-prose">
-  <%- include("../includes/legalHeader", { title: "Cancellation Policy", intro: "How guests and hosts cancel a stay on Wanderlust.", sections }) %>
+  <%- include("../includes/legalHeader", { title: "Cancellation Policy", intro: "How guests and hosts cancel a stay on Wanderlust, and what each listing's policy means.", sections }) %>
+
+  <h2 id="policies">The three policies</h2>
+  <p>Each host chooses one policy for each listing. You see it on the listing page and on your booking request. The policy that applies is the one shown when the request was sent, even if the host changes it later.</p>
+  <% for (const policy of Object.values(policies)) { %>
+  <h3><%= policy.label %></h3>
+  <p><%= policy.description %></p>
+  <% } %>
+  <p>The free period counts back from the earliest check-in time on the listing, on the check-in day.</p>
+
+  <h2 id="late">Late cancellations</h2>
+  <p>A confirmed booking cancelled after the free period is recorded as a late cancellation, whoever cancels it. The guest and the host both see this on the booking. Withdrawing a request the host has not yet accepted is never late.</p>
 
   <h2 id="before">Before check-in</h2>
-  <p>A guest or a host may cancel a confirmed booking at any time before the check-in date, from the booking page. Once the check-in day has started, a booking can no longer be cancelled here. <a href="/contact">Contact us</a> if something has gone wrong.</p>
+  <p>A guest or a host may still cancel a confirmed booking at any time before the check-in date, from the booking page, even after the free period. Once the check-in day has started, a booking can no longer be cancelled here. <a href="/contact">Contact us</a> if something has gone wrong.</p>
 
   <h2 id="requests">Requests that have not been confirmed</h2>
   <p>A guest can withdraw a request until the host responds. A host can decline. A request with no answer expires after 48 hours.</p>
@@ -24,7 +37,7 @@
   </ul>
 
   <h2 id="refunds">Refunds</h2>
-  <p>The platform takes no payment, so no refunds are handled by Wanderlust. If you paid a host anything directly, sort out any refund with that host.</p>
+  <p>The platform takes no payment, so no refunds are handled by Wanderlust and a late cancellation carries no charge here. If you paid a host anything directly, sort out any refund with that host.</p>
 
   <h2 id="notices">Notices</h2>
   <p>When one party cancels, the other is told by email, with the reason if one was given.</p>

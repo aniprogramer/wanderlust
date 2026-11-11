@@ -21,7 +21,7 @@
       <% if (typeof fieldError !== "undefined" && fieldError) { %>aria-invalid="true"<% } %>
       <%= typeof optional !== "undefined" && optional ? "" : "required" %>
     />
-    <% if (kind === 'password') { %><%- include("./passwordToggle", { target: id }) %><% } %>
+    <% if (kind === 'password') { %><%- include("./passwordToggle", { target: id, confirm: id.toLowerCase().includes("confirm") }) %><% } %>
   </div>
   <p class="wl-field__error" id="<%= id %>-error" <%= typeof fieldError !== "undefined" && fieldError ? "" : "hidden" %>><%= typeof fieldError !== "undefined" ? fieldError : "" %></p>
 </div>

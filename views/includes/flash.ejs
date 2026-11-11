@@ -1,36 +1,41 @@
 <%#
-  Success and info messages fade after 5 seconds and pause on hover or focus (flash.js).
-  Errors and warnings stay until closed.
+  Pop-up notifications. Every req.flash message renders here, server side, so they show as
+  plain messages at the top of the page even without JavaScript. flash.js then queues them
+  (three visible), closes success and info after 6 seconds, and pauses on hover or focus.
+  Warnings and errors stay until closed. Field-level validation stays inline beside its field.
 %>
-<% const flashes = [
+<% const toasts = [
   { type: "success", messages: successMsg, icon: "fa-circle-check", live: true },
   { type: "info", messages: typeof infoMsg === "undefined" ? [] : infoMsg, icon: "fa-circle-info", live: true },
   { type: "warning", messages: typeof warningMsg === "undefined" ? [] : warningMsg, icon: "fa-triangle-exclamation", live: false },
   { type: "error", messages: errorMsg, icon: "fa-circle-exclamation", live: false },
 ]; %>
-<div class="wl-flash-stack">
-<% if (currUser && !currUser.emailVerifiedAt) { %>
-  <div class="wl-auth-alert wl-auth-alert--info wl-banner" data-verify-banner>
-    <i class="fa-solid fa-envelope" aria-hidden="true"></i>
-    <span class="wl-flash__text">Please confirm your email address. You need this to send a request or list a stay. <a class="wl-auth-link" href="/verify-email">Resend the link</a></span>
-    <button type="button" class="wl-flash__close" data-flash-close aria-label="Dismiss until the next page">
-      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-    </button>
-  </div>
-<% } %>
-<% for (const flash of flashes) { %>
-  <% if (flash.messages && flash.messages.length) { %>
+<div class="wl-toasts" data-toasts aria-label="Notifications" role="region">
+<% for (const toast of toasts) { %>
+  <% for (const message of (toast.messages || [])) { %>
   <div
-    class="wl-auth-alert wl-auth-alert--<%= flash.type %> wl-flash"
-    role="<%= flash.live ? 'status' : 'alert' %>"
-    <%= flash.live ? 'data-autodismiss' : '' %>
+    class="wl-auth-alert wl-auth-alert--<%= toast.type %> wl-toast"
+    role="<%= toast.live ? 'status' : 'alert' %>"
+    aria-live="<%= toast.live ? 'polite' : 'assertive' %>"
+    data-toast
+    <%= toast.live ? 'data-autodismiss' : '' %>
   >
-    <i class="fa-solid <%= flash.icon %>" aria-hidden="true"></i>
-    <span class="wl-flash__text"><%= flash.messages %></span>
-    <button type="button" class="wl-flash__close" data-flash-close aria-label="Dismiss message">
+    <i class="fa-solid <%= toast.icon %>" aria-hidden="true"></i>
+    <span class="wl-toast__text"><%= message %></span>
+    <button type="button" class="wl-toast__close" data-toast-close aria-label="Dismiss notification">
       <i class="fa-solid fa-xmark" aria-hidden="true"></i>
     </button>
   </div>
   <% } %>
+<% } %>
+<% if (typeof currUser !== "undefined" && currUser && !currUser.emailVerifiedAt) { %>
+  <%# A reminder, not a result of something the person did: it goes last, so real messages come first %>
+  <div class="wl-auth-alert wl-auth-alert--info wl-toast" role="status" aria-live="polite" data-toast data-autodismiss data-verify-banner>
+    <i class="fa-solid fa-envelope" aria-hidden="true"></i>
+    <span class="wl-toast__text">Please confirm your email address. You need this to send a request or list a stay. <a class="wl-auth-link" href="/verify-email">Resend the link</a></span>
+    <button type="button" class="wl-toast__close" data-toast-close aria-label="Dismiss notification">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+  </div>
 <% } %>
 </div>

@@ -12,17 +12,15 @@
       <div class="wl-row__meta">
         <%= booking.checkIn.toISOString().slice(0, 10) %> → <%= booking.checkOut.toISOString().slice(0, 10) %>
         · <%= booking.guests || 1 %> guest<%= (booking.guests || 1) === 1 ? "" : "s" %>
-        · <%= money(booking.totalPrice, currency) %>
-        <% if (hosting) { %> · @<%= booking.guest ? booking.guest.username : "Deleted user" %><% } %>
+        · <%= money(booking.totalPrice, currency) %> <%= totalLabel.toLowerCase() %>
+        <% if (hosting) { %> · <%- include("./userLink.ejs", { user: booking.guest }) %><% } %>
       </div>
-      <% if (hosting && booking.guest && state === "confirmed") { %>
-      <div class="wl-row__meta"><a href="mailto:<%= booking.guest.email %>"><%= booking.guest.email %></a></div>
-      <% } %>
     </div>
     <% } else { %>
     <div class="wl-row__main wl-row__meta">Listing no longer available</div>
     <% } %>
     <%- include("./bookingStatus.ejs", { booking, today }) %>
+    <% if (booking.cancelledLate) { %><span class="wl-badge wl-badge--warning" data-late-cancel>Late cancellation</span><% } %>
     <div class="wl-row__actions">
       <% if (booking.listing) { %><a class="wl-text-btn" href="/bookings/<%= booking._id %>">View</a><% } %>
       <% if (canCancel) { %>

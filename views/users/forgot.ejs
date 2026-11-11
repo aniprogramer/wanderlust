@@ -7,7 +7,6 @@
       <%- include("../includes/auth/mark", { size: 56, cls: "wl-auth-card__mark" }) %>
       <h1 class="wl-auth-card__title">Reset your password</h1>
       <p class="wl-auth-card__sub">Enter your email and we will send you a link to choose a new one.</p>
-      <%- include("../includes/auth/alerts") %>
       <form action="/forgot-password" method="POST" class="wl-auth-form" data-auth-form data-busy-label="Sending…" novalidate>
         <%- include("../includes/csrf.ejs") %>
         <%- include("../includes/auth/field", { id: "email", name: "email", label: "Email", type: "email", icon: "fa-regular fa-envelope", placeholder: "you@example.com", autocomplete: "email" }) %>

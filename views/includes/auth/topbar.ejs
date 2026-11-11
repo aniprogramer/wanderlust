@@ -1,4 +1,7 @@
-<div class="wl-auth-topbar">
-  <span class="wl-auth-topbar__prompt"><%= prompt %></span>
-  <a class="wl-auth-btn wl-auth-btn--outline" href="<%= href %>"><%= label %></a>
+<div class="wl-auth-topbar-row d-flex align-items-center justify-content-end gap-3 w-100 mb-3">
+  <%- include("../currencyDropdown") %>
+  <div class="wl-auth-topbar d-flex align-items-center gap-2">
+    <span class="wl-auth-topbar__prompt"><%= prompt %></span>
+    <a class="wl-auth-btn wl-auth-btn--outline" href="<%= href %>"><%= label %></a>
+  </div>
 </div>

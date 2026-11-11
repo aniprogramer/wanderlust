@@ -1,0 +1,53 @@
+<%
+  const activeCode = typeof currentCurrency !== 'undefined' && currentCurrency ? currentCurrency : 'INR';
+  const info = typeof currencyInfo !== 'undefined' ? currencyInfo : {
+    INR: { code: "INR", symbol: "₹", flag: "🇮🇳", label: "Indian Rupee" },
+    USD: { code: "USD", symbol: "$", flag: "🇺🇸", label: "US Dollar" },
+    EUR: { code: "EUR", symbol: "€", flag: "🇪🇺", label: "Euro" },
+    GBP: { code: "GBP", symbol: "£", flag: "🇬🇧", label: "British Pound" },
+    AUD: { code: "AUD", symbol: "A$", flag: "🇦🇺", label: "Australian Dollar" },
+    CAD: { code: "CAD", symbol: "C$", flag: "🇨🇦", label: "Canadian Dollar" },
+    JPY: { code: "JPY", symbol: "¥", flag: "🇯🇵", label: "Japanese Yen" },
+    AED: { code: "AED", symbol: "AED", flag: "🇦🇪", label: "UAE Dirham" },
+  };
+  const activeMeta = info[activeCode] || info.INR;
+%>
+<div class="dropdown glass-currency-dropdown">
+  <button
+    class="glass-currency-btn glass-action glass-pill d-inline-flex align-items-center gap-2"
+    type="button"
+    id="currencyMenuBtn"
+    data-bs-toggle="dropdown"
+    data-bs-offset="[0, 8]"
+    aria-expanded="false"
+    aria-label="Select currency. Currently <%= activeMeta.code %>"
+  >
+    <span class="glass-currency-flag glass-currency-flag--trigger" data-currency-flag aria-hidden="true"><%= activeMeta.flag %></span>
+    <span class="glass-currency-code fw-semibold"><%= activeMeta.code %></span>
+    <i class="fa-solid fa-chevron-down glass-currency-chevron small" aria-hidden="true"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end shadow-lg glass-dropdown glass-currency-menu py-2" aria-labelledby="currencyMenuBtn">
+    <li class="dropdown-header text-uppercase small px-3 py-1">Currency</li>
+    <% for (const [code, meta] of Object.entries(info)) { %>
+      <%
+        const isCurrent = code === activeCode;
+        // Build target URL preserving other query params
+        const queryParams = typeof filters !== 'undefined' && filters ? { ...filters, currency: code } : { currency: code };
+        const targetHref = typeof qs === 'function' ? `/listings${qs({ currency: code })}` : `?currency=${code}`;
+      %>
+      <li>
+        <a
+          class="dropdown-item d-flex align-items-center justify-content-between px-3 py-2 <%= isCurrent ? 'active' : '' %>"
+          href="<%= targetHref %>"
+          data-currency-select="<%= code %>"
+        >
+          <span class="d-flex align-items-center gap-2">
+            <span class="glass-currency-flag" aria-hidden="true"><%= meta.flag %></span>
+            <span class="glass-currency-name"><%= meta.label %></span>
+          </span>
+          <span class="glass-currency-symbol text-muted fw-bold ms-3"><%= meta.symbol %> (<%= code %>)</span>
+        </a>
+      </li>
+    <% } %>
+  </ul>
+</div>

@@ -1,14 +1,14 @@
-<nav class="navbar navbar-expand-xl bg-body border-bottom sticky-top">
+<nav class="navbar navbar-expand-xl bg-body border-bottom sticky-top py-2 px-3 mb-4">
   <div class="container-fluid">
-    <a class="navbar-brand d-flex align-items-center gap-2 text-decoration-none" href="/listings">
-      <%- include("./auth/mark", { size: 32 }) %>
-      <!-- Premium Wordmark -->
-      <span class="wl-wordmark">
+    <a class="navbar-brand d-flex align-items-center gap-2 text-decoration-none" href="/listings" aria-label="Wanderlust Home">
+      <%- include("./auth/mark", { size: 30, cls: "wl-brand-mark-gold" }) %>
+      <span class="wl-wordmark fs-4">
         Wanderlust
       </span>
     </a>
+
     <button
-      class="navbar-toggler"
+      class="navbar-toggler border-0"
       type="button"
       data-bs-toggle="collapse"
       data-bs-target="#navbarNavAltMarkup"
@@ -18,43 +18,79 @@
     >
       <span class="navbar-toggler-icon"></span>
     </button>
+
     <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
-      <div class="navbar-nav">
-        <a class="nav-link" href="/listings">Explore</a>
-        <a class="nav-link" href="/listings/map">Map</a>
+      <!-- Primary nav links -->
+      <div class="navbar-nav me-auto align-items-lg-center">
+        <% (currUser ? navLinks : navLinks.slice(0, 2)).forEach((link) => { %>
+        <a class="nav-link px-3" href="<%= link.href %>"><%= link.label %></a>
+        <% }) %>
       </div>
-      <div class="navbar-nav ms-auto">
-        <form class="d-flex" role="search" action="/listings" method="GET">
-          <input
-            class="form-control me-2"
-            type="search"
-            name="q"
-            maxlength="100"
-            placeholder="Search destinations"
-            aria-label="Search"
-            id="search-box"
-          />
-          <button class="btn btn-search" type="submit">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            Search
-          </button>
+
+      <!-- Center Capsule Search -->
+      <div class="navbar-nav mx-auto my-2 my-xl-0">
+        <form class="d-flex align-items-center" role="search" action="/listings" method="GET">
+          <div class="wl-topbar-search glass-input glass-pill d-flex align-items-center px-3 py-1">
+            <i class="fa-solid fa-magnifying-glass me-2 text-muted" aria-hidden="true"></i>
+            <input
+              class="form-control border-0 bg-transparent shadow-none"
+              type="search"
+              name="q"
+              maxlength="100"
+              placeholder="Search destinations"
+              aria-label="Search"
+              id="search-box"
+              autocomplete="off"
+            />
+            <button class="btn btn-search btn-sm rounded-pill px-3 py-1 ms-1" type="submit">
+              Search
+            </button>
+          </div>
         </form>
       </div>
-      <div class="navbar-nav ms-auto align-items-center gap-2">
+
+      <!-- Right Actions: Currency, Mode, User Menu -->
+      <div class="navbar-nav ms-auto align-items-lg-center gap-2">
+        <%- include("./currencyDropdown") %>
+
         <% if (!currUser) { %>
-        <a class="nav-link" href="/signup"><b>SignUp</b></a>
-        <a class="nav-link" href="/login"><b>Login</b></a>
+          <a class="nav-link px-2" href="/signup"><b>Sign up</b></a>
+          <a class="nav-link px-2" href="/login"><b>Log in</b></a>
         <% } %>
+
         <% if (currUser) { %>
-        <a class="nav-link" href="/wishlist"><i class="fa-regular fa-heart"></i> Wishlist</a>
-        <a class="nav-link" href="/bookings">Trips</a>
-        <a class="nav-link" href="/account">Account</a>
-        <% if (currUser.isAdmin) { %><a class="nav-link" href="/admin">Admin</a><% } %>
-        <a class="nav-link" href="/bookings/hosting">Hosting</a>
-        <form action="/logout" method="POST" class="d-flex">
-          <%- include("./csrf.ejs") %>
-          <button type="submit" class="nav-link btn btn-link"><b>Logout</b></button>
-        </form>
+          <%- include("./modeSwitch", { cls: "d-none d-md-inline-flex" }) %>
+
+          <!-- User dropdown menu -->
+          <div class="dropdown ms-lg-2">
+            <button
+              class="wl-hero-avatar-btn glass-action"
+              type="button"
+              id="userMenuBtnNav"
+              data-bs-toggle="dropdown"
+              data-bs-offset="[0, 8]"
+              aria-expanded="false"
+              aria-label="User Account Menu"
+            >
+              <div class="wl-avatar-circle user-logged-in">
+                <%= currUser.username.slice(0, 1).toUpperCase() %>
+              </div>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-lg glass-dropdown wl-dropdown-menu" aria-labelledby="userMenuBtnNav">
+              <li class="dropdown-header fw-bold">Hello, <%= currUser.username %></li>
+              <li><a class="dropdown-item py-2" href="/users/<%= encodeURIComponent(currUser.username) %>"><i class="fa-regular fa-id-card me-2" aria-hidden="true"></i>Profile</a></li>
+              <% if (currUser.isAdmin) { %>
+                <li><a class="dropdown-item py-2" href="/admin"><i class="fa-solid fa-shield-halved me-2" aria-hidden="true"></i>Admin</a></li>
+              <% } %>
+              <li><hr class="dropdown-divider" /></li>
+              <li>
+                <form action="/logout" method="POST" class="m-0">
+                  <%- include("./csrf.ejs") %>
+                  <button type="submit" class="dropdown-item py-2 wl-dropdown-item-danger"><b>Log out</b></button>
+                </form>
+              </li>
+            </ul>
+          </div>
         <% } %>
       </div>
     </div>

@@ -1,34 +1,77 @@
 <% layout("/layouts/boilerplate") %>
 <main class="wl-auth" id="main-content">
-  <%- include("../includes/auth/hero") %>
+  <%- include("../includes/auth/hero", { authType: "signup" }) %>
+
   <div class="wl-auth-panel">
     <%- include("../includes/auth/topbar", { prompt: "Already a member?", href: "/login", label: "Sign in" }) %>
-    <div class="wl-auth-card">
-      <%- include("../includes/auth/mark", { size: 56, cls: "wl-auth-card__mark" }) %>
-      <h1 class="wl-auth-card__title">Create your account</h1>
-      <p class="wl-auth-card__sub">Join Wanderlust and start exploring.</p>
-      <%- include("../includes/auth/alerts") %>
-      <form action="/signup" method="POST" class="wl-auth-form" data-auth-form data-busy-label="Creating account…" novalidate>
+
+    <div class="wl-auth-card glass-modal shadow-lg">
+      <div class="text-center mb-3">
+        <%- include("../includes/auth/mark", { size: 48, cls: "wl-auth-card__mark" }) %>
+        <h1 class="wl-auth-card__title mt-2">Create your account</h1>
+        <p class="wl-auth-card__sub text-muted">Join Wanderlust and start exploring.</p>
+      </div>
+
+      <form action="/signup" method="POST" class="wl-auth-form" data-auth-form data-match="confirmPassword" data-busy-label="Creating account…" novalidate>
         <%- include("../includes/csrf.ejs") %>
-        <%- include("../includes/auth/field", { id: "username", name: "username", label: "Username", icon: "fa-regular fa-user", placeholder: "Choose a username", autocomplete: "username", maxlength: 30, minlength: 3 }) %>
-        <%- include("../includes/auth/field", { id: "email", name: "email", label: "Email", type: "email", icon: "fa-regular fa-envelope", placeholder: "you@example.com", autocomplete: "email" }) %>
-        <%- include("../includes/auth/field", { id: "password", name: "password", label: "Password", type: "password", icon: "fa-solid fa-lock", placeholder: "At least 8 characters", autocomplete: "new-password", maxlength: 128, minlength: 8, hint: "Use 8 to 128 characters with at least one letter and one digit.", newPassword: true }) %>
-        <div class="wl-check">
+
+        <!-- First & Last Name side-by-side -->
+        <div class="row g-2 mb-2">
+          <div class="col-6">
+            <%- include("../includes/auth/field", { id: "firstName", name: "firstName", label: "First name", icon: "fa-regular fa-user", placeholder: "First name", autocomplete: "given-name", optional: true }) %>
+          </div>
+          <div class="col-6">
+            <%- include("../includes/auth/field", { id: "lastName", name: "lastName", label: "Last name", icon: "fa-regular fa-user", placeholder: "Last name", autocomplete: "family-name", optional: true }) %>
+          </div>
+        </div>
+
+        <%- include("../includes/auth/field", { id: "email", name: "email", label: "Email address", type: "email", icon: "fa-regular fa-envelope", placeholder: "Email address", autocomplete: "email" }) %>
+        <%- include("../includes/auth/field", { id: "username", name: "username", label: "Username", icon: "fa-solid fa-at", placeholder: "Username", autocomplete: "username", maxlength: 30, minlength: 3 }) %>
+        <%- include("../includes/auth/field", { id: "password", name: "password", label: "Password", type: "password", icon: "fa-solid fa-lock", placeholder: "Password", autocomplete: "new-password", maxlength: 128, minlength: 8, hint: "Use 8 to 128 characters with at least one letter and one digit.", newPassword: true }) %>
+        <%- include("../includes/auth/field", { id: "confirmPassword", name: "confirmPassword", label: "Confirm password", type: "password", icon: "fa-solid fa-lock", placeholder: "Confirm password", autocomplete: "new-password", maxlength: 128, optional: true }) %>
+
+        <fieldset class="wl-segmented wl-segmented--stacked" data-required-radio="Choose whether you want to find stays or list your home." id="startingMode">
+          <legend class="wl-segmented__legend">I want to:</legend>
+          <div class="wl-segmented__options">
+            <label class="wl-segmented__option">
+              <input type="radio" name="startingMode" value="guest" />
+              <span class="wl-segmented__label">
+                <span class="wl-segmented__title"><i class="fa-solid fa-check wl-segmented__check" aria-hidden="true"></i> Find stays</span>
+                <span class="wl-segmented__hint">Browse places and send requests to hosts.</span>
+              </span>
+            </label>
+            <label class="wl-segmented__option">
+              <input type="radio" name="startingMode" value="host" />
+              <span class="wl-segmented__label">
+                <span class="wl-segmented__title"><i class="fa-solid fa-check wl-segmented__check" aria-hidden="true"></i> List my home</span>
+                <span class="wl-segmented__hint">Add your place and answer requests from guests.</span>
+              </span>
+            </label>
+          </div>
+          <p class="wl-segmented__note wl-field__hint">One account does both. You can switch at any time.</p>
+          <p class="wl-field__error" id="startingMode-error" hidden></p>
+        </fieldset>
+
+        <div class="wl-check mb-3 mt-3">
           <input type="checkbox" id="terms" name="terms" value="on" required data-required-check="Accept the Terms and Privacy Policy to create an account." />
-          <label for="terms">I agree to the <a class="wl-auth-link" href="/terms" target="_blank" rel="noopener">Terms</a> and <a class="wl-auth-link" href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</label>
+          <label for="terms" class="small">I agree to the <a class="wl-auth-link" href="/terms" target="_blank" rel="noopener">Terms of Service</a> and <a class="wl-auth-link" href="/privacy" target="_blank" rel="noopener">Privacy Policy</a></label>
         </div>
         <p class="wl-field__error" id="terms-error" hidden></p>
+
         <button type="submit" class="wl-auth-btn wl-auth-btn--primary wl-auth-btn--block">
           <span data-btn-label>Create account</span>
-          <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+          <i class="fa-solid fa-arrow-right ms-2" aria-hidden="true"></i>
         </button>
       </form>
-      <hr class="wl-auth-rule" />
-      <p class="wl-auth-switch">
+
+      <hr class="wl-auth-rule my-4" />
+
+      <p class="wl-auth-switch text-center mb-0">
         Already a member?
-        <a class="wl-auth-link" href="/login">Sign in <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+        <a class="wl-auth-link" href="/login">Sign in <i class="fa-solid fa-arrow-right small" aria-hidden="true"></i></a>
       </p>
     </div>
+
     <%- include("../includes/auth/footer") %>
   </div>
 </main>

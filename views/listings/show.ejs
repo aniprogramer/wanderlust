@@ -1,19 +1,29 @@
 <% layout("/layouts/boilerplate") %>
 <% const isHost = currUser && listing.owner && currUser._id.equals(listing.owner._id);
    const photos = listing.gallery;
-   const coords = listing.geometry && listing.geometry.coordinates;
+   const coords = mapCoords;
+   const isDraft = listing.status === "draft";
+   const hasValue = (value) => value !== undefined && value !== null;
+   const stated = (keys) => keys.filter((key) => listing[key]);
+   const ruleKeys = Object.keys(houseRules).filter((key) => hasValue(listing[key]));
    const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`; %>
 <article class="wl-stay">
   <a class="wl-back-link" href="/listings">← All stays</a>
-  <h1 class="wl-page-title wl-stay__title"><%= listing.title %></h1>
+  <h1 class="wl-page-title wl-stay__title"><%= listing.title || "Untitled draft" %></h1>
   <p class="wl-stay__place">
-    <%= listing.location %>, <%= listing.country %>
+    <%= [listing.location, listing.country].filter(Boolean).join(", ") %>
     <% if (listing.reviewCount) { %>
     · <span class="wl-rating"><i class="fa-solid fa-star" aria-hidden="true"></i> <strong><%= listing.avgRating.toFixed(1) %></strong> (<%= plural(listing.reviewCount, "review") %>)</span>
     <% } else { %>
-    · <span>No reviews yet</span>
+    · <span class="wl-badge wl-badge--neutral">New</span>
     <% } %>
   </p>
+  <% if (isDraft) { %>
+  <div class="wl-auth-alert wl-auth-alert--warning" role="note">
+    <i class="fa-solid fa-eye-slash" aria-hidden="true"></i>
+    <span>This is a draft. Only you can see it, and guests cannot request it. <a class="wl-auth-link" href="/listings/<%= listing._id %>/edit">Keep editing</a></span>
+  </div>
+  <% } %>
   <% if (listing.status === "hidden") { %>
   <div class="wl-auth-alert wl-auth-alert--warning" role="note">
     <i class="fa-solid fa-eye-slash" aria-hidden="true"></i>
@@ -54,16 +64,41 @@
     <% } %>
   </div>
 
+  <%# Above the two columns on purpose: on phones the booking panel comes first in the columns,
+      and these terms have to be read before it. %>
+  <section class="wl-panel wl-stay-rules" id="stay-rules" aria-labelledby="stay-rules-title">
+    <h2 class="wl-section-title" id="stay-rules-title">House rules and stay terms</h2>
+    <% if (listing.detailsIncomplete) { %><p class="wl-note wl-form-section__intro">The host has not confirmed these details yet. Ask them before you travel.</p><% } %>
+    <dl class="wl-facts">
+      <div><dt>Check-in</dt><dd><%= listing.checkInFrom ? (listing.checkInUntil ? `${listing.checkInFrom} to ${listing.checkInUntil}` : `From ${listing.checkInFrom}`) : "Ask the host" %></dd></div>
+      <div><dt>Check-out</dt><dd><%= listing.checkOutBy ? `By ${listing.checkOutBy}` : "Ask the host" %></dd></div>
+      <div><dt>Quiet hours</dt><dd><%= listing.quietHoursStart && listing.quietHoursEnd ? `${listing.quietHoursStart} to ${listing.quietHoursEnd}` : "None set" %></dd></div>
+      <% if (policy) { %><div class="wl-stay-rules__policy"><dt>Cancellation</dt><dd><strong><%= policy.label %>.</strong> <%= policy.summary %> <a href="/cancellation-policy">Full policy</a></dd></div><% } %>
+    </dl>
+    <% if (ruleKeys.length) { %>
+    <ul class="wl-amenities">
+      <% for (const key of ruleKeys) { %>
+      <li><i class="fa-solid <%= listing[key] ? "fa-check" : "fa-xmark" %>" aria-hidden="true"></i> <%= listing[key] ? houseRules[key].yes : houseRules[key].no %></li>
+      <% } %>
+    </ul>
+    <% } else { %>
+    <p class="wl-note">The host has not listed any house rules yet.</p>
+    <% } %>
+    <% if (listing.otherRules) { %><p class="wl-stay-rules__other"><strong>Other rules:</strong> <%= listing.otherRules %></p><% } %>
+  </section>
+
   <div class="wl-stay__layout">
     <div class="wl-stay__main">
       <ul class="wl-stay__facts">
-        <li><%= plural(listing.maxGuests, "guest") %></li>
-        <li><%= plural(listing.bedrooms, "bedroom") %></li>
-        <li><%= plural(listing.beds, "bed") %></li>
-        <li><%= plural(listing.bathrooms, "bathroom") %></li>
+        <% if (hasValue(listing.maxGuests)) { %><li><%= plural(listing.maxGuests, "guest") %></li><% } %>
+        <% if (hasValue(listing.bedrooms)) { %><li><%= plural(listing.bedrooms, "bedroom") %></li><% } %>
+        <% if (hasValue(listing.beds)) { %><li><%= plural(listing.beds, "bed") %></li><% } %>
+        <% if (hasValue(listing.bathrooms)) { %><li><%= plural(listing.bathrooms, "bathroom") %></li><% } %>
+        <% if (listing.sizeSqm) { %><li><%= listing.sizeSqm %> m²</li><% } %>
         <% if (listing.minNights > 1) { %><li><%= listing.minNights %> night minimum</li><% } %>
+        <% if (listing.maxNights && listing.maxNights < 30) { %><li><%= listing.maxNights %> night maximum</li><% } %>
       </ul>
-      <p class="wl-stay__host">Hosted by @<%= listing.owner ? listing.owner.username : "Unknown host" %></p>
+      <p class="wl-stay__host">Hosted by <% if (listing.owner) { %><%- include("../includes/avatar.ejs", { person: listing.owner }) %> <%- include("../includes/userLink.ejs", { user: listing.owner }) %><% } else { %>Unknown host<% } %></p>
 
       <% if (listing.category || listing.propertyType) { %>
       <p class="wl-stay__tags">
@@ -84,7 +119,7 @@
       </div>
       <% } %>
 
-      <% if (listing.amenities.length) { %>
+      <% if (listing.amenities.length || listing.wifiMbps) { %>
       <section aria-labelledby="amenities-title">
         <h2 class="wl-section-title" id="amenities-title">What this place offers</h2>
         <ul class="wl-amenities">
@@ -92,13 +127,26 @@
           <li><i class="fa-solid <%= amenityInfo[key][1] %>" aria-hidden="true"></i> <%= amenityInfo[key][0] %></li>
           <% } %>
         </ul>
+        <% if (listing.wifiMbps) { %><p class="wl-note">Wi-Fi speed: <%= listing.wifiMbps %> Mbps (Host-reported)</p><% } %>
       </section>
       <% } %>
 
-      <% if (mapboxToken && coords) { %>
+      <% const accessKeys = stated(Object.keys(accessibility)); const safetyKeys = stated(Object.keys(safety)); %>
+      <% if (accessKeys.length || safetyKeys.length) { %>
+      <section class="wl-panel" aria-labelledby="access-title">
+        <h2 class="wl-section-title" id="access-title">Accessibility and safety</h2>
+        <dl class="wl-facts">
+          <% if (accessKeys.length) { %><div><dt>Accessibility</dt><dd><%= accessKeys.map((key) => accessibility[key]).join(", ") %></dd></div><% } %>
+          <% if (safetyKeys.length) { %><div><dt>Safety</dt><dd><%= safetyKeys.map((key) => safety[key]).join(", ") %></dd></div><% } %>
+        </dl>
+      </section>
+      <% } %>
+
       <section aria-labelledby="map-title">
         <h2 class="wl-section-title" id="map-title">Where you'll be</h2>
+        <% if (mapboxToken && coords) { %>
         <%- include("../includes/mapbox.ejs") %>
+        <% if (seesAddress) { %>
         <div
           id="map"
           class="wl-map"
@@ -108,9 +156,25 @@
           data-lat="<%= coords[1] %>"
           data-title="<%= listing.title %>"
         ></div>
-        <p class="wl-note"><%= listing.location %>, <%= listing.country %></p>
+        <% } else { %>
+        <div
+          id="map"
+          class="wl-map"
+          data-mode="show"
+          data-token="<%= mapboxToken %>"
+          data-center-lng="<%= coords[0] %>"
+          data-center-lat="<%= coords[1] %>"
+          data-radius="<%= approxRadius %>"
+        ></div>
+        <% } %>
+        <% } %>
+        <p class="wl-note">
+          <%= [listing.location, listing.country].filter(Boolean).join(", ") %>.
+          <% if (seesAddress && listing.addressLine) { %><strong>Address:</strong> <%= [listing.addressLine, listing.city, listing.region, listing.country].filter(Boolean).join(", ") %>.
+          <% } else if (!seesAddress && coords) { %>The circle shows the general area, within about <%= approxRadius %> m. The exact address is shared once the host confirms your stay.
+          <% } else if (!seesAddress) { %>The exact address is shared once the host confirms your stay.<% } %>
+        </p>
       </section>
-      <% } %>
 
       <section aria-labelledby="reviews-title" class="wl-reviews">
         <h2 class="wl-section-title" id="reviews-title">Reviews</h2>
@@ -147,7 +211,7 @@
           <% listing.reviews.forEach((review) => { %>
           <li class="review-card">
             <div class="wl-review__head">
-              <strong><%= review.author ? `@${review.author.username}` : "Deleted user" %></strong>
+              <strong><%- include("../includes/userLink.ejs", { user: review.author }) %></strong>
               <% if (review.verifiedStay) { %><span class="wl-badge wl-badge--success"><i class="fa-solid fa-check" aria-hidden="true"></i> Verified stay</span><% } %>
             </div>
             <div class="wl-rating" aria-label="<%= review.rating %> out of 5">
@@ -172,7 +236,8 @@
 
     <aside class="wl-stay__aside">
       <div class="wl-panel" id="booking-card">
-        <p class="wl-stay__price"><strong><%= money(listing.price, listing.currency) %></strong> <span>/ night</span></p>
+        <% if (hasValue(listing.price)) { %><p class="wl-stay__price"><strong><%= money(listing.price, listing.currency) %></strong> <span>/ night</span></p><% } %>
+        <% if (listing.cleaningFee) { %><p class="wl-note">Plus a one-time cleaning fee of <%= money(listing.cleaningFee, listing.currency) %>.</p><% } %>
         <% if (isHost) { %>
         <p class="wl-note">This is your listing. Manage guests under <a href="/bookings/hosting">Hosting</a>.</p>
         <% } else { %>
@@ -184,6 +249,8 @@
           data-currency="<%= listing.currency %>"
           data-cleaning-fee="<%= listing.cleaningFee || 0 %>"
           data-min-nights="<%= listing.minNights || 1 %>"
+          data-max-nights="<%= listing.maxNights || 30 %>"
+          data-total-label="<%= totalLabel %>"
           data-booked="<%= JSON.stringify(bookedNights) %>"
           data-today="<%= serverToday %>"
         >
@@ -195,7 +262,7 @@
             <span class="legend-dot booked"></span> Unavailable
             <span class="legend-dot selected ms-3"></span> Selected
           </div>
-          <p class="wl-note">Dates are local to the property.<% if (listing.minNights > 1) { %> <%= listing.minNights %> night minimum.<% } %></p>
+          <p class="wl-note">Dates are local to the property.<% if (listing.minNights > 1) { %> <%= listing.minNights %> night minimum.<% } %><% if (listing.maxNights && listing.maxNights < 30) { %> <%= listing.maxNights %> night maximum.<% } %></p>
 
           <div class="wl-field">
             <label for="booking-guests">Guests</label>
@@ -227,7 +294,7 @@
             <li>You send a request. The stay is booked only when confirmed by the host, usually within 48 hours.</li>
             <li>You pay at the property. Nothing is charged here.</li>
             <li><%= taxNotice %></li>
-            <li><a href="/cancellation-policy">Cancellation policy</a></li>
+            <li><% if (policy) { %><%= policy.summary %> <% } %><a href="/cancellation-policy">Cancellation policy</a></li>
           </ul>
         </form>
         <% } %>
@@ -240,7 +307,7 @@
           <li>
             <span><%= b.checkIn.toISOString().slice(0, 10) %> → <%= b.checkOut.toISOString().slice(0, 10) %></span>
             <% if (isHost) { %>
-            <span class="wl-note">· @<%= b.guest ? b.guest.username : "Deleted user" %> · <%= money(b.totalPrice, b.currency || listing.currency) %></span>
+            <span class="wl-note">· <%- include("../includes/userLink.ejs", { user: b.guest }) %> · <%= money(b.totalPrice, b.currency || listing.currency) %> <%= totalLabel.toLowerCase() %></span>
             <form action="/bookings/<%= b._id %>?_method=DELETE" method="POST" data-confirm="Cancel this reservation?">
               <%- include("../includes/csrf.ejs") %>
               <button class="wl-text-btn wl-text-btn--danger">Cancel</button>

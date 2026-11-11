@@ -1,134 +1,21 @@
 <% layout("/layouts/boilerplate") %>
   <div class="row">
-    <div class="col-12 col-md-8 offset-md-2">
-      <h1 id="edit-page-h3" class="wl-page-title">Edit <%= listing.title %></h1>
+    <div class="col-12 col-lg-8 offset-lg-2">
+      <h1 id="edit-page-h3" class="wl-page-title"><%= listing.status === "draft" ? "Draft" : "Edit" %>: <%= listing.title || "Untitled" %></h1>
+      <% if (listing.status === "draft") { %><p class="wl-page-lede"><span class="wl-badge wl-badge--neutral">Draft</span> Only you can see this. <a href="/listings/<%= listing._id %>">Preview it</a>.</p><% } %>
       <% if (listing.capacityDefaulted) { %>
       <div class="wl-auth-alert wl-auth-alert--warning" role="alert">
         <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
         <span><strong>Confirm your listing details.</strong> We filled in the guest and room numbers below with a best guess. Check them and save.</span>
       </div>
       <% } %>
-      <form
-        action="/listings/<%= listing._id %>?_method=PUT"
-        method="post"
-        class="needs-validation"
-        enctype="multipart/form-data"
-        novalidate
-      >
-        <%- include("../includes/csrf.ejs") %>
-        <div class="mb-3">
-          <label for="title" class="form-label">Title</label>
-          <input
-            type="text"
-            id="title"
-            name="listing[title]"
-            value="<%= listing.title %>"
-            class="form-control"
-            required
-          />
-          <div class="valid-feedback">Looks good!</div>
-          <div class="invalid-feedback">Please Enter the Title</div>
-        </div>
-
-        <div class="mb-3">
-          <label for="desc" class="form-label">Description</label>
-          <textarea
-            id="desc"
-            name="listing[description]"
-            class="form-control"
-            maxlength="2000"
-            required
-          >
-<%= listing.description %></textarea
-          >
-          <div class="invalid-feedback">Description is required (up to 2000 characters).</div>
-          <div class="valid-feedback">Looks good!</div>
-        </div>
-
-        <fieldset class="wl-fieldset">
-          <legend class="wl-section-title">Photos</legend>
-          <% const photos = listing.gallery; %>
-          <ul class="wl-photos">
-            <% photos.forEach((photo, i) => { %>
-            <li class="wl-photo" data-photo>
-              <img src="<%= photoUrl(photo.url, 400) %>" alt="Photo <%= i + 1 %>" loading="lazy" />
-              <label class="wl-check wl-check--small">
-                <input type="radio" name="coverImage" value="<%= photo.filename %>" <%= i === 0 ? "checked" : "" %> />
-                <span>Make cover</span>
-              </label>
-              <label class="wl-check wl-check--small">
-                <input type="checkbox" name="removeImages" value="<%= photo.filename %>" data-photo-remove />
-                <span>Remove</span>
-              </label>
-            </li>
-            <% }) %>
-          </ul>
-          <label for="img" class="form-label">Add photos</label>
-          <p class="wl-field__hint" id="img-hint">Up to 6 photos in total. JPEG, PNG or WebP, 5 MB each.</p>
-          <input
-            type="file"
-            id="img"
-            name="listing[images]"
-            class="form-control"
-            accept="image/jpeg,image/png,image/webp"
-            aria-describedby="img-hint"
-            data-max="6"
-            multiple
-          />
-          <ul class="wl-photos" id="new-photo-list" aria-label="Photos to upload"></ul>
-          <p class="wl-field__error" id="photo-note" role="status"></p>
-        </fieldset>
-
-        <div class="row">
-          <div class="mb-3 col-12 col-md-4">
-            <label for="price" class="form-label">Price</label>
-            <input
-              type="number"
-              id="price"
-              name="listing[price]"
-              value="<%= listing.price %>"
-              class="form-control"
-              required
-            />
-            <div class="valid-feedback">Looks good!</div>
-            <div class="invalid-feedback">Please enter a valid price!</div>
-          </div>
-
-          <div class="mb-3 col-12 col-md-8">
-            <label for="country" class="form-label">Country</label>
-            <input
-              type="text"
-              id="country"
-              name="listing[country]"
-              value="<%= listing.country %>"
-              class="form-control"
-              required
-            />
-            <div class="valid-feedback">Looks good!</div>
-            <div class="invalid-feedback">Please enter the country!</div>
-          </div>
-        </div>
-
-        <div class="mb-3">
-          <label for="location" class="form-label">Location</label>
-          <input
-            type="text"
-            id="location"
-            name="listing[location]"
-            value="<%= listing.location %>"
-            class="form-control"
-            required
-          />
-          <div class="valid-feedback">Looks good!</div>
-          <div class="invalid-feedback">Please enter valid location!</div>
-        </div>
-
-        <%- include("../includes/listingExtras.ejs") %>
-
-        <button type="submit" class="wl-auth-btn wl-auth-btn--primary">
-          Save changes
-        </button>
-      </form>
+      <% if (listing.detailsIncomplete) { %>
+      <div class="wl-auth-alert wl-auth-alert--warning" role="alert">
+        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+        <span><strong>Complete your listing details.</strong> This stay was listed before we asked for the full address, stay rules and cancellation terms. We filled in what we could. Check every section and save.</span>
+      </div>
+      <% } %>
+      <%- include("../includes/listingForm.ejs", { listing, action: `/listings/${listing._id}?_method=PUT` }) %>
 
       <section id="availability" class="wl-panel wl-account-section" aria-labelledby="availability-title">
         <h2 class="wl-section-title" id="availability-title">Availability</h2>

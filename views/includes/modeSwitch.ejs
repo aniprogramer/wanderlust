@@ -1,0 +1,14 @@
+<%# One labelled button that posts to /mode. Pass cls to match the header it sits in. %>
+<% if (currUser) { %>
+<% const other = mode === "host" ? "guest" : "host"; %>
+<form action="/mode" method="POST" class="wl-mode-switch m-0" data-mode="<%= mode %>">
+  <%- include("./csrf.ejs") %>
+  <input type="hidden" name="mode" value="<%= other %>" />
+  <input type="hidden" name="returnTo" value="<%= currentPath %>" />
+  <button type="submit" class="<%= typeof cls === 'undefined' ? 'wl-auth-btn wl-auth-btn--outline' : cls %>">
+    <i class="fa-solid fa-repeat" aria-hidden="true"></i>
+    <span>Switch to <%= other %></span>
+  </button>
+  <span class="visually-hidden">You are in <%= mode %> mode.</span>
+</form>
+<% } %>

@@ -13,6 +13,16 @@
   </div>
   <% } %>
 
+  <% if (toComplete.length) { %>
+  <div class="wl-auth-alert wl-auth-alert--warning" role="alert" data-details-incomplete>
+    <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+    <div>
+      <strong>Complete your listing details.</strong> These stays were listed before we asked for the full address, stay rules and cancellation terms. Please complete them:
+      <% toComplete.forEach((listing, i) => { %><a class="wl-auth-link" href="/listings/<%= listing._id %>/edit"><%= listing.title || "Untitled draft" %></a><%= i < toComplete.length - 1 ? ", " : "." %><% }) %>
+    </div>
+  </div>
+  <% } %>
+
   <div class="wl-stats">
     <div class="wl-stat"><span class="wl-stat__value"><%= summary.pending %></span><span class="wl-stat__label">Requests waiting</span></div>
     <div class="wl-stat"><span class="wl-stat__value"><%= summary.upcoming %></span><span class="wl-stat__label">Upcoming stays</span></div>
@@ -36,12 +46,12 @@
       <div class="wl-row__main">
         <a class="wl-row__title" href="/bookings/<%= booking._id %>"><%= booking.listing.title %></a>
         <div class="wl-row__meta">
-          @<%= booking.guest ? booking.guest.username : "Deleted user" %>
-          · <%= booking.checkIn.toISOString().slice(0, 10) %> → <%= booking.checkOut.toISOString().slice(0, 10) %>
+          <%- include("../includes/userLink.ejs", { user: booking.guest }) %>
+          · <strong>Stay:</strong> <%= booking.checkIn.toISOString().slice(0, 10) %> → <%= booking.checkOut.toISOString().slice(0, 10) %>
           · <%= booking.guests %> guest<%= booking.guests === 1 ? "" : "s" %>
-          · <%= money(booking.totalPrice, booking.currency) %>
         </div>
-        <% if (booking.guestMessage) { %><p class="wl-request__message"><%= booking.guestMessage %></p><% } %>
+        <% if (booking.guestMessage) { %><p class="wl-request__message"><strong>Guest's message:</strong> <%= booking.guestMessage %></p><% } %>
+        <%- include("../includes/priceBreakdown.ejs", { booking }) %>
         <div class="wl-row__meta">Reply by <%= booking.expiresAt.toISOString().slice(0, 16).replace("T", " ") %> UTC, or the request expires.</div>
       </div>
       <div class="wl-row__actions">

@@ -1,0 +1,9 @@
+<%# Profile photo, or an initials tile when there is none. Expects person ({ avatar | avatarUrl, displayName, username }); size "lg" is optional. %>
+<% const photo = person.avatarUrl || (person.avatar && person.avatar.url);
+   const label = person.displayName || person.username || "?";
+   const letters = label.trim().split(/\s+/).slice(0, 2).map((w) => w[0].toUpperCase()).join(""); %>
+<% if (photo) { %>
+<img class="wl-avatar <%= typeof size !== 'undefined' && size === 'lg' ? 'wl-avatar--lg' : '' %>" src="<%= photo %>" alt="" width="96" height="96" loading="lazy" />
+<% } else { %>
+<span class="wl-avatar wl-avatar--tile <%= typeof size !== 'undefined' && size === 'lg' ? 'wl-avatar--lg' : '' %>" aria-hidden="true"><%= letters %></span>
+<% } %>

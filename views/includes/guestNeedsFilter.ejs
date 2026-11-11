@@ -1,0 +1,12 @@
+<%# Boolean search filters, drawn like the amenities filter. Expects filters, guestNeeds. %>
+<fieldset class="col-12 wl-fieldset">
+  <legend class="form-label fw-bold small">Guest needs</legend>
+  <div class="wl-check-grid">
+    <% for (const [key, label] of Object.entries(guestNeeds)) { %>
+    <label class="wl-check wl-check--small">
+      <input type="checkbox" name="needs" value="<%= key %>" <%= (filters.needs || []).includes(key) ? "checked" : "" %> />
+      <span><%= label %></span>
+    </label>
+    <% } %>
+  </div>
+</fieldset>

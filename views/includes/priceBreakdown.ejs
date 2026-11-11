@@ -1,4 +1,5 @@
-<%# Expects: booking. Shows the stored price, never today's listing price. %>
+<%# Expects: booking. Shows the stored price, never today's listing price. The one price breakdown:
+    nightly price and nights, the cleaning fee if the host set one, the total and the tax line. %>
 <% const currency = booking.currency || (booking.listing && booking.listing.currency) || "INR";
    const nights = booking.nights.length; %>
 <dl class="wl-breakdown">
@@ -8,5 +9,6 @@
   <% if (booking.cleaningFee) { %>
   <div><dt>Cleaning fee</dt><dd><%= money(booking.cleaningFee, currency) %></dd></div>
   <% } %>
-  <div class="wl-breakdown__total"><dt>Total, paid at the property</dt><dd><%= money(booking.totalPrice, currency) %></dd></div>
+  <div class="wl-breakdown__total"><dt><%= totalLabel %></dt><dd><%= money(booking.totalPrice, currency) %></dd></div>
 </dl>
+<p class="wl-note"><%= taxNotice %></p>

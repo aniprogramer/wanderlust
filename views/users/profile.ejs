@@ -1,0 +1,68 @@
+<% layout("/layouts/boilerplate") %>
+<div class="wl-page">
+  <section class="wl-panel wl-profile" aria-labelledby="profile-name">
+    <%- include("../includes/avatar.ejs", { person: profile, size: "lg" }) %>
+    <div class="wl-profile__main">
+      <h1 class="wl-page-title wl-profile__name" id="profile-name"><%= profile.displayName %></h1>
+      <p class="wl-profile__handle">@<%= profile.username %></p>
+      <ul class="wl-profile__facts">
+        <% if (profile.city || profile.country) { %>
+        <li><i class="fa-solid fa-location-dot" aria-hidden="true"></i> <span class="visually-hidden">Lives in</span> <%= [profile.city, profile.country].filter(Boolean).join(", ") %></li>
+        <% } %>
+        <% if (profile.languages.length) { %>
+        <li><i class="fa-solid fa-language" aria-hidden="true"></i> <span class="visually-hidden">Speaks</span> <%= profile.languages.join(", ") %></li>
+        <% } %>
+        <% if (profile.memberSince) { %>
+        <li><i class="fa-regular fa-calendar" aria-hidden="true"></i> Member since <%= profile.memberSince.toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" }) %></li>
+        <% } %>
+        <% if (profile.emailVerified) { %>
+        <li><span class="wl-badge wl-badge--success"><i class="fa-solid fa-check" aria-hidden="true"></i> Email verified</span></li>
+        <% } %>
+      </ul>
+      <% if (profile.bio) { %><p class="wl-profile__bio"><%= profile.bio %></p><% } %>
+      <% if (isSelf) { %><a class="wl-auth-btn wl-auth-btn--outline" href="#edit-profile">Edit profile</a><% } %>
+    </div>
+  </section>
+
+  <% if (listings.length) { %>
+  <section aria-labelledby="listings-title">
+    <h2 class="wl-section-title" id="listings-title">Stays hosted by <%= profile.displayName %></h2>
+    <div class="row row-cols-lg-3 row-cols-md-2 row-cols-1">
+      <% for (let listing of listings) { %>
+      <div class="col"><%- include("../includes/listingCard.ejs", { listing }) %></div>
+      <% } %>
+    </div>
+    <%- include("../includes/pagination.ejs", { base: `/users/${encodeURIComponent(profile.username)}`, qs: (o) => `?page=${o.page}` }) %>
+  </section>
+  <% } %>
+
+  <% if (reviews.length) { %>
+  <section aria-labelledby="reviews-title">
+    <h2 class="wl-section-title" id="reviews-title">Reviews written by <%= profile.displayName %></h2>
+    <ul class="wl-review-list">
+      <% reviews.forEach(({ review, listing }) => { %>
+      <li class="review-card">
+        <div class="wl-review__head">
+          <strong><a class="wl-user-link" href="/listings/<%= listing._id %>"><%= listing.title %></a></strong>
+          <% if (review.verifiedStay) { %><span class="wl-badge wl-badge--success"><i class="fa-solid fa-check" aria-hidden="true"></i> Verified stay</span><% } %>
+        </div>
+        <div class="wl-rating" aria-label="<%= review.rating %> out of 5">
+          <% for (let i = 1; i <= review.rating; i++) { %><i class="fa-solid fa-star" aria-hidden="true"></i><% } %>
+          <span><%= review.rating %></span>
+        </div>
+        <p class="review-text"><%= review.comment %></p>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } %>
+
+  <% if (!listings.length && !reviews.length) { %>
+  <div class="wl-empty">
+    <h2 class="wl-empty__title">Nothing to show yet</h2>
+    <p class="wl-empty__text"><%= profile.displayName %> has not hosted a stay or written a review.</p>
+  </div>
+  <% } %>
+
+  <% if (manage) { %><%- include("./_settings", { manage }) %><% } %>
+</div>

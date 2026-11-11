@@ -1,0 +1,28 @@
+<%# One labelled control in the listing form. Expects id, name, label. Optional: kind (text, number,
+    textarea, select), required, value, hint, error, options ([[value, label]]), attrs (object of
+    extra attributes), wrap. Same markup as auth/field, without the icon. %>
+<% const control = typeof kind === "undefined" ? "text" : kind;
+   const isRequired = typeof required !== "undefined" && required;
+   const current = typeof value === "undefined" || value === null ? "" : String(value);
+   const help = typeof hint !== "undefined" && hint;
+   const problem = typeof error !== "undefined" && error;
+   const described = [help && `${id}-hint`, problem && `${id}-error`].filter(Boolean).join(" ");
+   const extra = Object.entries(typeof attrs === "undefined" ? {} : attrs); %>
+<div class="wl-field wl-field--form">
+  <label for="<%= id %>"><%= label %><% if (isRequired) { %> <span class="wl-required">(required)</span><% } %></label>
+  <% if (help) { %><p class="wl-field__hint" id="<%= id %>-hint"><%= help %></p><% } %>
+  <div class="wl-input wl-input--plain <%= control === "textarea" ? "wl-input--textarea" : control === "select" ? "wl-input--select" : "" %> <%= problem ? "is-invalid" : "" %>">
+    <% if (control === "select") { %>
+    <select id="<%= id %>" name="<%= name %>" <%= isRequired ? "required" : "" %> <% if (described) { %>aria-describedby="<%= described %>"<% } %> <% if (problem) { %>aria-invalid="true"<% } %> <% extra.forEach(([k, v]) => { %><%= k %>="<%= v %>" <% }) %>>
+      <% options.forEach(([optionValue, optionLabel]) => { %>
+      <option value="<%= optionValue %>" <%= current === String(optionValue) ? "selected" : "" %>><%= optionLabel %></option>
+      <% }) %>
+    </select>
+    <% } else if (control === "textarea") { %>
+    <textarea id="<%= id %>" name="<%= name %>" rows="5" <%= isRequired ? "required" : "" %> <% if (described) { %>aria-describedby="<%= described %>"<% } %> <% if (problem) { %>aria-invalid="true"<% } %> <% extra.forEach(([k, v]) => { %><%= k %>="<%= v %>" <% }) %>><%= current %></textarea>
+    <% } else { %>
+    <input id="<%= id %>" name="<%= name %>" type="<%= control %>" value="<%= current %>" <%= isRequired ? "required" : "" %> <% if (described) { %>aria-describedby="<%= described %>"<% } %> <% if (problem) { %>aria-invalid="true"<% } %> <% extra.forEach(([k, v]) => { %><%= k %>="<%= v %>" <% }) %> />
+    <% } %>
+  </div>
+  <p class="wl-field__error" id="<%= id %>-error" <%= problem ? "" : "hidden" %>><%= problem || "" %></p>
+</div>

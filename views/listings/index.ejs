@@ -4,20 +4,48 @@
      HERO SECTION WITH TOP HEADER & OVERLAPPING SEARCH
      ============================================== -->
 <section class="wl-hero-section position-relative">
+  <div class="wl-hero-fade" aria-hidden="true"></div>
   <!-- Top Navigation Header Controls (Inside Hero) -->
-  <header class="wl-hero-header d-flex justify-content-between align-items-center">
-    <!-- Mobile Brand Display (shown only on mobile/tablet) -->
-    <div class="wl-mobile-brand d-lg-none d-flex align-items-center gap-2">
-      <%- include("../includes/auth/mark", { size: 28, cls: "wl-mark--band" }) %>
-      <span class="wl-mobile-brand__word">Wanderlust</span>
+  <header class="wl-hero-header d-flex justify-content-between align-items-center w-100 px-3 px-md-4 py-3">
+    <!-- Brand link & primary top links (Stays, Experiences, Destinations) -->
+    <div class="wl-top-brand-area d-flex align-items-center gap-4">
+      <a href="/listings" class="wl-brand-link d-inline-flex align-items-center gap-2 text-decoration-none" aria-label="Wanderlust Home">
+        <%- include("../includes/auth/mark", { size: 28, cls: "wl-brand-mark-gold" }) %>
+        <span class="wl-brand-name fs-4">Wanderlust</span>
+      </a>
+      <div class="wl-top-nav-links d-none d-md-flex align-items-center gap-3 ms-2">
+        <a href="/listings" class="wl-nav-link-top text-decoration-none fw-medium active">Stays</a>
+        <a href="/listings?category=Trending" class="wl-nav-link-top text-decoration-none fw-medium">Experiences</a>
+        <a href="/listings/map" class="wl-nav-link-top text-decoration-none fw-medium">Destinations</a>
+      </div>
     </div>
 
+    <!-- Center Compact Capsule Search Bar -->
+    <form action="/listings" method="GET" class="wl-topbar-search-form d-none d-lg-flex align-items-center mx-3 flex-grow-1 justify-content-center" role="search">
+      <div class="wl-topbar-search glass-input glass-pill d-flex align-items-center px-3 py-2">
+        <i class="fa-solid fa-magnifying-glass wl-topbar-search-icon me-2" aria-hidden="true"></i>
+        <input
+          type="search"
+          name="q"
+          value="<%= filters.q || '' %>"
+          placeholder="Search destinations, stays or experiences"
+          aria-label="Search destinations, stays or experiences"
+          class="wl-topbar-search-input border-0 bg-transparent text-reset"
+          autocomplete="off"
+        />
+      </div>
+    </form>
+
     <!-- Top Right Actions -->
-    <div class="wl-hero-top-actions ms-auto d-flex align-items-center gap-3">
+    <div class="wl-hero-top-actions ms-auto d-flex align-items-center gap-2 gap-md-3">
+      <%- include("../includes/currencyDropdown") %>
+
+      <%- include("../includes/modeSwitch", { cls: "wl-hero-pill-btn d-none d-sm-inline-flex" }) %>
+
       <!-- User Account Dropdown -->
       <div class="dropdown">
         <button
-          class="wl-hero-avatar-btn"
+          class="wl-hero-avatar-btn glass-action"
           type="button"
           id="userMenuBtn"
           data-bs-toggle="dropdown"
@@ -31,20 +59,21 @@
             </div>
           <% } else { %>
             <div class="wl-avatar-circle">
-              <i class="fa-solid fa-user"></i>
+              <i class="fa-regular fa-user" aria-hidden="true"></i>
             </div>
           <% } %>
         </button>
-        <ul class="dropdown-menu dropdown-menu-end shadow-lg wl-dropdown-menu" aria-labelledby="userMenuBtn">
+        <ul class="dropdown-menu dropdown-menu-end shadow-lg glass-dropdown wl-dropdown-menu" aria-labelledby="userMenuBtn">
           <% if (!currUser) { %>
             <li><a class="dropdown-item py-2" href="/login"><b>Log in</b></a></li>
             <li><a class="dropdown-item py-2" href="/signup">Sign up</a></li>
           <% } else { %>
             <li class="dropdown-header fw-bold">Hello, <%= currUser.username %></li>
-            <li><a class="dropdown-item py-2" href="/wishlist"><i class="fa-regular fa-bookmark me-2"></i>Saved Wishlist</a></li>
-            <li><a class="dropdown-item py-2" href="/bookings"><i class="fa-solid fa-suitcase-rolling me-2"></i>My Trips</a></li>
-            <li><a class="dropdown-item py-2" href="/bookings/hosting"><i class="fa-solid fa-house-chimney me-2"></i>Hosting Dashboard</a></li>
-            <li><a class="dropdown-item py-2" href="/listings/new"><i class="fa-solid fa-plus me-2"></i>Create Listing</a></li>
+            <% navLinks.forEach((link) => { %>
+            <li class="d-lg-none"><a class="dropdown-item py-2" href="<%= link.href %>"><i class="<%= link.icon %> me-2" aria-hidden="true"></i><%= link.label %></a></li>
+            <% }) %>
+            <li class="d-lg-none"><hr class="dropdown-divider" /></li>
+            <li><a class="dropdown-item py-2" href="/users/<%= encodeURIComponent(currUser.username) %>"><i class="fa-regular fa-id-card me-2" aria-hidden="true"></i>Profile</a></li>
             <li><hr class="dropdown-divider" /></li>
             <li>
               <form action="/logout" method="POST" class="m-0">
@@ -65,7 +94,7 @@
     </div>
     <h1 class="wl-hero-headline">
       Stays worth<br />
-      the <em>journey.</em>
+      <em>the journey.</em>
     </h1>
     <p class="wl-hero-subtitle">
       Homes, cabins and villas around the world. Send a request and the host confirms your stay.
@@ -74,10 +103,10 @@
 
   <!-- Overlapping Destination Search Panel -->
   <div class="wl-search-wrapper">
-    <form action="/listings" method="GET" class="wl-search-panel" role="search" id="hero-search-form">
+    <form action="/listings" method="GET" class="wl-search-panel glass-surface glass-pill" role="search" id="hero-search-form">
       <!-- Field 1: Destination -->
       <div class="wl-search-field wl-field-destination">
-        <i class="fa-solid fa-magnifying-glass wl-search-icon"></i>
+        <i class="fa-solid fa-location-dot wl-search-icon" aria-hidden="true"></i>
         <div class="wl-field-text">
           <label for="search-box" class="wl-field-label">Where to?</label>
           <input
@@ -139,7 +168,7 @@
         </div>
 
         <!-- Custom Branded Guests Popover Panel -->
-        <div class="wl-guests-popover shadow-lg" id="guests-popover" role="dialog" aria-modal="false" aria-label="Guests selector" hidden>
+        <div class="wl-guests-popover shadow-lg glass-popover" id="guests-popover" role="dialog" aria-modal="false" aria-label="Guests selector" hidden>
           <div class="wl-guests-header mb-3">
             <span class="wl-guests-title d-block fw-bold">Guests</span>
             <span class="wl-guests-subtitle small text-muted">Up to 16 guests</span>
@@ -193,7 +222,7 @@
       </div>
 
       <!-- Custom Premium Date Range Picker Popover Panel -->
-      <div class="wl-calendar-popover shadow-lg" id="calendar-popover" role="dialog" aria-modal="true" aria-label="Choose stay dates. Dates are local to the property." data-today="<%= serverToday %>" hidden>
+      <div class="wl-calendar-popover shadow-lg glass-popover" id="calendar-popover" role="dialog" aria-modal="true" aria-label="Choose stay dates. Dates are local to the property." data-today="<%= serverToday %>" hidden>
         <!-- Injected and managed by datepicker.js -->
       </div>
     </form>
@@ -216,11 +245,6 @@
         <a href="<%= targetUrl %>" class="wl-category-item <%= isSelected ? 'selected' : '' %> text-decoration-none">
           <div class="wl-cat-thumb-wrapper position-relative">
             <img src="<%= cat.image %>" alt="<%= cat.label %>" class="wl-cat-thumb" loading="lazy" />
-            <% if (cat.icon) { %>
-              <div class="wl-cat-icon-badge" aria-hidden="true">
-                <i class="<%= cat.icon %>"></i>
-              </div>
-            <% } %>
           </div>
           <span class="wl-cat-label"><%= cat.label %></span>
         </a>
@@ -347,7 +371,8 @@
         <fieldset class="col-12 wl-fieldset">
           <legend class="form-label fw-bold small">Amenities</legend>
           <div class="wl-check-grid">
-            <% for (const [key, info] of Object.entries(amenityInfo)) { %>
+            <%# Pets and workspace are under Guest needs below %>
+            <% for (const [key, info] of Object.entries(amenityInfo).filter(([key]) => !["pets_allowed", "workspace"].includes(key))) { %>
             <label class="wl-check wl-check--small">
               <input type="checkbox" name="amenities" value="<%= key %>" <%= (filters.amenities || []).includes(key) ? "checked" : "" %> />
               <span><%= info[0] %></span>
@@ -355,6 +380,7 @@
             <% } %>
           </div>
         </fieldset>
+        <%- include("../includes/guestNeedsFilter.ejs", { filters, guestNeeds }) %>
       </div>
       <div class="d-flex justify-content-end gap-2 mt-3">
         <a href="/listings" class="btn btn-outline-secondary btn-sm rounded-pill px-3">Reset All</a>
@@ -396,7 +422,7 @@
   <div class="row g-4">
     <!-- Panel 1: Destinations -->
     <div class="col-12 col-lg-6">
-      <div class="wl-editorial-card wl-card-destinations">
+      <div class="wl-editorial-card wl-card-destinations glass-surface">
         <img
           src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80"
           alt=""
@@ -417,7 +443,7 @@
 
     <!-- Panel 2: Experiences -->
     <div class="col-12 col-lg-6">
-      <div class="wl-editorial-card wl-card-experiences">
+      <div class="wl-editorial-card wl-card-experiences glass-surface">
         <img
           src="https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=800&q=80"
           alt=""

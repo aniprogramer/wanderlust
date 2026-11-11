@@ -1,0 +1,243 @@
+<%# The one listing form, for create and edit. Expects listing (null on create), form (errors, values
+    and choices kept after a failed save), formOptions, action, and submit labels. %>
+<% const saved = typeof listing !== "undefined" && listing ? listing : null;
+   const typed = form.values;
+   const errors = form.errors;
+   const opts = formOptions;
+   const lim = opts.limits;
+   // What was typed wins after an error, then the stored value, then the default
+   const val = (name, fallback = "") => {
+     if (typed && typed[name] !== undefined) return typed[name];
+     if (saved && saved[name] !== undefined && saved[name] !== null) return saved[name];
+     return fallback;
+   };
+   const ticked = (name) => (typed ? Boolean(typed[name]) : Boolean(saved && saved[name]));
+   const amenityOn = (key) => (typed ? [].concat(typed.amenities || []) : (saved && saved.amenities) || []).includes(key);
+   const f = (name) => `listing[${name}]`;
+   const asOptions = (list, prompt) => [["", prompt], ...list.map((item) => [item, item])];
+   const coords = saved && saved.geometry && saved.geometry.coordinates;
+   const lat = typed && typed.lat !== undefined ? typed.lat : coords ? coords[1] : "";
+   const lng = typed && typed.lng !== undefined ? typed.lng : coords ? coords[0] : "";
+   const pinned = lat !== "" && lng !== "";
+   const photos = saved ? (saved.images.length || saved.status === "draft" ? saved.images : saved.gallery) : [];
+   const status = saved ? saved.status : "new";
+   const errorCount = Object.keys(errors).length;
+   const checkbox = (name, label, on, hint) => ({ name, label, on, hint }); %>
+<% if (errorCount) { %>
+<div class="wl-auth-alert wl-auth-alert--error wl-form-summary" role="alert" id="form-error" tabindex="-1">
+  <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+  <span>Fix <%= errorCount %> field<%= errorCount === 1 ? "" : "s" %> to continue. <%= form.photosLost ? "Your browser cannot keep chosen photos after an error, so choose your new photos again." : "" %></span>
+</div>
+<% } %>
+
+<form action="<%= action %>" method="POST" class="wl-listing-form" enctype="multipart/form-data" data-listing-form novalidate>
+  <%- include("./csrf.ejs") %>
+
+  <fieldset class="wl-form-section" id="section-basics">
+    <legend class="wl-section-title">Basics</legend>
+    <%- include("./formField", { id: "title", name: f("title"), label: "Title", required: true, value: val("title"), error: errors.title, hint: `${lim.TITLE_MIN} to ${lim.TITLE_MAX} characters.`, attrs: { maxlength: lim.TITLE_MAX } }) %>
+    <%- include("./formField", { id: "description", name: f("description"), label: "Description", kind: "textarea", required: true, value: val("description"), error: errors.description, hint: `${lim.DESCRIPTION_MIN} to ${lim.DESCRIPTION_MAX} characters of plain text.`, attrs: { maxlength: lim.DESCRIPTION_MAX } }) %>
+    <div class="row g-3">
+      <div class="col-12 col-md-6"><%- include("./formField", { id: "propertyType", name: f("propertyType"), label: "Property type", kind: "select", required: true, value: val("propertyType"), error: errors.propertyType, options: asOptions(propertyTypes, "Choose a type") }) %></div>
+      <div class="col-12 col-md-6"><%- include("./formField", { id: "category", name: f("category"), label: "Category", kind: "select", required: true, value: val("category"), error: errors.category, options: asOptions(Object.keys(categories), "Choose a category") }) %></div>
+    </div>
+  </fieldset>
+
+  <fieldset class="wl-form-section" id="section-location">
+    <legend class="wl-section-title">Location</legend>
+    <p class="wl-note wl-form-section__intro">Guests see the city and country, and a circle of about 500 m on the map. The address and the exact pin are shared only once you confirm a stay.</p>
+    <%- include("./formField", { id: "addressLine", name: f("addressLine"), label: "Address line", required: true, value: val("addressLine"), error: errors.addressLine, attrs: { maxlength: lim.ADDRESS_MAX, autocomplete: "street-address" } }) %>
+    <div class="row g-3">
+      <div class="col-12 col-md-6"><%- include("./formField", { id: "city", name: f("city"), label: "City", required: true, value: val("city"), error: errors.city, attrs: { maxlength: lim.PLACE_MAX, autocomplete: "address-level2" } }) %></div>
+      <div class="col-12 col-md-6"><%- include("./formField", { id: "region", name: f("region"), label: "Region or state", required: true, value: val("region"), error: errors.region, attrs: { maxlength: lim.PLACE_MAX, autocomplete: "address-level1" } }) %></div>
+    </div>
+    <%- include("./formField", { id: "country", name: f("country"), label: "Country", kind: "select", required: true, value: val("country"), error: errors.country, options: asOptions(opts.countries, "Choose a country") }) %>
+    <div class="wl-field wl-field--form">
+      <span class="wl-field-legend d-block">Map pin</span>
+      <% if (mapboxToken) { %>
+      <p class="wl-field__hint">Click the map to drop a pin, or leave it and we look up the address when you save.</p>
+      <%- include("./mapbox.ejs") %>
+      <div id="map" class="wl-map" data-mode="picker" data-token="<%= mapboxToken %>" role="application" aria-label="Map for placing the pin. If you cannot use it, leave it and we look up the address."></div>
+      <input type="hidden" id="lat" name="listing[lat]" value="<%= lat %>" />
+      <input type="hidden" id="lng" name="listing[lng]" value="<%= lng %>" />
+      <% } %>
+      <p id="map-status" class="form-text" role="status"><%= pinned ? "Pin set. Drag it to fine-tune." : "No pin yet" %></p>
+      <% if (errors.lat || errors.lng) { %><p class="wl-field__error"><%= errors.lat || errors.lng %></p><% } %>
+      <label class="wl-check wl-check--small" for="noPinAck">
+        <input type="checkbox" id="noPinAck" name="<%= f("noPinAck") %>" value="on" <%= ticked("noPinAck") ? "checked" : "" %> />
+        <span>Publish without a pin if there is none. Guests will see the city and country, and no map.</span>
+      </label>
+    </div>
+  </fieldset>
+
+  <fieldset class="wl-form-section" id="section-space">
+    <legend class="wl-section-title">Space</legend>
+    <div class="row g-3">
+      <div class="col-6 col-md-3"><%- include("./formField", { id: "maxGuests", name: f("maxGuests"), label: "Maximum guests", kind: "number", required: true, value: val("maxGuests"), error: errors.maxGuests, attrs: { min: 1, max: lim.MAX_GUESTS, step: 1 } }) %></div>
+      <div class="col-6 col-md-3"><%- include("./formField", { id: "bedrooms", name: f("bedrooms"), label: "Bedrooms", kind: "number", required: true, value: val("bedrooms"), error: errors.bedrooms, attrs: { min: 0, max: lim.MAX_BEDROOMS, step: 1 } }) %></div>
+      <div class="col-6 col-md-3"><%- include("./formField", { id: "beds", name: f("beds"), label: "Beds", kind: "number", required: true, value: val("beds"), error: errors.beds, attrs: { min: 1, max: lim.MAX_BEDS, step: 1 } }) %></div>
+      <div class="col-6 col-md-3"><%- include("./formField", { id: "bathrooms", name: f("bathrooms"), label: "Bathrooms", kind: "number", required: true, value: val("bathrooms"), error: errors.bathrooms, attrs: { min: 0, max: lim.MAX_BATHROOMS, step: 0.5 } }) %></div>
+    </div>
+    <%- include("./formField", { id: "sizeSqm", name: f("sizeSqm"), label: "Size in square metres", kind: "number", value: val("sizeSqm"), error: errors.sizeSqm, hint: `Optional, ${lim.SIZE_MIN} to ${lim.SIZE_MAX}.`, attrs: { min: lim.SIZE_MIN, max: lim.SIZE_MAX } }) %>
+  </fieldset>
+
+  <fieldset class="wl-form-section" id="section-pricing">
+    <legend class="wl-section-title">Pricing</legend>
+    <p class="wl-note wl-form-section__intro">You set the only charges. Wanderlust adds no fee, and guests pay you at the property.</p>
+    <div class="row g-3">
+      <div class="col-12 col-md-4"><%- include("./formField", { id: "currency", name: f("currency"), label: "Currency", kind: "select", required: true, value: val("currency", "INR"), error: errors.currency, hint: "Sets the label only. Nothing is converted.", options: currencies.map((code) => [code, code]) }) %></div>
+      <div class="col-6 col-md-4"><%- include("./formField", { id: "price", name: f("price"), label: `Nightly price`, kind: "number", required: true, value: val("price"), error: errors.price, hint: `In ${val("currency", "INR")}.`, attrs: { min: 1, step: 1, "data-currency-hint": "" } }) %></div>
+      <div class="col-6 col-md-4"><%- include("./formField", { id: "cleaningFee", name: f("cleaningFee"), label: "Cleaning fee", kind: "number", value: val("cleaningFee") === 0 ? "" : val("cleaningFee"), error: errors.cleaningFee, hint: `Optional, in ${val("currency", "INR")}.`, attrs: { min: 0, step: 1, "data-currency-hint": "" } }) %></div>
+      <div class="col-6"><%- include("./formField", { id: "minNights", name: f("minNights"), label: "Minimum nights", kind: "number", value: val("minNights", 1), error: errors.minNights, attrs: { min: 1, max: lim.MAX_STAY_NIGHTS, step: 1 } }) %></div>
+      <div class="col-6"><%- include("./formField", { id: "maxNights", name: f("maxNights"), label: "Maximum nights", kind: "number", value: val("maxNights", lim.MAX_STAY_NIGHTS), error: errors.maxNights, attrs: { min: 1, max: lim.MAX_STAY_NIGHTS, step: 1 } }) %></div>
+    </div>
+  </fieldset>
+
+  <fieldset class="wl-form-section" id="section-rules">
+    <legend class="wl-section-title">Stay rules</legend>
+    <div class="row g-3">
+      <div class="col-12 col-md-4"><%- include("./formField", { id: "checkInFrom", name: f("checkInFrom"), label: "Earliest check-in", kind: "select", required: true, value: val("checkInFrom"), error: errors.checkInFrom, options: asOptions(opts.times, "Choose a time") }) %></div>
+      <div class="col-12 col-md-4"><%- include("./formField", { id: "checkInUntil", name: f("checkInUntil"), label: "Latest check-in", kind: "select", required: true, value: val("checkInUntil"), error: errors.checkInUntil, options: asOptions(opts.times, "Choose a time") }) %></div>
+      <div class="col-12 col-md-4"><%- include("./formField", { id: "checkOutBy", name: f("checkOutBy"), label: "Check-out by", kind: "select", required: true, value: val("checkOutBy"), error: errors.checkOutBy, options: asOptions(opts.times, "Choose a time") }) %></div>
+      <div class="col-6"><%- include("./formField", { id: "quietHoursStart", name: f("quietHoursStart"), label: "Quiet hours start", kind: "select", value: val("quietHoursStart"), error: errors.quietHoursStart, hint: "Optional.", options: asOptions(opts.times, "None") }) %></div>
+      <div class="col-6"><%- include("./formField", { id: "quietHoursEnd", name: f("quietHoursEnd"), label: "Quiet hours end", kind: "select", value: val("quietHoursEnd"), error: errors.quietHoursEnd, hint: "Optional.", options: asOptions(opts.times, "None") }) %></div>
+    </div>
+
+    <fieldset class="wl-form-group" <% if (errors.cancellationPolicy) { %>aria-describedby="cancellationPolicy-error"<% } %>>
+      <legend class="wl-field-legend">Cancellation policy <span class="wl-required">(required)</span></legend>
+      <% for (const [key, policy] of Object.entries(opts.policies)) { %>
+      <label class="wl-check" for="policy-<%= key %>">
+        <input type="radio" id="policy-<%= key %>" name="<%= f("cancellationPolicy") %>" value="<%= key %>" <%= val("cancellationPolicy") === key ? "checked" : "" %> <%= errors.cancellationPolicy ? 'aria-invalid=true' : "" %> />
+        <span><strong><%= policy.label %>.</strong> <%= policy.description %></span>
+      </label>
+      <% } %>
+      <p class="wl-field__error" id="cancellationPolicy-error" <%= errors.cancellationPolicy ? "" : "hidden" %>><%= errors.cancellationPolicy || "" %></p>
+      <p class="wl-note"><a href="/cancellation-policy" target="_blank" rel="noopener">Read the full cancellation policy</a></p>
+    </fieldset>
+
+    <fieldset class="wl-form-group">
+      <legend class="wl-field-legend">House rules</legend>
+      <div class="wl-check-cols">
+        <% for (const [key, rule] of Object.entries(opts.houseRules)) { %>
+        <label class="wl-check" for="<%= key %>">
+          <input type="checkbox" id="<%= key %>" name="<%= f(key) %>" value="on" <%= ticked(key) ? "checked" : "" %> />
+          <span><%= rule.yes %></span>
+        </label>
+        <% } %>
+      </div>
+    </fieldset>
+    <%- include("./formField", { id: "otherRules", name: f("otherRules"), label: "Other rules", kind: "textarea", value: val("otherRules"), error: errors.otherRules, hint: `Optional, up to ${lim.OTHER_RULES_MAX} characters.`, attrs: { maxlength: lim.OTHER_RULES_MAX } }) %>
+  </fieldset>
+
+  <fieldset class="wl-form-section" id="section-amenities">
+    <legend class="wl-section-title">Amenities and accessibility</legend>
+    <% for (const [group, keys] of Object.entries(opts.amenityGroups)) { %>
+    <fieldset class="wl-form-group">
+      <legend class="wl-field-legend"><%= group %></legend>
+      <div class="wl-check-cols">
+        <% for (const key of keys) { %>
+        <label class="wl-check" for="amenity-<%= key %>">
+          <input type="checkbox" id="amenity-<%= key %>" name="<%= f("amenities") %>" value="<%= key %>" <%= amenityOn(key) ? "checked" : "" %> />
+          <span><i class="fa-solid <%= amenities[key][1] %>" aria-hidden="true"></i> <%= amenities[key][0] %></span>
+        </label>
+        <% } %>
+      </div>
+    </fieldset>
+    <% } %>
+    <% if (errors.amenities) { %><p class="wl-field__error"><%= errors.amenities %></p><% } %>
+    <%- include("./formField", { id: "wifiMbps", name: f("wifiMbps"), label: "Wi-Fi speed in Mbps", kind: "number", value: val("wifiMbps"), error: errors.wifiMbps, hint: `Optional. Shown to guests as "Host-reported", because nobody measures it.`, attrs: { min: 1, max: lim.WIFI_MAX } }) %>
+    <fieldset class="wl-form-group">
+      <legend class="wl-field-legend">Accessibility</legend>
+      <div class="wl-check-cols">
+        <% for (const [key, label] of Object.entries(opts.accessibility)) { %>
+        <label class="wl-check" for="<%= key %>">
+          <input type="checkbox" id="<%= key %>" name="<%= f(key) %>" value="on" <%= ticked(key) ? "checked" : "" %> />
+          <span><%= label %></span>
+        </label>
+        <% } %>
+      </div>
+    </fieldset>
+    <fieldset class="wl-form-group">
+      <legend class="wl-field-legend">Safety</legend>
+      <div class="wl-check-cols">
+        <% for (const [key, label] of Object.entries(opts.safety)) { %>
+        <label class="wl-check" for="<%= key %>">
+          <input type="checkbox" id="<%= key %>" name="<%= f(key) %>" value="on" <%= ticked(key) ? "checked" : "" %> />
+          <span><%= label %></span>
+        </label>
+        <% } %>
+      </div>
+    </fieldset>
+  </fieldset>
+
+  <fieldset class="wl-form-section" id="section-photos">
+    <legend class="wl-section-title">Photos</legend>
+    <% if (photos.length) { %>
+    <ul class="wl-photos wl-photos--form" aria-label="Current photos">
+      <% photos.forEach((photo, i) => { %>
+      <li class="wl-photo <%= form.removed && form.removed.includes(photo.filename) ? "is-removed" : "" %>" data-photo>
+        <img src="<%= photoUrl(photo.url, 400) %>" alt="<%= photo.caption || `Photo ${i + 1}` %>" loading="lazy" />
+        <label class="wl-check wl-check--small">
+          <input type="radio" name="coverImage" value="<%= photo.filename %>" <%= (form.cover ? form.cover === photo.filename : i === 0) ? "checked" : "" %> />
+          <span>Make cover</span>
+        </label>
+        <label class="wl-check wl-check--small">
+          <input type="checkbox" name="removeImages" value="<%= photo.filename %>" data-photo-remove <%= form.removed && form.removed.includes(photo.filename) ? "checked" : "" %> />
+          <span>Remove</span>
+        </label>
+        <div class="wl-field wl-photo__alt">
+          <label for="existing-alt-<%= i %>">Alt text for photo <%= i + 1 %></label>
+          <div class="wl-input wl-input--plain">
+            <input type="text" id="existing-alt-<%= i %>" name="existingAlt[<%= i %>]" value="<%= photo.caption || "" %>" maxlength="<%= lim.PHOTO_ALT_MAX %>" />
+          </div>
+          <input type="hidden" name="existingAltFile[<%= i %>]" value="<%= photo.filename %>" />
+        </div>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+    <div class="wl-field wl-field--form">
+      <label for="img"><%= photos.length ? "Add photos" : "Choose photos" %><% if (!photos.length) { %> <span class="wl-required">(required to publish)</span><% } %></label>
+      <p class="wl-field__hint" id="img-hint">Up to <%= opts.maxImages %> photos in total. JPEG, PNG or WebP, 5 MB each. The first is the cover unless you choose another. Alt text is optional, up to <%= lim.PHOTO_ALT_MAX %> characters.</p>
+      <input
+        type="file"
+        id="img"
+        name="listing[images]"
+        class="form-control <%= errors.photos ? "is-invalid" : "" %>"
+        accept="image/jpeg,image/png,image/webp"
+        aria-describedby="img-hint<%= errors.photos ? " photos-error" : "" %>"
+        <% if (errors.photos) { %>aria-invalid="true"<% } %>
+        data-max="<%= opts.maxImages %>"
+        data-alt-max="<%= lim.PHOTO_ALT_MAX %>"
+        multiple
+      />
+      <p class="wl-field__error" id="photos-error" <%= errors.photos ? "" : "hidden" %>><%= errors.photos || "" %></p>
+      <% if (errors.existingAlt || errors.newAlt) { %><p class="wl-field__error"><%= errors.existingAlt || errors.newAlt %></p><% } %>
+      <ul class="wl-photos wl-photos--form" id="new-photo-list" aria-label="Photos to upload"></ul>
+      <p class="wl-field__error" id="photo-note" role="status"></p>
+    </div>
+  </fieldset>
+
+  <% if (!saved) { %>
+  <section class="wl-form-section" id="section-availability" aria-labelledby="availability-note-title">
+    <h2 class="wl-section-title" id="availability-note-title">Availability</h2>
+    <p class="wl-note">You can block dates after you save.</p>
+  </section>
+  <% } %>
+
+  <section class="wl-form-section" id="section-status" aria-labelledby="status-title">
+    <h2 class="wl-section-title" id="status-title">Status</h2>
+    <% if (status === "hidden") { %>
+    <p>The Wanderlust team has hidden this listing. Your changes are saved, and it stays hidden.</p>
+    <% } else { %>
+    <p class="wl-note">A draft is visible only to you and can be incomplete. Publishing needs every required field, at least one photo, and a map pin or the box ticked under Map pin.</p>
+    <% } %>
+    <div class="wl-actions wl-form-actions">
+      <%# Publish comes first, so pressing Enter in a field does what the main button says %>
+      <button type="submit" name="intent" value="publish" class="wl-auth-btn wl-auth-btn--primary"><%= status === "published" || status === "hidden" ? "Save changes" : "Publish listing" %></button>
+      <% if (status !== "hidden") { %>
+      <button type="submit" name="intent" value="draft" class="wl-auth-btn wl-auth-btn--outline"><%= status === "published" ? "Move to draft" : "Save as draft" %></button>
+      <% } %>
+    </div>
+  </section>
+</form>

@@ -1,78 +1,46 @@
-<!-- Wanderlust Lagoon-Green Vertical Sidebar -->
+<!-- Wanderlust Liquid Glass Floating Navigation Rail -->
 <aside class="wl-sidebar">
-  <div class="wl-sidebar-inner">
-    <!-- Brand Area -->
-    <div class="wl-sidebar-brand">
-      <a href="/listings" class="wl-brand-link" aria-label="Wanderlust Home">
-        <!-- Approved Wanderlust Vector Brand Mark (Dark surface variant) -->
-        <%- include("./auth/mark", { size: 30, cls: "wl-brand-icon wl-mark--band" }) %>
-        <span class="wl-brand-name">Wanderlust</span>
-      </a>
-    </div>
+  <div class="wl-sidebar-inner d-flex flex-column align-items-center justify-content-start py-4">
+    <!-- Floating Liquid Glass Rail Dock -->
+    <nav class="wl-nav-rail glass-navigation" aria-label="Primary Navigation">
+      <ul class="wl-rail-list wl-nav-list m-0 p-0 list-unstyled d-flex flex-column align-items-center">
+        <% (navLinks || []).forEach((link) => { 
+             const isActive = currentPath === link.href || (link.href !== '/listings' && currentPath.startsWith(link.href));
+             const iconCls = link.label === "Saved" ? "fa-regular fa-heart" : link.icon;
+        %>
+        <li class="wl-rail-item wl-nav-item">
+          <a
+            href="<%= link.href %>"
+            class="wl-rail-link wl-nav-link <%= isActive ? 'active' : '' %>"
+            aria-label="<%= link.label %>"
+            title="<%= link.label %>"
+          >
+            <div class="wl-rail-icon-wrap">
+              <i class="<%= iconCls %>" aria-hidden="true"></i>
+            </div>
+            <span class="wl-rail-label"><%= link.label %></span>
+          </a>
+        </li>
+        <% }); %>
 
-    <!-- Primary Navigation -->
-    <nav class="wl-sidebar-nav" aria-label="Primary Navigation">
-      <ul class="wl-nav-list">
-        <li class="wl-nav-item">
-          <a href="/listings" class="wl-nav-link active">
-            <i class="fa-solid fa-compass wl-nav-icon wl-icon-amber" aria-hidden="true"></i>
-            <span>Explore</span>
+        <!-- Profile Link (for guests and visitors) -->
+        <% if (typeof mode === 'undefined' || mode !== 'host') { %>
+        <li class="wl-rail-item">
+          <% const profileHref = currUser ? `/users/${encodeURIComponent(currUser.username)}` : '/login'; %>
+          <a
+            href="<%= profileHref %>"
+            class="wl-rail-link <%= currentPath.startsWith('/users') ? 'active' : '' %>"
+            aria-label="<%= currUser ? 'Your profile' : 'Sign in to profile' %>"
+            title="Profile"
+          >
+            <div class="wl-rail-icon-wrap">
+              <i class="fa-regular fa-user" aria-hidden="true"></i>
+            </div>
+            <span class="wl-rail-label">Profile</span>
           </a>
         </li>
-        <li class="wl-nav-item">
-          <a href="/listings/map" class="wl-nav-link">
-            <i class="fa-solid fa-location-dot wl-nav-icon" aria-hidden="true"></i>
-            <span>Map</span>
-          </a>
-        </li>
-        <li class="wl-nav-item">
-          <a href="/wishlist" class="wl-nav-link">
-            <i class="fa-regular fa-bookmark wl-nav-icon" aria-hidden="true"></i>
-            <span>Saved</span>
-          </a>
-        </li>
-        <li class="wl-nav-item">
-          <a href="/bookings" class="wl-nav-link">
-            <i class="fa-solid fa-suitcase-rolling wl-nav-icon" aria-hidden="true"></i>
-            <span>Trips</span>
-          </a>
-        </li>
+        <% } %>
       </ul>
     </nav>
-
-    <!-- Editorial Promotional Panel -->
-    <div class="wl-sidebar-promo">
-      <div class="wl-promo-card">
-        <div class="wl-promo-content">
-          <span class="wl-promo-eyebrow">TRAVEL DIFFERENTLY</span>
-          <h2 class="wl-promo-heading">Not just stays, stories.</h2>
-          <p class="wl-promo-copy">
-            Homes, cabins and villas around the world, confirmed by their hosts.
-          </p>
-          <a href="/listings" class="wl-promo-btn">
-            <span>Explore now</span>
-            <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-          </a>
-        </div>
-        <div class="wl-promo-media">
-          <img
-            src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80"
-            alt="Scenic Mountain Stories"
-            loading="lazy"
-          />
-        </div>
-      </div>
-    </div>
-
-    <!-- Editorial Footer Tagline -->
-    <div class="wl-sidebar-footer">
-      <div class="wl-sidebar-footer-inner d-flex align-items-center gap-2">
-        <i class="fa-solid fa-compass wl-footer-symbol" aria-hidden="true"></i>
-        <div class="wl-footer-lines">
-          <span>Wander further.</span>
-          <span>Live more.</span>
-        </div>
-      </div>
-    </div>
   </div>
 </aside>

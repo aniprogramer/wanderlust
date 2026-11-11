@@ -1,0 +1,2 @@
+<%# A person's name, linked to their public profile. Expects user ({ username, displayName }). A deleted user has no link. %>
+<% if (user && user.username) { %><a class="wl-user-link" href="/users/<%= encodeURIComponent(user.username) %>"><%= user.displayName || user.username %></a><% } else { %>Deleted user<% } %>

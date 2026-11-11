@@ -13,11 +13,14 @@
       />
     </a>
 
+    <!-- Floating Badge on Media (e.g. New or Guest favourite) -->
     <% if (badge) { %><div class="wl-card-badge"><%= badge %></div><% } %>
 
     <!-- Top-right Wishlist Heart Button -->
     <% const saved = (typeof savedIds !== 'undefined' && savedIds) ? savedIds.has(String(listing._id)) : false; %>
-    <% if (!currUser) { %>
+    <% if (typeof mode !== 'undefined' && mode === 'host') { %>
+      <%# Saving is a guest action %>
+    <% } else if (!currUser) { %>
       <div class="wish-form wl-wish-wrapper">
         <a href="/login" class="wish-btn wl-wish-btn" aria-label="Log in to save">
           <i class="fa-regular fa-heart" aria-hidden="true"></i>
@@ -57,10 +60,8 @@
           <span class="wl-rating-num"><%= listing.avgRating.toFixed(1) %></span>
           <span class="wl-reviews-count">(<%= listing.reviewCount %><span class="visually-hidden"> review<%= listing.reviewCount === 1 ? "" : "s" %></span>)</span>
         </div>
-      <% } else if (isRecentlyListed(listing)) { %>
-        <span class="wl-badge wl-badge--neutral flex-shrink-0">New</span>
       <% } else { %>
-        <span class="wl-reviews-count flex-shrink-0">No reviews yet</span>
+        <span class="wl-badge wl-badge--neutral flex-shrink-0">New</span>
       <% } %>
     </div>
 
@@ -70,18 +71,24 @@
       <span><%= listing.location %>, <%= listing.country %></span>
     </div>
 
+    <!-- Row 3: Category / Property Type if present -->
     <% if (listing.category || listing.propertyType) { %>
-    <div class="wl-card-amenities">
-      <% if (listing.propertyType) { %><span><%= listing.propertyType %></span><% } %>
-      <% if (listing.category) { %><span><%= listing.category %></span><% } %>
+    <div class="wl-card-amenities d-flex align-items-center gap-3 flex-wrap">
+      <% if (listing.propertyType) { %>
+        <span class="d-inline-flex align-items-center gap-1"><i class="fa-solid fa-house small" aria-hidden="true"></i> <%= listing.propertyType %></span>
+      <% } %>
+      <% if (listing.category) { %>
+        <span class="d-inline-flex align-items-center gap-1"><i class="fa-solid fa-mountain small" aria-hidden="true"></i> <%= listing.category %></span>
+      <% } %>
     </div>
     <% } %>
 
     <!-- Row 4: Pricing and Arrow Action -->
     <div class="wl-card-footer d-flex justify-content-between align-items-center">
       <div class="wl-card-price-block">
-        <span class="wl-price-amount"><%= money(listing.price, listing.currency) %></span>
+        <span class="wl-price-amount"><%= money(listing.price, listing.currency, typeof displayCurrency !== 'undefined' ? displayCurrency : null) %></span>
         <span class="wl-price-period">/ night</span>
+        <% if (listing.cleaningFee) { %><span class="wl-price-fee d-block">Plus <%= money(listing.cleaningFee, listing.currency, typeof displayCurrency !== 'undefined' ? displayCurrency : null) %> cleaning fee</span><% } %>
       </div>
       <a href="/listings/<%= listing._id %>" class="wl-card-action-btn" aria-label="View <%= listing.title %>">
         <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>

@@ -1,0 +1,31 @@
+<% layout("/layouts/boilerplate") %>
+<h1 class="wl-page-title">Your listings</h1>
+<% if (!allListings.length && !drafts.length) { %>
+<div class="wl-empty">
+  <h2 class="wl-empty__title">You have no listings yet</h2>
+  <p class="wl-empty__text">Add photos, a price and the dates you are away. Requests arrive under Reservations.</p>
+  <a href="/listings/new" class="wl-auth-btn wl-auth-btn--primary">Create listing</a>
+</div>
+<% } %>
+<% if (drafts.length) { %>
+<h2 class="wl-section-title">Drafts</h2>
+<p class="wl-note wl-form-section__intro">Only you can see these.</p>
+<% drafts.forEach((draft) => { %>
+<div class="wl-panel" data-draft>
+  <div class="wl-row">
+    <div class="wl-row__main">
+      <a class="wl-row__title" href="/listings/<%= draft._id %>/edit"><%= draft.title || "Untitled draft" %></a>
+      <div class="wl-row__meta"><%= [draft.city, draft.country].filter(Boolean).join(", ") || "No location yet" %></div>
+    </div>
+    <span class="wl-badge wl-badge--neutral">Draft</span>
+    <div class="wl-row__actions"><a class="wl-auth-btn wl-auth-btn--outline" href="/listings/<%= draft._id %>/edit">Continue</a></div>
+  </div>
+</div>
+<% }) %>
+<% if (allListings.length) { %><h2 class="wl-section-title">Published</h2><% } %>
+<% } %>
+<div class="row row-cols-lg-3 row-cols-md-2 row-cols-1">
+  <% for (let listing of allListings) { %>
+  <div class="col"><%- include("../includes/listingCard.ejs", { listing }) %></div>
+  <% } %>
+</div>

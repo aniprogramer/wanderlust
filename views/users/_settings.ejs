@@ -1,0 +1,101 @@
+<%# Owner only: the settings that sit under your own profile. Expects manage (not "settings": Express uses that name itself). %>
+<div class="wl-manage">
+<h2 class="wl-section-title wl-settings__title">Your settings</h2>
+<p class="wl-note">Only you see what is below.</p>
+  <section class="wl-panel wl-account-section" aria-labelledby="profile-title" id="edit-profile">
+    <h2 class="wl-section-title" id="profile-title">Edit profile</h2>
+    <p class="wl-note">Everything in this section is shown at the top of your profile. Your email is never shown.</p>
+    <form action="/account/profile" method="POST" enctype="multipart/form-data" class="wl-auth-form" data-auth-form data-busy-label="Saving…" novalidate>
+      <%- include("../includes/csrf.ejs") %>
+      <div class="wl-field wl-account-photo">
+        <%- include("../includes/avatar.ejs", { person: manage.user, size: "lg" }) %>
+        <div class="wl-account-photo__controls">
+          <label for="avatar">Profile photo</label>
+          <p class="wl-field__hint" id="avatar-hint">A JPEG, PNG or WebP under 5 MB. Without one, your initials show.</p>
+          <input type="file" id="avatar" name="avatar" class="form-control" accept="image/jpeg,image/png,image/webp" aria-describedby="avatar-hint" />
+          <% if (manage.user.avatar && manage.user.avatar.url) { %>
+          <label class="wl-check wl-check--small"><input type="checkbox" name="removeAvatar" /> Remove my photo</label>
+          <% } %>
+        </div>
+      </div>
+      <%- include("../includes/auth/field", { id: "username", name: "username", label: "Username", icon: "fa-regular fa-user", placeholder: "Username", autocomplete: "username", maxlength: 30, value: manage.user.username, hint: "Part of your profile address." }) %>
+      <%- include("../includes/auth/field", { id: "displayName", name: "displayName", label: "Display name", noun: "display name", icon: "fa-regular fa-id-badge", placeholder: "How your name appears", autocomplete: "name", maxlength: manage.limits.displayName, minlength: 2, value: manage.user.displayName, optional: true, hint: `2 to ${manage.limits.displayName} characters. If empty, your username shows.` }) %>
+      <div class="wl-field">
+        <label for="bio">Short bio</label>
+        <p class="wl-field__hint" id="bio-hint">Plain text, up to <%= manage.limits.bio %> characters.</p>
+        <div class="wl-input wl-input--textarea">
+          <textarea id="bio" name="bio" rows="4" maxlength="<%= manage.limits.bio %>" aria-describedby="bio-hint" data-label="bio"><%= manage.user.bio || "" %></textarea>
+        </div>
+        <p class="wl-field__error" id="bio-error" hidden></p>
+      </div>
+      <%- include("../includes/auth/field", { id: "city", name: "city", label: "City", icon: "fa-solid fa-location-dot", placeholder: "For example Lisbon", autocomplete: "address-level2", maxlength: manage.limits.place, value: manage.user.city, optional: true }) %>
+      <%- include("../includes/auth/field", { id: "country", name: "country", label: "Country", icon: "fa-solid fa-earth-asia", placeholder: "For example Portugal", autocomplete: "country-name", maxlength: manage.limits.place, value: manage.user.country, optional: true, hint: "No street address. City and country only." }) %>
+      <fieldset class="wl-field wl-fieldset">
+        <legend>Languages you speak</legend>
+        <div class="wl-check-grid wl-check-grid--compact">
+          <% manage.languages.forEach((language) => { %>
+          <label class="wl-check wl-check--small"><input type="checkbox" name="languages" value="<%= language %>" <%= (manage.user.languages || []).includes(language) ? "checked" : "" %> /> <%= language %></label>
+          <% }) %>
+        </div>
+      </fieldset>
+      <button type="submit" class="wl-auth-btn wl-auth-btn--primary"><span data-btn-label>Save profile</span></button>
+    </form>
+  </section>
+
+  <section class="wl-panel wl-account-section" aria-labelledby="contact-title">
+    <h2 class="wl-section-title" id="contact-title">Contact</h2>
+    <p>Your email is <strong><%= currUser.email %></strong>. <%= currUser.emailVerifiedAt ? "It is confirmed." : "It is not confirmed yet." %> Hosts and guests only see it after a booking is confirmed, and only on that booking.</p>
+    <% if (manage.pendingEmail) { %>
+    <p class="wl-auth-alert wl-auth-alert--info"><i class="fa-solid fa-envelope" aria-hidden="true"></i><span>Waiting for you to confirm <strong><%= manage.pendingEmail %></strong>. Your current address stays active until then.</span></p>
+    <% } %>
+    <form action="/account/email" method="POST" class="wl-auth-form" data-auth-form data-busy-label="Sending…" novalidate>
+      <%- include("../includes/csrf.ejs") %>
+      <%- include("../includes/auth/field", { id: "email", name: "email", label: "New email address", noun: "email address", type: "email", icon: "fa-regular fa-envelope", placeholder: "you@example.com", autocomplete: "email", hint: "We send a link to the new address. The old one keeps working until you use it." }) %>
+      <%- include("../includes/auth/field", { id: "email-password", name: "currentPassword", label: "Current password", noun: "current password", type: "password", icon: "fa-solid fa-lock", placeholder: "Current password", autocomplete: "current-password", maxlength: 128 }) %>
+      <button type="submit" class="wl-auth-btn wl-auth-btn--outline"><span data-btn-label>Send confirmation link</span></button>
+    </form>
+  </section>
+
+  <section class="wl-panel wl-account-section" aria-labelledby="security-title">
+    <h2 class="wl-section-title" id="security-title">Security</h2>
+    <dl class="wl-facts">
+      <div><dt>Mode</dt><dd>You are in <strong><%= mode %></strong> mode. Use the button in the header to switch.</dd></div>
+      <div><dt>Terms and Privacy</dt><dd><%= manage.termsAcceptedAt ? `Accepted on ${manage.termsAcceptedAt.toISOString().slice(0, 10)}, version ${manage.termsVersion || "unknown"}` : "No acceptance on record for this older account." %></dd></div>
+    </dl>
+    <h3 class="wl-subsection-title">Your default mode when you log in</h3>
+    <p class="wl-note">The switch in the header changes your mode for now. This sets where your next login starts.</p>
+    <form action="/account/starting-mode" method="POST" class="wl-auth-form" data-starting-mode>
+      <%- include("../includes/csrf.ejs") %>
+      <fieldset class="wl-fieldset">
+        <legend class="visually-hidden">Your default mode when you log in</legend>
+        <label class="wl-check wl-check--small"><input type="radio" name="startingMode" value="guest" <%= (currUser.startingMode || "guest") === "guest" ? "checked" : "" %> /> <span>Guest: find stays</span></label>
+        <label class="wl-check wl-check--small"><input type="radio" name="startingMode" value="host" <%= currUser.startingMode === "host" ? "checked" : "" %> /> <span>Host: list my home</span></label>
+      </fieldset>
+      <button type="submit" class="wl-auth-btn wl-auth-btn--outline">Save default mode</button>
+    </form>
+    <h3 class="wl-subsection-title">Change password</h3>
+    <form action="/account/password" method="POST" class="wl-auth-form" data-auth-form data-busy-label="Saving…" novalidate>
+      <%- include("../includes/csrf.ejs") %>
+      <%- include("../includes/auth/field", { id: "current-password", name: "currentPassword", label: "Current password", noun: "current password", type: "password", icon: "fa-solid fa-lock", placeholder: "Current password", autocomplete: "current-password", maxlength: 128 }) %>
+      <%- include("../includes/auth/field", { id: "new-password", name: "password", label: "New password", noun: "new password", type: "password", icon: "fa-solid fa-lock", placeholder: "New password", autocomplete: "new-password", maxlength: 128, minlength: 8, hint: manage.passwordHint, newPassword: true }) %>
+      <button type="submit" class="wl-auth-btn wl-auth-btn--outline"><span data-btn-label>Change password</span></button>
+    </form>
+  </section>
+
+  <section class="wl-panel wl-account-section" aria-labelledby="data-title">
+    <h2 class="wl-section-title" id="data-title">Your data</h2>
+    <p>Download your account, bookings, reviews, saved stays and listings as a JSON file. Read how we use your data in the <a href="/privacy">Privacy Policy</a>.</p>
+    <a class="wl-auth-btn wl-auth-btn--outline" href="/account/export">Download my data</a>
+  </section>
+
+  <section class="wl-panel wl-account-section" aria-labelledby="delete-title">
+    <h2 class="wl-section-title" id="delete-title">Delete account</h2>
+    <p>This removes your account, listings and saved stays, and shows your reviews as "Deleted user". It cannot be undone. If you have upcoming confirmed stays, cancel them first.</p>
+    <form action="/account/delete" method="POST" class="wl-auth-form" data-auth-form data-busy-label="Deleting…" data-confirm="Delete your account for good?" novalidate>
+      <%- include("../includes/csrf.ejs") %>
+      <%- include("../includes/auth/field", { id: "delete-password", name: "currentPassword", label: "Current password", noun: "current password", type: "password", icon: "fa-solid fa-lock", placeholder: "Current password", autocomplete: "current-password", maxlength: 128 }) %>
+      <%- include("../includes/auth/field", { id: "delete-confirm", name: "confirm", label: "Type DELETE to confirm", noun: "the word DELETE", icon: "fa-solid fa-keyboard", placeholder: "DELETE", autocomplete: "off", maxlength: 6 }) %>
+      <button type="submit" class="wl-auth-btn wl-auth-btn--danger"><span data-btn-label>Delete my account</span></button>
+    </form>
+  </section>
+</div>
