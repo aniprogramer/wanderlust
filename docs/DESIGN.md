@@ -201,7 +201,8 @@ These match the existing Bootstrap breakpoints so the app keeps working with the
 | --- | --- |
 | Logo | Meridian mark plus the word "Wanderlust" in the display family. Links home. |
 | Primary links | Stays, Map, Saved, Trips. The current page has a 1.5px underline in `text` and full weight. Others use `text-secondary`. |
-| Right side | Currency label (plain text, PRD D3), "Host a stay" text link, then Log in as an outlined pill. When logged in, the Log in pill becomes an account menu showing the user's initial and name. |
+| Right side | Logged out: Log in as an outlined pill. Logged in: the **mode switch** (one labelled button), then the account menu showing the user's initial. There is no "host a stay" link anywhere: switching modes replaces it. |
+| Links by mode | Guest mode: Explore, Map, Saved, Trips. Host mode: Your listings, Create listing, Reservations. Home shows them in the sidebar; below the large breakpoint they sit in the account menu. |
 | Height and spacing | Content row of at least 44px high targets, 28px above, 56px below on the home page. |
 | Behaviour | Static (not sticky) on desktop. Not decorative: no blur, no shadow. |
 
@@ -209,7 +210,7 @@ The old dark sidebar is retired (PRD FR-16).
 
 ### 6.2 Account menu
 
-Contents for a logged-in user: Saved, Trips, Hosting dashboard, Create listing, Log out. Log out is a form submit, not a link. The menu opens on click, closes on Escape or outside click, and returns focus to its trigger.
+Contents for a logged-in user, the same in both modes: Profile, Log out. There is no separate Account entry: settings live on the profile. (Below the large breakpoint on the home page the mode's links are added above them.) Log out is a form submit, not a link. The menu opens on click, closes on Escape or outside click, and returns focus to its trigger.
 
 ### 6.3 Phone navigation
 
@@ -332,10 +333,35 @@ A `surface` card with hairline. Order: price line, date range (the calendar), ni
 
 ### 7.13 Alerts (flash messages)
 
+Transient messages are now pop-ups (7.13a). This section still describes the alert colours and shape they reuse, and inline status alerts on a page.
+
 - A full-width bar inside the container below the header. Status colour on its `-subtle` background, icon, message, and a close button.
-- Success auto-dismisses after 6 seconds (the launch brief says 5; this document's value was kept). Errors and warnings stay until closed.
+- Success auto-dismisses after 5 seconds. Errors and warnings stay until closed.
 - Announced to screen readers: errors as assertive, others as polite.
 - Messages are one or two short sentences. They say what happened and what to do next.
+
+### 7.13a Pop-up notifications
+
+- Replaces the flash bar above for every transient message. Built on the alert colours and shape, floated in a fixed container with `shadow-raised` (no other shadow, no new colour) and a `border` hairline.
+- Placement: top centre on every screen size, 480px wide at most (a 32px margin each side on phones). It floats (fixed) and takes no room from the page, and it sits at the top of the viewport, narrow enough to leave the header controls beside it free. Layer: `--z-toast`.
+- Stacking: at most three visible; later ones wait and appear as room opens, so none is lost.
+- Timing: success and info close after 5 seconds and pause on hover and focus. Warnings and errors stay until closed.
+- States: success, info, warning, error, each with its icon and the subtle fill from section 2. Colour is never the only signal.
+- Accessibility: success and info are `role="status"` and polite; warning and error are `role="alert"` and assertive. The close button is 44 by 44 px, named "Dismiss notification". Escape closes the newest. Focus never moves to a pop-up. Server-rendered, so without JavaScript they show as static messages at the top of the page.
+- Not pop-ups: field errors (inline, `aria-invalid`, `aria-describedby`), empty states, page status text and the email reminder banner.
+
+### 7.13b Mode switch and sign-up choice
+
+- **Mode switch:** one outlined (home hero: pill) button in the header beside the account menu, labelled "Switch to host" or "Switch to guest", with a repeat icon. It is a POST form with a CSRF token. A visually hidden line states the current mode.
+- **Sign-up choice:** a native radio group in a fieldset with the visible legend "I want to:" and two equal options, each with a title and one plain line: "Find stays" and "List my home". Nothing is checked, and submitting without a choice shows an inline error under the group and moves focus to the first option. Options sit side by side, and stack below 420 px. The selected option is not colour alone: it has a `secondary-subtle` fill, a thicker edge, a heavier title and a check icon. The radio stays in the page, invisible, over its whole option, so the keyboard and screen readers just work. Login has no mode control.
+
+### 7.13c Public profile
+
+A panel with the photo (96px circle; initials on a tile when there is none), display name as the page heading, `@username`, then city and country, languages, "Member since Month Year" and an "Email verified" pill, then the bio (plain text, line breaks kept). The owner sees an "Edit profile" button. Below: "Stays hosted by ..." as stay cards with pagination, and "Reviews written by ..." with the stay name and the "Verified stay" pill where it applies. Names elsewhere (stay page host, review authors, the other party on a booking) link here.
+
+### 7.13d Profile settings (owner only)
+
+Below the owner's own profile, under the heading "Your settings", five panels in this order using the form field pattern: Edit profile (photo, username, display name, bio, city, country, languages; the one primary button), Contact (new email plus current password; shows a pending address), Security (active mode, Terms and Privacy acceptance date and version, change password), Your data (download), Delete account (password and typing DELETE).
 
 ### 7.14 Confirmation
 
@@ -377,6 +403,14 @@ Rows, not tables, on phones. Each booking row shows photo thumbnail, stay title 
 ### 7.18d File preview (listing form)
 
 `.wl-photos`: a grid of chosen photos, each with a checkbox to remove it and a radio to make it the cover. States: empty (hint text), previewing, invalid file (inline error, `aria-invalid`), busy while the form submits.
+
+### 7.18d-2 Listing form
+
+One long page from one partial, `views/includes/listingForm.ejs`, used by create and edit. Each section is a `.wl-form-section` panel: `surface` with a `border` hairline and `radius-md`, in this order: Basics, Location, Space, Pricing, Stay rules, Amenities and accessibility, Photos, Availability, Status. Groups are `<fieldset>` and `<legend>`. Required fields say "(required)" in text. Errors follow the form field pattern, with a summary at the top that takes focus and says how many fields to fix. Long checkbox groups (`.wl-check-cols`) are two columns from 768 px and one on phones. Each photo has a "Make cover" radio, a "Remove" box and an alt field. Status has one primary button, Publish listing or Save changes, followed by the outline Save as draft or Move to draft.
+
+### 7.18d-3 Stay terms and policy display
+
+The stay page has a "House rules and stay terms" panel above the two columns, so on phones it is still read before the booking panel. Times and the policy use the `.wl-facts` rows from the booking page, and rules use the amenity list with a check or a cross plus words. Only what the host stated is shown. Nothing unstated appears as "No". A policy is always its label in bold plus one plain sentence, with a link to the full page. A late cancellation is a `warning` badge reading "Late cancellation", on the booking page and in lists, for both parties. The public map shows a circle in `--primary` at low opacity with no marker.
 
 ### 7.18e Legal layout
 

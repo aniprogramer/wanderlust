@@ -43,7 +43,7 @@ Wanderlust is a curated, calm place to find and reserve a stay:
 | **Host** | A person who owns or manages one or more properties | List a property with good photos, see who has reserved it |
 | **Visitor** | Anyone not logged in | Browse stays before deciding to sign up |
 
-A person is not a "guest account" or "host account". Any registered user can reserve stays and also list stays [Built].
+A person is not a "guest account" or "host account". One account acts as a guest or as a host, depending on the **mode** it is in (decision M1, section 19). The mode is chosen at login and can be switched at any time. There is no "become a host" step: switching modes is all it takes.
 
 ---
 
@@ -212,20 +212,20 @@ IDs map to requirements in section 4.
 
 ## 6. Roles and permissions
 
-There is one account type. Permissions depend on the situation.
+There is one account type. Permissions depend on the situation and on the active mode (M1, M2). Ownership is always checked on the server, whatever the mode.
 
 | Action | Visitor | Logged-in user | Listing owner | Booking party (guest or host of that booking) |
 | --- | --- | --- | --- | --- |
 | Browse, search, view stays and map | Yes | Yes | Yes | Yes |
 | Sign up, log in | Yes | n/a | n/a | n/a |
-| Save and unsave stays | No | Yes | Yes | Yes |
-| Reserve a stay | No | Yes (not own, A2) | No | n/a |
-| View own trips | No | Yes | Yes | Yes |
-| View hosting dashboard | No | Yes (empty if no listings) | Yes | Yes |
-| Cancel a reservation | No | Only if party to it | Yes, on own listing | Yes |
-| Create a listing | No | Yes | Yes | Yes |
-| Edit or delete a listing | No | No | Yes (delete blocked with upcoming bookings) | No |
-| Review a stay | No | Yes, once per stay, not own | No | n/a |
+| Save and unsave stays | No | Yes (guest mode) | Yes (guest mode) | Yes (guest mode) |
+| Reserve a stay | No | Yes (guest mode, not own, A2) | No | n/a |
+| View own trips | No | Yes (guest mode) | Yes (guest mode) | Yes (guest mode) |
+| View reservations (hosting dashboard) | No | Yes (host mode; empty if no listings) | Yes (host mode) | Yes (host mode) |
+| Cancel a reservation | No | Only if party to it, in the mode of their role | Yes, on own listing, in host mode | Yes, in the mode of their role |
+| Create a listing | No | Yes (host mode) | Yes (host mode) | Yes (host mode) |
+| Edit or delete a listing | No | No | Yes, in host mode (delete blocked with upcoming bookings) | No |
+| Review a stay | No | Yes (guest mode), once per stay, not own | No | n/a |
 | Delete a review | No | Own review only | Own review only | n/a |
 | Use geocode lookup | No | Yes (rate limited) | Yes | Yes |
 
@@ -392,6 +392,7 @@ All criteria are proposals [Assumption A6]. Targets marked "baseline" need a fir
 | A5 | Everything listed under out of scope is out of scope until you say otherwise. |
 | A6 | The success criteria in section 12 are acceptable as proposed. |
 | A7 | The booking flow is a reservation only, with no payment step. |
+| A8 | One account, two modes (M1). This replaces the earlier rule that every user has both abilities at all times (section 1.3 before this change). A1 above is unchanged: it is about the audience and currency, not about modes. |
 
 ---
 
@@ -459,3 +460,68 @@ These override earlier sections where they disagree. Implementation status is in
 | FR-25 | Reporting a listing, and an admin dashboard limited to LD8. Hidden listings leave search, map and sitemap, and open only for their owner and admins. | Built |
 
 FR-7 now sends a request rather than reserving (LD1). FR-10 includes the password rule in FR-16.
+
+---
+
+## 19. Modes, profiles and notifications (2026-11)
+
+### 19.1 Decisions
+
+| ID | Decision |
+| --- | --- |
+| M1 | One account, two modes. A user acts as a **guest** or a **host**. The active mode is stored in the server-side session (`session.mode`), never on the user, and changed by `POST /mode` with a CSRF token. Anything missing or invalid reads as guest. Logout and password reset clear it. |
+| M2 | The mode controls the interface and the actions. Guest mode shows Explore, Map, Saved and Trips; booking requests, saving and reviewing need guest mode. Host mode shows Your listings, Create listing and Reservations; creating, editing and deleting listings, blocking dates, and accepting or declining requests need host mode. Pages and actions of the wrong mode redirect with a message instead of showing a broken page. Ownership checks always run, in either mode. A user in either mode can read every public page. |
+| M3 | Sign-up chooses the starting mode with a required "I want to: Find stays / List my home" choice, saved as `User.startingMode`. Login has no mode control: it starts in the saved mode, unless the user already switched in that session. If the page the user was sent from belongs to the other mode, they land on their mode's home with a message. The header switch changes the session only. Profile settings change the default. Superseded the login control on 2026-11-06. |
+| M4 | Notifications are pop-ups. Every transient message from an action is a pop-up. Field-level validation stays inline. Blocking decisions (delete, cancel, decline) use the confirm dialog. |
+| M5 | One page per person: the profile at `/users/:username`. Everyone sees the public part; its owner also gets their private settings (edit profile, contact, security, data, delete) below it on the same page. There is no separate account page: `/account` only redirects to your own profile. |
+| M6 | Booking requests stay as they are: request, pending until the host accepts, 48-hour expiry, pay at the property. No payment integration. |
+
+### 19.2 Who can see what
+
+| Data | Everyone (public profile) | The two parties of a confirmed booking | The user | Admins |
+| --- | --- | --- | --- | --- |
+| Display name, username, photo, bio, city and country, languages | Yes | Yes | Yes | Yes |
+| Member since (month and year), "Email verified" badge | Yes | Yes | Yes | Yes |
+| Published listings (host), reviews written with the stay name and "Verified stay" label (guest) | Yes | Yes | Yes | Yes |
+| Email address | No | Yes, on that booking's page only, and not after it is cancelled | Yes | Yes |
+| Pending email, terms version, sign-in details, password hash | No | No | Own only (hash never) | No |
+| Trips, saved stays, request history, incoming requests, reservations | No | The booking itself | Yes | No |
+| Reports made, admin flag | No | No | No | Yes |
+
+A hidden profile answers 404, exactly like a user that does not exist. The public page is built from an allowlist in `utils/profile.js`; a field added to the User model stays private until it is added there.
+
+### 19.3 Notifications
+
+Pop-ups float at the bottom centre, at most three at a time (the rest wait). Success and info close after 6 seconds, pause on hover and focus, and are announced politely. Warnings and errors stay until closed and are announced assertively. Every pop-up has a 44 by 44 px close button named "Dismiss notification", Escape closes the newest, and focus is never moved. Messages render on the server, so they show as plain messages without JavaScript. The email-confirmation reminder is one more info pop-up (last in the stack), so nothing sits in the page flow. The stack floats clear of the header and takes no room from the page.
+
+## 20. Sign-up mode, honest terms and the listing form (2026-11)
+
+### 20.1 Decisions
+
+| ID | Decision |
+| --- | --- |
+| L1 | The guest or host choice moves from login to sign-up. Nothing is preselected. One account does both. |
+| L2 | One price breakdown everywhere a stay has dates: nightly price × nights, cleaning fee if any, "Total before taxes", and "Taxes are not included. The host will confirm any applicable taxes." Computed on the server, stored on the booking. No platform fee. Cards and map pop-ups have no dates, so they show the nightly price, and cards add any cleaning fee. |
+| L3 | Reviews come only from completed stays and are marked "Verified stay". A listing with no reviews says "New" and never shows a number. |
+| L4 | Every listing has one of three cancellation policies: **Flexible** (free up to 24 hours before check-in), **Moderate** (5 days), **Strict** (14 days). The policy and its deadline are stored on the booking at request. A confirmed booking cancelled after the deadline, by either party, is flagged `cancelledLate` and both parties see it. No money moves, so there are no refunds through the platform. |
+| L5 | House rules, check-in and check-out times and quiet hours appear in a labelled section before the booking panel. |
+| L6 | Search adds four guest-need filters: pets allowed, workspace, step-free access, wheelchair-accessible entrance. |
+| L7 | Hosts see each new request on Hosting with the guest's message, the dates and the breakdown. Messaging stays out of scope. |
+| L8 | The address and exact pin go only to the host and to a guest with a confirmed stay. Everyone else sees the city, the country and a circle of about 500 m that contains the pin but is not centred on it. |
+| L9 | A listing can be a **draft**, visible only to its owner. Publishing needs all required fields, at least one photo, and a pin or a "No pin yet" acknowledgement. An address that cannot be placed never loses the host's work. |
+| L10 | Existing listings stay visible, flagged `detailsIncomplete`, with a prompt on Hosting. A rule the host never stated is shown as not stated, never as a claim. |
+
+### 20.2 Listing fields
+
+| Section | Fields |
+| --- | --- |
+| Basics | Title (required, 10 to 80), description (required, 50 to 2000, plain text), property type (required), category (required) |
+| Location | Address line, city, region, country from a list (all required), map pin |
+| Space | Maximum guests (required, 1 to 16), bedrooms (0 to 20), beds (1 to 30), bathrooms (0 to 20 in half steps), size in m² (optional, 5 to 5000) |
+| Pricing | Currency (required, a label only), nightly price (required, positive), cleaning fee (optional, 0 or more), minimum nights (1 to 30, default 1), maximum nights (1 to 30, default 30, not below the minimum) |
+| Stay rules | Earliest and latest check-in, check-out (half-hour list), optional quiet hours, cancellation policy, smoking, pets, parties and events, children welcome, other rules (up to 300) |
+| Amenities | Wi-Fi, kitchen, washer, dryer, air conditioning, heating, TV, workspace, dedicated desk, parking, pool, hot tub, balcony, fireplace, garden, gym, breakfast. Pets allowed is set once, under house rules. Wi-Fi speed in Mbps (optional, shown as "Host-reported") |
+| Accessibility | Step-free access, wheelchair-accessible entrance, wide doorways, accessible bathroom, lift |
+| Safety | Smoke alarm, carbon monoxide alarm, first-aid kit, fire extinguisher |
+| Photos | Up to 6, JPEG, PNG or WebP, 5 MB each, checked by content. A chosen cover, optional alt text up to 150 |
+| Status | Save as draft, or publish |

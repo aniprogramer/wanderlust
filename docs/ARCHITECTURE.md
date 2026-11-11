@@ -196,7 +196,7 @@ The database index is the source of truth for double booking. The earlier availa
 
 ### 6.3 Create or edit a listing (write with an external service)
 
-Browser posts a multipart form → multer writes a temporary file under size and type limits → content check of the file's first bytes → CSRF check → Joi validates the text fields → controller uploads the photo to Cloudinary, resolves the pin (use the submitted pin, or call the geocoder if the address changed) → model saves → the temporary file is deleted in every case (success or failure) → if the save fails after an upload, the new photo is destroyed → redirect to the stay.
+Browser posts a multipart form → multer writes a temporary file under size and type limits → content check of the file's first bytes → CSRF check → Joi validates the text fields against the publish or draft rules, chosen by the button pressed; on failure the form is drawn again with status 400, inline errors and the typed values → controller resolves the pin (use the submitted pin, or call the geocoder if the address changed; a failed lookup means no pin, never a lost form) → if publishing with no pin and no `noPinAck`, a draft stays a draft with a "No pin yet" warning → uploads the photos to Cloudinary → model saves and picks the public circle → the temporary file is deleted in every case (success or failure) → if the save fails after an upload, the new photo is destroyed → redirect to the stay.
 
 ### 6.4 Review and rating
 
@@ -262,9 +262,9 @@ Fields added for launch:
 
 | Model | Fields |
 | --- | --- |
-| User | `termsAcceptedAt`, `termsVersion`, `emailVerifiedAt`, `verifyTokenHash`, `verifyTokenExpires`, `isAdmin` (set only by `scripts/make-admin.js`) |
-| Listing | `maxGuests`, `bedrooms`, `beds`, `bathrooms`, `capacityDefaulted`, `cleaningFee`, `minNights`, `blockedRanges[]`, `images[]`, `amenities[]`, `status` |
-| Booking | `guests`, `currency`, `nightlyPrice`, `cleaningFee`, `subtotal`, `taxAmount`, `status` (pending, confirmed, declined, expired, cancelled), `requestedAt`, `respondedAt`, `expiresAt`, `cancelledBy`, `cancelReason`, `declineReason`, `guestMessage`, `guestDeleted` |
+| User | `startingMode` (guest or host: the mode a login starts in, chosen at sign-up), `termsAcceptedAt`, `termsVersion`, `emailVerifiedAt`, `verifyTokenHash`, `verifyTokenExpires`, `isAdmin` (set only by `scripts/make-admin.js`), `displayName` (2 to 50), `bio` (up to 300), `city`, `country` (up to 80 each), `languages[]` (from `LANGUAGES` in `utils/constants.js`), `avatar` (`url`, `filename`, same shape as a listing photo), `pendingEmail` (waits for its link; the old address stays active), `profileHidden` (set by hand; a hidden profile is a 404) |
+| Listing | `maxGuests`, `bedrooms`, `beds`, `bathrooms`, `capacityDefaulted`, `cleaningFee`, `minNights`, `maxNights`, `blockedRanges[]`, `images[]` (`caption` is the alt text, up to 150), `amenities[]`, `status` (published, hidden, draft). **Address and map:** `addressLine`, `city`, `region` (private until a stay is confirmed, except the city), `location` (public place name, mirrors `city`), `approxGeometry` (public point; the centre of a 500 m circle that contains the pin), `noPinAck`. **Space and terms:** `sizeSqm`, `wifiMbps` (host-reported), `checkInFrom`, `checkInUntil`, `checkOutBy`, `quietHoursStart`, `quietHoursEnd`, `cancellationPolicy` (flexible, moderate, strict), `otherRules` (up to 300). **Booleans, unset meaning the host has not said:** `smokingAllowed`, `petsAllowed`, `partiesAllowed`, `childrenWelcome`, `stepFreeAccess`, `wheelchairEntrance`, `wideDoorways`, `accessibleBathroom`, `liftInBuilding`, `smokeAlarm`, `carbonMonoxideAlarm`, `firstAidKit`, `fireExtinguisher`. **Derived:** `hasWorkspace` (from the workspace or dedicated desk amenity); `petsAllowed` keeps the `pets_allowed` amenity in step. `detailsIncomplete` flags a migrated listing until its host saves the form. A draft may leave any required field empty. |
+| Booking | `cancellationPolicy` and `freeCancelUntil` (copied or worked out when requested, so later listing changes do not affect them), `cancelledLate`, `guests`, `currency`, `nightlyPrice`, `cleaningFee`, `subtotal`, `taxAmount`, `status` (pending, confirmed, declined, expired, cancelled), `requestedAt`, `respondedAt`, `expiresAt`, `cancelledBy`, `cancelReason`, `declineReason`, `guestMessage`, `guestDeleted` |
 | Review | `verifiedStay`, `booking` |
 | SupportMessage | `reference`, `user`, `name`, `email`, `topic`, `bookingReference`, `message`, `resolvedAt` |
 | Report | `reference`, `listing`, `reporter`, `reason`, `details`, `resolvedAt` |
@@ -298,6 +298,10 @@ MongoDB writes to a single document are atomic. Operations spanning documents (r
 
 ### 8.5 Migrations
 
+Migration `007-user-starting-mode.js` sets `startingMode` to `guest` where it is missing. Migration `008-listing-details.js` gives listings with no `cancellationPolicy` the flexible policy, `city` from `location`, `maxNights` 30, check-in 15:00 to 20:00, check-out 11:00, `hasWorkspace`, `detailsIncomplete: true` and a public circle when they have a pin; `petsAllowed` is set only where the amenity existed, and other rule, accessibility and safety fields stay unset so that nothing is claimed for the host. Both are safe to run twice.
+
+Migration `006-user-profile.js` sets `displayName` from `username` for existing users who have none and leaves the other profile fields empty; running it twice changes nothing.
+
 Schema changes that affect existing data ship as a new numbered file in `migrations/`, applied by `npm run migrate` and recorded in the `migrations` collection. Each script is also safe to run twice. Take a database backup before running one in production. See `RUNBOOK.md`.
 
 ---
@@ -312,7 +316,8 @@ Schema changes that affect existing data ship as a new numbered file in `migrati
 - Login failures return one generic message. Login and signup are rate limited per IP.
 - After login the user returns to the page they came from.
 - Logout is a POST with a CSRF token.
-- Not in the MVP: password reset, email verification, social login, two-factor (see section 14).
+- **Mode.** One account acts as a guest or a host. The active mode is `session.mode` (`guest` or `host`); it is never stored on the user. The user stores only `startingMode`, chosen at sign-up and changed by `POST /account/starting-mode`. Login sets `session.mode` from `startingMode` unless the user already switched in this session (`session.modeSwitched`), `POST /mode` changes the session only, and logout or a password reset clears both. Anything missing or invalid reads as `guest` (`utils/mode.js`, `normalizeMode`). `res.locals.mode` and `res.locals.navLinks` drive the header links.
+- Not in the MVP: social login, two-factor (see section 14).
 
 ### 9.2 Authorization
 
@@ -324,6 +329,8 @@ Authorization is enforced on the server in middleware, never only by hiding butt
 | Is listing owner | Owner guard | Edit and delete listing |
 | Is review author and review belongs to the listing | Review guard | Delete review |
 | Is booking party (guest or listing owner) | Booking guard | Cancel booking |
+| Active mode is host / guest | `requireMode("host")`, `requireMode("guest")` | Host pages and listing or reservation actions / trips, saved, requests and reviews. Wrong mode: warning message and redirect, never a broken page |
+| Active mode matches the booking role | `requireModeForRole` | Withdraw or cancel a booking |
 | Is not the listing's owner | Controller rule | Review a listing, reserve a listing (PRD A2) |
 
 Rules for new routes: default to requiring login. Make a route public only when the PRD says so. Ownership is always checked against the stored record, never against a value sent by the browser.
@@ -345,29 +352,31 @@ The application is a set of server-rendered routes that return HTML and redirect
 | Method | Path | Access | Purpose |
 | --- | --- | --- | --- |
 | GET | `/listings` | Public | Home, search and filters, pagination |
-| POST | `/listings` | Login | Create listing (multipart) |
-| GET | `/listings/new` | Login | Listing form |
+| POST | `/listings` | Login, host mode | Create listing (multipart) |
+| GET | `/listings/new` | Login, host mode | Listing form |
+| GET | `/listings/mine` | Login, host mode | Your listings, with the "You have no listings yet" empty state |
 | GET | `/listings/map` | Public | Map view |
 | GET | `/listings/geocode` | Login | **JSON.** Address to coordinates, rate limited |
 | GET | `/listings/:id` | Public | Stay page |
-| PUT | `/listings/:id` | Owner | Update listing (multipart) |
-| DELETE | `/listings/:id` | Owner | Delete listing |
-| GET | `/listings/:id/edit` | Owner | Edit form |
-| POST | `/listings/:id/blocks` | Owner | Block nights |
-| DELETE | `/listings/:id/blocks/:blockId` | Owner | Reopen blocked nights |
+| PUT | `/listings/:id` | Owner, host mode | Update listing (multipart) |
+| DELETE | `/listings/:id` | Owner, host mode | Delete listing |
+| GET | `/listings/:id/edit` | Owner, host mode | Edit form |
+| POST | `/listings/:id/blocks` | Owner, host mode | Block nights |
+| DELETE | `/listings/:id/blocks/:blockId` | Owner, host mode | Reopen blocked nights |
 | GET, POST | `/listings/:id/report` | Login | Report a listing |
-| POST | `/listings/:id/bookings` | Verified login | Send a booking request |
-| POST | `/listings/:id/reviews` | Login | Add review |
+| POST | `/listings/:id/bookings` | Verified login, guest mode | Send a booking request |
+| POST | `/listings/:id/reviews` | Login, guest mode | Add review |
 | DELETE | `/listings/:id/reviews/:reviewId` | Review author | Delete review |
-| GET | `/bookings` | Login | Trips |
-| GET | `/bookings/hosting` | Login | Hosting dashboard |
-| GET | `/bookings/:bookingId` | Booking party | Booking page |
-| DELETE | `/bookings/:bookingId` | Booking party | Withdraw or cancel |
-| POST | `/bookings/:bookingId/accept` | Host | Accept a request |
-| POST | `/bookings/:bookingId/decline` | Host | Decline a request |
-| GET | `/wishlist` | Login | Saved |
-| POST | `/wishlist/:id` | Login | Save |
-| DELETE | `/wishlist/:id` | Login | Unsave |
+| GET | `/bookings` | Login, guest mode | Trips |
+| GET | `/bookings/hosting` | Login, host mode | Reservations (the hosting dashboard) |
+| GET | `/bookings/:bookingId` | Booking party | Booking page (either mode) |
+| DELETE | `/bookings/:bookingId` | Booking party, mode matches role | Withdraw (guest mode) or cancel (host mode) |
+| POST | `/bookings/:bookingId/accept` | Host, host mode | Accept a request |
+| POST | `/bookings/:bookingId/decline` | Host, host mode | Decline a request |
+| GET | `/wishlist` | Login, guest mode | Saved |
+| POST | `/wishlist/:id` | Login, guest mode | Save |
+| DELETE | `/wishlist/:id` | Login, guest mode | Unsave |
+| POST | `/mode` | Login | Switch between guest and host mode (`mode`, optional `returnTo`) |
 | GET, POST | `/signup` | Public | Create account |
 | GET, POST | `/login` | Public | Log in |
 | POST | `/logout` | Login | Log out |
@@ -375,8 +384,13 @@ The application is a set of server-rendered routes that return HTML and redirect
 | GET | `/verify-email` | Login | Prompt to verify |
 | POST | `/verify-email/resend` | Login | Send the link again |
 | GET | `/verify-email/:token` | Public | Confirm an email address |
-| GET | `/account`, `/account/export` | Login | Settings, data download |
-| POST | `/account/profile`, `/account/password`, `/account/delete` | Login | Change details, password; delete account |
+| GET | `/users/:username` | Public | The one profile page. Everyone: the allowlist only (`utils/profile.js`); 404 if unknown or hidden. The owner also gets the settings sections below it |
+| GET | `/account` | Login | Redirects to your own profile (kept for old links) |
+| GET | `/account/export` | Login | Data download |
+| POST | `/account/profile` | Login | Settings action on the profile page. **Multipart.** Username, display name, bio, city, country, languages, photo. Upload rules and cleanup as for listing photos |
+| POST | `/account/starting-mode` | Login | Saves `startingMode`, the default mode for the next login. Does not change the current session |
+| POST | `/account/email` | Login | Ask to change email: needs the current password; sends a link to the new address |
+| POST | `/account/password`, `/account/delete` | Login | Change password; delete account |
 | GET | `/account/deleted` | Public | Confirmation |
 | GET | `/help`, `/contact/sent` | Public | Help, message sent |
 | GET, POST | `/contact` | Public | Support form |
@@ -604,3 +618,11 @@ Everything in sections 1 to 16, specifically:
 | AD5 | Keep in-memory rate limiting, valid only while one instance runs. | Yes for MVP |
 | AD6 | Add a repository check that fails the build when raw colours or inline styles appear in views and styles. | Yes |
 | AD7 | Start the home page redesign with the shared layout and components first (PRD D1 option b) so the work does not need redoing. | Yes |
+
+## 19. Listing terms and constants
+
+The fixed lists live in `utils/constants.js`: `CANCELLATION_POLICIES` (flexible 24 hours, moderate 5 days, strict 14 days), `AMENITY_GROUPS`, `HOUSE_RULES`, `ACCESSIBILITY`, `SAFETY`, `GUEST_NEEDS`, `TIME_OPTIONS` (half hours), `COUNTRIES`, `APPROX_RADIUS_M` (500), `TOTAL_LABEL` and `TAX_NOTICE`. `utils/location.js` picks the public circle and gives the public coordinates. `utils/availability.js` has `cancellationTerms` and `isLateCancellation`.
+
+Who sees the location: the public, and guests with no confirmed stay, get `location`, `country` and `approxGeometry` only, on pages, the map, the sitemap and structured data. `addressLine`, `region` and `geometry` go only to the owner and to a guest whose confirmed stay has not ended. Radius search uses `approxGeometry`, so distances cannot be used to find a pin.
+
+Search parameter `needs` filters on `petsAllowed`, `hasWorkspace`, `stepFreeAccess` and `wheelchairEntrance`. `Listing.publicStatus()` is the one definition of what the public can see: not hidden and not draft.

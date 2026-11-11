@@ -60,6 +60,10 @@ npm run migrate          # applies what is outstanding
 
 Both print which database they point at. Run them from a machine with the production `ATLAS` set. A new migration is a new numbered file; never edit one that has run.
 
+Migration `007-user-starting-mode` makes every existing user a guest by default. Migration `008-listing-details` gives existing listings the flexible cancellation policy, default check-in and check-out times, a public map circle and the `detailsIncomplete` flag, which prompts their hosts on the Hosting page. Take a backup first: the flexible policy and the times are defaults the host did not choose.
+
+Migration `006-user-profile` gives every existing user a display name (their username) and leaves the other profile fields empty. It only touches users without a display name, so it is safe to run twice. Take a backup first (section 4), as for any migration.
+
 **The first deploy of this release must run the migrations.** Listings with no capacity get defaults flagged `capacityDefaulted`, and hosts see a prompt to correct them.
 
 ## 7. Seed script
