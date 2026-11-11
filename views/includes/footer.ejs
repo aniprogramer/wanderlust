@@ -1,20 +1,41 @@
 <footer class="f-info">
-  <% if (site.socialLinks.length) { %>
-  <div class="f-info-socials">
-    <% for (const social of site.socialLinks) { %>
-    <a href="<%= social.url %>" target="_blank" rel="noopener noreferrer" aria-label="Wanderlust on <%= social.name %>">
-      <i class="fa-brands <%= social.icon %>" aria-hidden="true"></i>
-    </a>
-    <% } %>
+  <div class="f-info-inner">
+    <div class="f-info-intro">
+      <a class="f-info-logo" href="/listings" aria-label="Wanderlust home">
+        <%- include("./auth/mark", { size: 28, cls: "wl-brand-mark-gold" }) %>
+        <span class="f-info-wordmark">Wanderlust</span>
+      </a>
+      <p class="f-info-tagline">Stays worth the <em>journey.</em></p>
+      <p class="f-info-note">Homes, cabins and villas around the world. Send a request and the host confirms your stay.</p>
+      <% if (site.socialLinks.length) { %>
+      <div class="f-info-socials">
+        <% for (const social of site.socialLinks) { %>
+        <a href="<%= social.url %>" target="_blank" rel="noopener noreferrer" aria-label="Wanderlust on <%= social.name %>">
+          <i class="fa-brands <%= social.icon %>" aria-hidden="true"></i>
+        </a>
+        <% } %>
+      </div>
+      <% } %>
+    </div>
+
+    <nav class="f-info-links" aria-label="Footer">
+      <div class="f-info-col">
+        <span class="f-info-heading">Support</span>
+        <a href="/help">Help</a>
+        <a href="/contact">Contact</a>
+      </div>
+      <div class="f-info-col">
+        <span class="f-info-heading">Policies</span>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="/cancellation-policy">Cancellation policy</a>
+        <a href="/house-rules">House rules</a>
+      </div>
+    </nav>
   </div>
-  <% } %>
-  <nav class="f-info-links" aria-label="Footer">
-    <a href="/help">Help</a>
-    <a href="/contact">Contact</a>
-    <a href="/privacy">Privacy</a>
-    <a href="/terms">Terms</a>
-    <a href="/cancellation-policy">Cancellation policy</a>
-    <a href="/house-rules">House rules</a>
-  </nav>
-  <div class="f-info-brand">&copy; <%= new Date().getFullYear() %> <%= site.legalEntity %></div>
+
+  <div class="f-info-bottom">
+    <span class="f-info-brand">&copy; <%= new Date().getFullYear() %> <%= site.legalEntity %></span>
+    <span class="f-info-eyebrow">Stays &middot; Cabins &middot; Villas</span>
+  </div>
 </footer>
