@@ -112,8 +112,6 @@ body {
    ============ */
 .navbar {
   min-height: 4rem;
-  background-color: var(--surface);
-  border-color: var(--border) !important;
 }
 
 /* Navbar wordmark (a class, not a style attribute, so the CSP can stay strict) */
@@ -1394,7 +1392,7 @@ body.wl-home-body {
    ========================================================================== */
 .wl-guests-popover {
   position: absolute;
-  top: calc(100% + 12px);
+  top: calc(100% + var(--popover-gap));
   right: 0;
   border-radius: var(--radius-xl);
   padding: 20px 22px;
@@ -1485,7 +1483,7 @@ body.wl-home-body {
    ========================================================================== */
 .wl-calendar-popover {
   position: absolute;
-  top: calc(100% + 14px);
+  top: calc(100% + var(--popover-gap));
   left: 50%;
   transform: translateX(-50%);
   border-radius: var(--radius-2xl);
@@ -1649,7 +1647,7 @@ body.wl-home-body {
   border-radius: 50%;
   background-color: var(--accent-fill);
   border: none;
-  color: var(--on-primary);
+  color: var(--band);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1663,9 +1661,20 @@ body.wl-home-body {
 }
 
 .wl-search-btn:hover {
-  background-color: var(--accent-fill-hover);
+  /* The brass stays; a pressed overlay shifts its tone so the hover is seen, never lost */
+  background-color: var(--accent-fill);
+  color: var(--band);
   transform: scale(1.06);
-  box-shadow: var(--shadow-raised);
+  box-shadow: inset 0 0 0 999px var(--state-pressed), var(--shadow-raised);
+}
+
+.wl-search-btn:active {
+  transform: scale(0.97);
+}
+
+.wl-search-btn:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
 }
 
 /* --------------------------------------------------------------------------
@@ -2264,186 +2273,94 @@ body.wl-home-body {
   src: url("/fonts/geist-latin.woff2") format("woff2");
 }
 
+/* Authentication pages: a full-screen photograph with one liquid-glass card centred over it */
 .wl-auth {
-  display: grid;
-  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   min-height: 100vh;
+  min-height: 100dvh;
+  padding: clamp(16px, 3vh, 32px) clamp(16px, 4vw, 40px) var(--space-2-5);
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
 }
 
-/* ---- Left: photograph + story ---- */
-.wl-auth-hero {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  padding: clamp(24px, 4.5vw, 68px);
-  overflow: hidden;
-  background: var(--primary);
-}
-
-.wl-auth-hero__photo {
-  position: absolute;
+.wl-auth-bg {
+  position: fixed;
   inset: 0;
+  z-index: -2;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 70% 0;
+  object-position: center 35%;
 }
 
-/* Night keeps one flat scrim so type stays readable on the photograph */
-.wl-auth-hero::after {
+/* One flat scrim keeps the card and the brand readable on the brightest part of the photograph */
+.wl-auth::before {
   content: "";
-  position: absolute;
+  position: fixed;
   inset: 0;
+  z-index: -1;
   background: var(--scrim);
-  opacity: var(--photo-scrim-opacity);
+  opacity: 0.3;
   pointer-events: none;
 }
 
-.wl-auth-hero > :not(.wl-auth-hero__photo) {
-  position: relative;
-  z-index: 1;
-}
-
-.wl-auth-hero__top {
+.wl-auth-brandbar {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
+  justify-content: center;
+  padding-bottom: clamp(16px, 4vh, 36px);
 }
 
 .wl-auth-brand {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  color: var(--text);
+  min-height: 44px;
+  color: var(--on-photo);
   text-decoration: none;
   border-radius: var(--radius-sm);
 }
 
 .wl-auth-brand__word {
   font-family: var(--font-display);
-  font-size: 1.75rem;
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
   letter-spacing: -0.01em;
   line-height: 1;
 }
 
-.wl-auth-eyebrow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.9em;
-  margin: 0;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--text);
-}
-
-.wl-auth-hero__copy {
-  margin-top: clamp(40px, 9vh, 96px);
-  max-width: 40rem;
-}
-
-.wl-auth-headline {
-  margin: 0;
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: clamp(2.6rem, 4.7vw, 4.6rem);
-  line-height: 1;
-  letter-spacing: -0.02em;
-  color: var(--text);
-}
-
-.wl-auth-headline em {
-  font-style: italic;
-  color: var(--accent);
-}
-
-.wl-auth-lede {
-  max-width: 24rem;
-  text-wrap: balance;
-  margin: clamp(16px, 2.4vh, 28px) 0 0;
-  font-size: clamp(1rem, 1.35vw, 1.25rem);
-  line-height: 1.55;
-  color: var(--text);
-}
-
-.wl-auth-caption {
-  width: fit-content;
-  margin: auto 0 0;
-  padding: 0;
-  background: transparent;
-  color: var(--on-photo);
-}
-
-.wl-auth-caption__rule {
-  display: block;
-  width: 48px;
-  height: 2px;
-  margin-bottom: 16px;
-  background: var(--accent-fill);
-}
-
-.wl-auth-caption__place {
-  margin: 0 0 10px;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-}
-
-/* ---- Right: sign-in card ---- */
 .wl-auth-panel {
   display: flex;
+  flex: 1;
   flex-direction: column;
-  justify-content: space-between;
-  min-width: 0;
-  min-height: 100vh;
-  padding: clamp(20px, 2.4vw, 36px);
-  background: var(--bg);
-}
-
-.wl-auth-topbar {
-  display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-  font-size: 0.9rem;
-  color: var(--text);
-  z-index: 2;
-}
-
-.wl-auth-topbar__prompt {
-  color: var(--text-secondary);
+  justify-content: center;
+  width: 100%;
+  max-width: 40rem;
+  min-width: 0;
 }
 
 .wl-auth-card {
   width: 100%;
-  max-width: 32rem;
-  margin: clamp(20px, 3vh, 40px) auto;
-  padding: clamp(28px, 3.4vw, 48px);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
+  padding: clamp(24px, 4vw, 48px);
+  border-radius: var(--radius-3xl);
   text-align: center;
-  box-shadow: var(--shadow-soft);
+  color: var(--text);
 }
 
 .wl-auth-card__mark {
   display: block;
-  margin: 0 auto 20px;
+  margin: 0 auto 12px;
 }
 
 .wl-auth-card__title {
   margin: 0;
   font-family: var(--font-display);
   font-weight: 400;
-  font-size: clamp(2rem, 2.8vw, 2.6rem);
+  font-size: clamp(2.1rem, 4vw, 2.9rem);
   line-height: 1.1;
   letter-spacing: -0.01em;
   color: var(--text);
@@ -2832,41 +2749,239 @@ body.wl-home-body {
   outline-offset: 2px;
 }
 
-/* ---- Tablet: shrink the photo, keep the form its full width ---- */
-@media (max-width: 1100px) {
-  .wl-auth {
-    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+/* ---- Glass fields, requirement checklist, role cards (the card sits over a photograph) ---- */
+.wl-auth-form--compact {
+  margin-top: 24px;
+}
+
+.wl-auth-form--compact > * + *,
+.wl-auth-form--compact .wl-field + .wl-field {
+  margin-top: 12px;
+}
+
+.wl-auth-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.wl-auth-row .wl-field + .wl-field {
+  margin-top: 0;
+}
+
+.wl-auth .wl-input {
+  height: 52px;
+  background: var(--glass-bg-subtle);
+  border-radius: var(--radius-xl);
+}
+
+.wl-auth .wl-input:hover {
+  background: var(--glass-bg-hover);
+}
+
+.wl-auth-helpers {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1-5);
+  margin: var(--space-2) 0 var(--space-2-5);
+  font-size: 0.95rem;
+}
+
+.wl-auth-forgot {
+  align-self: auto;
+  margin: 0;
+}
+
+.wl-auth-terms {
+  margin-top: var(--space-2);
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.wl-auth-btn--block {
+  min-height: 54px;
+  border-radius: var(--radius-pill);
+}
+
+.wl-auth-form--compact .wl-auth-btn--block {
+  margin-top: var(--space-2);
+}
+
+.wl-rules {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 12px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  text-align: left;
+}
+
+.wl-rules__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wl-rules__icon {
+  flex: none;
+  color: var(--text-muted);
+}
+
+/* Met is more than colour: the circle becomes a check and the text is announced as met */
+.wl-rules__item.is-met {
+  color: var(--text);
+}
+
+.wl-rules__item.is-met .wl-rules__icon {
+  color: var(--success);
+}
+
+.wl-field__error.is-ok {
+  color: var(--success);
+}
+
+.wl-segmented--stacked .wl-segmented__option input {
+  z-index: 1;
+}
+
+.wl-segmented--stacked .wl-segmented__label {
+  position: relative;
+  background: var(--glass-bg-subtle);
+  border-color: var(--border-strong);
+  border-radius: var(--radius-xl);
+  padding-inline-end: var(--space-4);
+}
+
+.wl-segmented--stacked .wl-segmented__option input:checked + .wl-segmented__label {
+  background: var(--accent-subtle);
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.wl-segmented__icon {
+  margin-inline-end: var(--space-half);
+  color: var(--text-secondary);
+}
+
+.wl-segmented__option input:checked + .wl-segmented__label .wl-segmented__icon {
+  color: var(--accent);
+}
+
+.wl-segmented__badge {
+  position: absolute;
+  top: var(--space-1-5);
+  right: var(--space-1-5);
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 50%;
+  font-size: 0.7rem;
+  color: transparent;
+}
+
+.wl-segmented__option input:checked + .wl-segmented__label .wl-segmented__badge {
+  background: var(--accent-fill);
+  border-color: var(--accent-fill);
+  color: var(--band);
+}
+
+.wl-auth-footer {
+  margin-top: var(--space-2-5);
+}
+
+.wl-auth-footer p {
+  padding: 4px var(--space-2);
+  border-radius: var(--radius-pill);
+}
+
+.wl-auth-footer__link {
+  color: var(--text-secondary);
+}
+
+/* Motion: transform and opacity only, once, and never when motion is reduced */
+@media (prefers-reduced-motion: no-preference) {
+  .wl-auth-card {
+    animation: wlAuthIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
-  .wl-auth-eyebrow {
-    display: none;
+  .wl-auth-brandbar {
+    animation: wlAuthIn 0.6s 0.08s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .wl-auth-bg {
+    animation: wlAuthDrift 24s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .wl-auth-btn--primary {
+    transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+  }
+  .wl-auth-btn--primary:hover {
+    transform: translateY(-1px);
+  }
+  .wl-auth-btn--primary:active {
+    transform: scale(0.985);
+  }
+  .wl-auth-btn.is-loading::after {
+    animation: wlSpin 0.8s linear infinite;
+  }
+  .wl-rules__item {
+    transition: color 0.2s ease;
+  }
+  .wl-input__toggle i {
+    transition: transform 0.2s ease;
+  }
+  .wl-input__toggle[aria-pressed="true"] i {
+    transform: scale(1.1);
   }
 }
 
-/* ---- Mobile: compact photo band above the form ---- */
-@media (max-width: 800px) {
-  .wl-auth {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-  }
-  .wl-auth-hero {
-    min-height: 0;
-    padding: 20px;
-    height: 18rem;
-  }
-  .wl-auth-hero__copy {
-    margin-top: 20px;
-  }
-  .wl-auth-headline {
-    font-size: 1.85rem;
-  }
-  .wl-auth-lede,
-  .wl-auth-caption {
-    display: none;
-  }
+@keyframes wlAuthIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes wlAuthDrift {
+  from { transform: scale(1.08); }
+  to { transform: scale(1); }
+}
+
+@keyframes wlSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* Loading: the arrow gives way to a ring */
+.wl-auth-btn.is-loading > i {
+  display: none;
+}
+
+.wl-auth-btn.is-loading::after {
+  content: "";
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+}
+
+@media (max-width: 480px) {
   .wl-auth-card {
-    margin-top: 20px;
-    padding: 24px 20px;
+    padding: 24px 18px;
+    border-radius: var(--radius-2xl);
+  }
+  .wl-rules {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .wl-auth-helpers {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 360px) {
+  .wl-auth-row {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -3186,9 +3301,6 @@ body.wl-home-body {
   --bs-dropdown-header-color: var(--text-muted);
 }
 
-.navbar.bg-body {
-  background-color: var(--surface) !important;
-}
 
 .navbar-toggler {
   border-color: var(--border-strong);
@@ -3372,13 +3484,55 @@ body.wl-home-body {
 
 .wl-toast {
   align-items: center;
+  gap: var(--space-1-5);
   margin-top: 0;
-  padding: var(--space-half) var(--space-half) var(--space-half) var(--space-2);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-raised);
-  font-size: 1rem;
+  padding: 6px 6px 6px 8px;
+  border: 1px solid var(--glass-border-strong);
+  border-radius: var(--radius-2xl);
+  color: var(--text);
+  font-size: 0.9375rem;
+  line-height: 1.45;
   pointer-events: auto;
+}
+
+/* The status lives in a small round chip: its colour on its subtle fill, with the icon (never colour alone) */
+.wl-toast > i:first-child {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 1rem;
+}
+
+.wl-toast.wl-auth-alert--success > i:first-child {
+  background: var(--success-subtle);
+  color: var(--success);
+}
+
+.wl-toast.wl-auth-alert--info > i:first-child {
+  background: var(--info-subtle);
+  color: var(--link);
+}
+
+.wl-toast.wl-auth-alert--warning > i:first-child {
+  background: var(--warning-subtle);
+  color: var(--warning);
+}
+
+.wl-toast.wl-auth-alert--error > i:first-child {
+  background: var(--error-subtle);
+  color: var(--error);
+}
+
+/* Errors and warnings keep a coloured edge so they read as more urgent than a confirmation */
+.wl-toast.wl-auth-alert--error {
+  border-color: var(--error);
+}
+
+.wl-toast.wl-auth-alert--warning {
+  border-color: var(--warning);
 }
 @media (prefers-reduced-motion: no-preference) {
   .wl-toast {
@@ -3407,12 +3561,19 @@ body.wl-home-body {
   border: 0;
   border-radius: var(--radius-pill);
   background: transparent;
-  color: inherit;
+  color: var(--text-muted);
   cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .wl-toast__close:hover {
   background: var(--state-hover);
+  color: var(--text);
+}
+
+.wl-toast__close:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
 
@@ -4697,5 +4858,423 @@ body.wl-home-body {
   }
   .wl-search-btn {
     margin-left: 0;
+  }
+}
+
+/* ==========================================================================
+   Unified product surfaces: every page outside home and auth shares the home language.
+   Floating rail from 993px, a glass header, fine glass borders on panels, pill buttons,
+   rounded fields. The blur itself lives in tokens.css; these surfaces are translucent fills only.
+   ========================================================================== */
+.wl-navbar {
+  min-height: 64px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.wl-navbar .navbar-toggler {
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-pill);
+  background: var(--glass-bg-subtle);
+}
+
+.wl-navbar .navbar-toggler:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.wl-navbar .nav-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  border-radius: var(--radius-pill);
+}
+
+.wl-navbar .nav-link:hover {
+  background: var(--state-hover);
+}
+
+.wl-navbar .nav-link.active {
+  color: var(--text) !important;
+  font-weight: 600;
+}
+
+.wl-navbar .nav-link:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+
+/* From 1200px the bar is open and the rail carries the page links, so they are not shown twice */
+@media (min-width: 1200px) {
+  .wl-navbar .wl-nav-primary {
+    display: none !important;
+  }
+}
+
+/* The collapsed menu opens as a glass sheet under the bar */
+@media (max-width: 1199.98px) {
+  .wl-navbar .navbar-collapse {
+    margin-top: var(--space-1);
+    padding: var(--space-1) var(--space-1-5);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    background: var(--glass-bg-subtle);
+  }
+  .wl-navbar .navbar-collapse .nav-link {
+    min-height: 44px;
+  }
+}
+
+/* Content clears the floating rail on both sides so the column stays centred */
+@media (min-width: 993px) {
+  .wl-rail-body .wl-shell-main {
+    max-width: min(1320px, calc(100% - 2 * var(--rail-gutter)));
+  }
+  .wl-rail-body .f-info {
+    padding-inline-start: max(clamp(20px, 4vw, 56px), var(--rail-gutter));
+  }
+}
+
+/* Panels, empty states, stats, contents lists and form sections: one fine glass card */
+.wl-panel,
+.wl-empty,
+.wl-stat,
+.wl-toc,
+.wl-rail-body .card:not(.wl-listing-card) {
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--radius-xl);
+}
+
+.wl-panel,
+.wl-stat {
+  transition: border-color 0.2s ease;
+}
+
+.wl-panel:hover,
+.wl-stat:hover,
+.wl-rail-body .booking-row:hover {
+  border-color: var(--glass-border-strong) !important;
+}
+
+.wl-empty {
+  padding: var(--space-4) clamp(20px, 4vw, 48px);
+  border-radius: var(--radius-2xl);
+}
+
+.wl-row__photo {
+  border-radius: var(--radius-lg);
+}
+
+/* Buttons: pills, like Search and Reserve */
+.wl-auth-btn,
+.btn {
+  border-radius: var(--radius-pill);
+}
+
+.wl-auth-btn--outline {
+  background: var(--glass-bg-subtle);
+  border-color: var(--glass-border-strong);
+}
+
+.wl-auth-btn--outline:hover {
+  background: var(--glass-bg-hover);
+}
+
+/* Fields: rounded, on a translucent fill, edges still findable (border-strong) */
+.wl-input,
+.form-control,
+.form-select {
+  background-color: var(--glass-bg-subtle);
+  border-radius: var(--radius-xl);
+}
+
+.wl-input:hover,
+.form-control:hover,
+.form-select:hover {
+  background-color: var(--glass-bg-hover);
+}
+
+.form-control:focus {
+  background-color: var(--glass-bg-hover);
+}
+
+textarea.form-control,
+.wl-input--textarea {
+  border-radius: var(--radius-lg);
+}
+
+.form-control::file-selector-button {
+  margin-inline-end: var(--space-1-5);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background-color: var(--secondary-subtle);
+}
+
+/* Tables (admin) sit in the same glass card */
+.wl-admin-table {
+  overflow: hidden;
+  padding: 0 var(--space-2);
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+}
+
+/* A quiet entrance for page content; nothing moves when motion is reduced */
+@media (prefers-reduced-motion: no-preference) {
+  .wl-rail-body .wl-shell-main > * {
+    /* backwards, not both: no transform is left behind to trap fixed-position children */
+    animation: wlPageIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  }
+}
+
+@keyframes wlPageIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Header mode switch: a compact glass pill */
+.wl-navbar .wl-mode-btn {
+  min-height: 40px;
+  padding: 0 14px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* Stay gallery: photographs get the same soft corners as listing cards */
+.wl-gallery__main {
+  border-radius: var(--radius-2xl);
+}
+
+.wl-gallery__thumb {
+  border-radius: var(--radius-lg);
+}
+
+.wl-gallery__thumb:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* The sticky reservation panel clears the sticky glass header */
+.wl-rail-body .wl-stay__aside {
+  top: 88px;
+}
+
+.wl-map {
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-2xl);
+}
+
+/* Status states (error, empty, done): an icon in a glass ring, a mono label, a title and the next step */
+.wl-state__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: var(--space-2);
+  border: 1px solid var(--glass-border);
+  border-radius: 50%;
+  background: var(--glass-bg-hover);
+  color: var(--accent);
+  font-size: 1.375rem;
+}
+
+.wl-state__label {
+  margin: 0 0 var(--space-1);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.wl-state__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-1-5);
+}
+
+/* Rail labels: host mode has longer words ("Reservations"), so a link may grow to two lines
+   instead of letting text spill past the rail */
+.wl-nav-rail {
+  width: 76px;
+}
+
+.wl-sidebar .wl-rail-link {
+  width: 66px;
+  height: auto;
+  min-height: 54px;
+  padding: 8px 2px;
+  border-radius: 22px;
+}
+
+.wl-sidebar .wl-rail-label {
+  max-width: 100%;
+  font-size: 0.6rem;
+  line-height: 1.15;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.wl-sidebar .wl-rail-link:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Page header: title and one line of context on the left, the page's one action on the right */
+.wl-page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 var(--space-3);
+}
+
+.wl-page-head .wl-page-lede {
+  margin-bottom: 0;
+}
+
+/* Shown in the map's place when Mapbox cannot load */
+.wl-map__fallback {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: var(--space-3);
+  background: var(--glass-bg-subtle);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* Collapsed header menu: the search fills the sheet, the mode switch sits in it on phones too */
+.wl-navbar .navbar-toggler:focus:not(:focus-visible) {
+  box-shadow: none;
+}
+
+@media (max-width: 1199.98px) {
+  .wl-navbar .navbar-nav.ms-auto {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    padding-block: var(--space-1);
+  }
+}
+
+/* Active rail item: ink on brass in both themes (the brass fill pairs with ink, 7.5:1) */
+.wl-sidebar .wl-rail-link.active,
+.wl-sidebar .wl-rail-link.active .wl-rail-label,
+.wl-sidebar .wl-rail-link.active i {
+  color: var(--band) !important;
+}
+
+/* Header search: one glass pill. The button sits inside it with an even 4px inset on every side,
+   so the pill's height is the button's height plus 8px and nothing pokes past its edge. */
+.wl-navsearch {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  width: min(420px, 100%);
+  height: 48px;
+  padding: 4px 4px 4px 16px;
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-pill);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.wl-navsearch:hover {
+  background: var(--glass-bg-hover);
+}
+
+.wl-navsearch:has(.wl-navsearch__input:focus) {
+  border-color: var(--glass-border-strong);
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.wl-navsearch__icon {
+  flex: none;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.wl-navsearch__input {
+  /* A search input has a built-in width of about 20 characters; starting from 0 and growing
+     keeps it from pushing the phone menu wider than the screen */
+  flex: 1 1 0;
+  width: 0;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9375rem;
+}
+
+/* The pill shows focus, so the field itself does not draw a second ring */
+.wl-navsearch__input:focus {
+  outline: none;
+}
+
+.wl-navsearch__input::placeholder {
+  color: var(--text-muted);
+}
+
+.wl-navsearch__input::-webkit-search-cancel-button {
+  cursor: pointer;
+}
+
+.wl-navsearch__btn {
+  flex: none;
+  height: 100%;
+  padding: 0 18px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--primary);
+  color: var(--on-primary);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.wl-navsearch__btn:hover {
+  background: var(--primary-hover);
+}
+
+.wl-navsearch__btn:active {
+  background: var(--primary-pressed);
+}
+
+.wl-navsearch__btn:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Open bar: the search takes the free middle space and centres in it */
+@media (min-width: 1200px) {
+  .wl-navbar .navbar-nav.mx-auto {
+    flex: 1 1 auto;
+    align-items: center;
+    justify-content: center;
+    padding-inline: var(--space-2);
+  }
+}
+
+/* In the collapsed menu the search fills the sheet; touch targets stay at least 44px */
+@media (max-width: 1199.98px) {
+  .wl-navsearch {
+    width: 100%;
+    /* 44px button + 4px inset + 1px border on each side */
+    height: 54px;
   }
 }

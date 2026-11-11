@@ -56,6 +56,7 @@
   --radius-lg: 8px;
   --radius-xl: 16px;
   --radius-2xl: 24px;
+  --radius-3xl: 44px;
   --radius-pill: 999px;
 
   /* Spacing half steps (docs/DESIGN.md 4.1) */
@@ -78,6 +79,7 @@
   --z-toast: 2100;
   --z-rail: 50;
   --rail-gutter: 104px;
+  --popover-gap: 22px;
   --shadow-soft: 0 8px 30px rgba(17, 27, 26, 0.08);
   --shadow-raised: 0 16px 40px rgba(17, 27, 26, 0.12);
 
@@ -101,6 +103,10 @@
   --glass-shadow-floating: 0 24px 60px rgba(17, 27, 26, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9);
   --glass-blur: blur(20px);
   --glass-backdrop: blur(20px) saturate(180%);
+  /* Dense glass for popovers and pop-ups that hold small text: the raised surface at 94%,
+     so text stays readable over photographs while a hint of the page still shows through.
+     It follows the theme because --surface-raised does. */
+  --glass-bg-dense: color-mix(in srgb, var(--surface-raised) 94%, transparent);
   --hero-fade-top: linear-gradient(180deg, rgba(241, 239, 233, 0.95) 0%, rgba(241, 239, 233, 0.3) 25%, transparent 45%);
   --hero-fade-bottom: linear-gradient(0deg, #F1EFE9 0%, rgba(241, 239, 233, 0.9) 15%, transparent 45%);
 
@@ -288,6 +294,13 @@
    ========================================================================== */
 
 /* 1. Base Glass Primitives */
+/* The site header on every page outside home and auth */
+.wl-navbar {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+}
+
 .glass-surface {
   background: var(--glass-bg);
   -webkit-backdrop-filter: var(--glass-backdrop);
@@ -1019,24 +1032,6 @@
   color: #0A1312;
 }
 
-/* 10. Authentication Layout & Liquid Glass Card */
-.wl-auth-hero::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: var(--hero-fade-top), var(--hero-fade-bottom);
-  background-size: 100% 200px, 100% 240px;
-  background-position: top center, bottom center;
-  background-repeat: no-repeat;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.wl-auth-card {
-  width: 100%;
-  max-width: 460px;
-  padding: clamp(24px, 4vw, 40px);
-}
 
 .wl-auth-card__title {
   font-family: var(--font-display);
@@ -1151,8 +1146,33 @@
   box-shadow: var(--glass-shadow);
 }
 
-/* The date picker and guest selector hold dense content over busy pages, so they use the denser glass tone */
+/* The date picker and guest selector hold small text over busy pages, so they use the dense glass tone */
 .wl-guests-popover,
 .wl-calendar-popover {
-  background: var(--glass-bg-hover);
+  background: var(--glass-bg-dense);
+  border-color: var(--glass-border-strong);
+}
+
+/* Pop-up notifications: the same dense glass as the popovers */
+.wl-toast.wl-auth-alert {
+  background: var(--glass-bg-dense);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  box-shadow: var(--glass-shadow-floating);
+}
+
+/* Authentication: the card is a liquid-glass panel over the photograph, and the footer links sit on a small glass pill */
+.wl-auth-card {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-floating);
+}
+
+.wl-auth-footer p {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
 }

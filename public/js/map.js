@@ -16,6 +16,18 @@
   });
   map.addControl(new mapboxgl.NavigationControl(), "top-right");
 
+  // If the map style cannot load (no token, a bad token, offline), say so in the map's place.
+  // Listening for "error" also stops Mapbox printing it to the console. Tile errors after the
+  // style has loaded are left alone: the map still works.
+  map.on("error", () => {
+    if (map.isStyleLoaded() || el.querySelector(".wl-map__fallback")) return;
+    const note = document.createElement("p");
+    note.className = "wl-map__fallback";
+    note.setAttribute("role", "status");
+    note.textContent = "The map could not load right now. The places are still listed on this page.";
+    el.appendChild(note);
+  });
+
   // ---- Listing page: single marker ----
   if (mode === "show" && el.dataset.radius) {
     // The public view: a circle around a nearby point, never the pin itself

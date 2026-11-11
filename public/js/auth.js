@@ -5,6 +5,28 @@
 
   const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+  // The password rules are read from the checklist on the page, which the server renders from the
+  // same list it enforces, so the browser and the server agree.
+  const rulesFor = (input) => document.querySelector(`[data-password-rules="${input.id}"]`);
+  const missingRules = (input) => {
+    const list = rulesFor(input);
+    if (!list) return [];
+    return [...list.querySelectorAll("[data-rule]")]
+      .filter((item) => !new RegExp(item.dataset.pattern).test(input.value))
+      .map((item) => item.querySelector("span").textContent.trim());
+  };
+
+  const paintRules = (input) => {
+    const list = rulesFor(input);
+    if (!list) return;
+    list.querySelectorAll("[data-rule]").forEach((item) => {
+      const met = new RegExp(item.dataset.pattern).test(input.value);
+      item.classList.toggle("is-met", met);
+      item.querySelector("i").className = `${met ? "fa-solid fa-circle-check" : "fa-regular fa-circle"} wl-rules__icon`;
+      item.querySelector("[data-rule-state]").textContent = met ? ", met" : ", not met yet";
+    });
+  };
+
   const message = (input) => {
     const noun = input.dataset.label || "this field";
     const value = input.value.trim();
@@ -16,11 +38,11 @@
       return "Username may only contain letters, numbers and underscores.";
     if (input.minLength > 0 && input.value.length < input.minLength)
       return `Use at least ${input.minLength} characters.`;
-    if (
-      "newPassword" in input.dataset &&
-      !(/[A-Za-z]/.test(input.value) && /\d/.test(input.value))
-    )
-      return "Use at least one letter and one digit.";
+    if ("newPassword" in input.dataset) {
+      const missing = missingRules(input);
+      if (missing.length)
+        return `Password needs ${missing.map((label) => label.toLowerCase()).join(", ")}.`;
+    }
     return "";
   };
 
@@ -33,6 +55,16 @@
     else input.removeAttribute("aria-describedby");
     input.closest(".wl-input")?.classList.toggle("is-invalid", Boolean(text));
     note.textContent = text;
+    note.classList.remove("is-ok");
+    note.hidden = !text;
+  };
+
+  // A positive note in the same slot as the error (username free, passwords match)
+  const setOk = (input, text) => {
+    const note = document.getElementById(`${input.id}-error`);
+    setError(input, "");
+    note.textContent = text;
+    note.classList.add("is-ok");
     note.hidden = !text;
   };
 
@@ -67,6 +99,8 @@
       if (input.value !== other.value) text = "Passwords do not match.";
     }
     setError(input, text);
+    if (!text && matchName && input.name === matchName && input.value)
+      setOk(input, "Passwords match.");
     return !text;
   };
 
@@ -102,6 +136,50 @@
         if (input.value) check(form, input);
       });
     });
+
+    // Requirements tick off as the password is typed; the confirmation re-checks against it
+    inputs.filter((input) => "newPassword" in input.dataset).forEach((input) => {
+      paintRules(input);
+      input.addEventListener("input", () => {
+        paintRules(input);
+        const confirm = form.elements[form.dataset.match];
+        if (confirm && confirm.value) check(form, confirm);
+      });
+    });
+    const confirmField = form.dataset.match && form.elements[form.dataset.match];
+    if (confirmField)
+      confirmField.addEventListener("input", () => {
+        if (confirmField.value) check(form, confirmField);
+      });
+
+    // Username availability, asked of the server once the name is well formed
+    const nameField = form.querySelector("[data-check-username]");
+    if (nameField) {
+      let ask = 0;
+      const status = async () => {
+        const name = nameField.value.trim();
+        if (!/^\w{3,30}$/.test(name)) return;
+        const mine = ++ask;
+        try {
+          const res = await fetch(`/signup/username-available?username=${encodeURIComponent(name)}`, {
+            headers: { Accept: "application/json" },
+          });
+          if (!res.ok || mine !== ask) return;
+          const { available } = await res.json();
+          if (nameField.value.trim() !== name) return;
+          if (available) setOk(nameField, "That username is free.");
+          else setError(nameField, "That username is taken.");
+        } catch {
+          // The server checks again on submit
+        }
+      };
+      let timer;
+      nameField.addEventListener("input", () => {
+        clearTimeout(timer);
+        timer = setTimeout(status, 400);
+      });
+      nameField.addEventListener("blur", status);
+    }
 
     form.addEventListener("submit", (event) => {
       if (form.dataset.submitting) return event.preventDefault();
