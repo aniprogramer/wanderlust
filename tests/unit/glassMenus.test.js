@@ -46,3 +46,37 @@ describe("liquid glass menus, cards and pagination", () => {
     expect(picker).toMatch(/addEventListener\("wl:popover-open"/);
   });
 });
+
+describe("footer", () => {
+  const footer = read("views/includes/footer.ejs");
+  test("keeps every policy, help and contact link and the brand tagline", () => {
+    for (const href of ["/help", "/contact", "/privacy", "/terms", "/cancellation-policy", "/house-rules"])
+      expect(footer).toContain(`href="${href}"`);
+    expect(footer).toContain("Stays worth the");
+  });
+  test("sits on the page ground so brass emphasis keeps its contrast", () => {
+    expect(block(style, ".f-info")).toMatch(/background-color:\s*var\(--bg\)/);
+  });
+});
+
+test("menu items are rounded so hover and selected fills have rounded corners", () => {
+  expect(block(style, ".dropdown-item,\n.wl-dropdown-item")).toMatch(/border-radius:\s*var\(--radius-lg\)/);
+});
+
+describe("responsive details", () => {
+  test("narrow phones drop the wordmark from the home header, and small links get a 44px hit area", () => {
+    expect(style).toMatch(/@media \(max-width: 380px\)\s*\{\s*\.wl-hero-header \.wl-brand-name\s*\{\s*display:\s*none/);
+    expect(style).toMatch(/@media \(max-width: 820px\)\s*\{\s*\.wl-auth-footer__link,\s*\.wl-user-link\s*\{[^}]*min-height:\s*44px/);
+  });
+  test("the header search hides until there is room (the hero panel searches too)", () => {
+    expect(read("views/listings/index.ejs")).toMatch(/wl-topbar-search-form d-none d-xl-flex/);
+  });
+});
+
+test("ultra-wide screens hold the content to a readable width", () => {
+  expect(style).toMatch(/@media \(min-width: 1800px\)\s*\{[^@]*max-width:\s*1800px/);
+});
+
+test("on tablets the search panel is a two-column grid in the page flow, not over the hero copy", () => {
+  expect(style).toMatch(/@media \(min-width: 769px\) and \(max-width: 991px\)\s*\{[\s\S]*?\.wl-search-wrapper\s*\{\s*position:\s*relative[\s\S]*?grid-template-columns:\s*repeat\(2/);
+});
